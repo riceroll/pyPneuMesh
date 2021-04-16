@@ -26,6 +26,7 @@ inFileName = args.iFile
 numGeneration = args.nGen
 numPopulation = args.nPop
 direction = args.direction
+numWorkers = args.nWorkers
 
 if visualize:
     import open3d as o3
@@ -347,6 +348,7 @@ if __name__ == "__main__":
     criterion = locomotion_x if direction == "x" else locomotion_x
     
     ea = EvolutionAlgorithm(name=inFileName, model=model, criterion=criterion,
+                            nWorkers=numWorkers,
                             nPop=numPopulation)
     gene = ea.maximize(2 if testing else numGeneration)
     

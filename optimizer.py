@@ -16,11 +16,12 @@ class Optimizer(object):
 
 
 class EvolutionAlgorithm(Optimizer):
-    def __init__(self, name, model=None, criterion=None, nPop=100, nHero=1,
+    def __init__(self, name, model=None, criterion=None, nWorkers=None, nPop=100, nHero=1,
                  mortality=0.9, pbCross=0.5, pbMut=0.04, pbCrossDig=0.05, pbMutDig=0.05):
         super().__init__(model)
         
         self.name = name
+        self.nWorkers = nWorkers
         self.criterion = criterion
 
         self.lb = self.model.lb()
@@ -98,7 +99,7 @@ class EvolutionAlgorithm(Optimizer):
     def evaluate(self, disp=False):
         pops = [p for p in self.pop]
     
-        with Pool(multiprocessing.cpu_count()) as p:
+        with Pool(self.nWorkers if self.nWorkers else multiprocessing.cpu_count()) as p:
             self.fits = np.array(p.map(self.criterion, pops))
         
         # self.fits = np.array([self.criterion(pop) for pop in pops])
