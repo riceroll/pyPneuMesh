@@ -16,6 +16,7 @@ parser.add_argument("--iFile", type=str, default="trussformer", help="name of in
 parser.add_argument("--nGen", type=int, default=1000, help="whether in testing mode")
 parser.add_argument("--nPop", type=int, default=100, help="size of population")
 parser.add_argument("--direction", type=str, default="x", help="direction of locomotion")
+parser.add_argument("--nWorkers", type=int, default=4, help="direction of locomotion")
 args = parser.parse_args()
 
 scripting = True
@@ -345,7 +346,7 @@ if __name__ == "__main__":
     locomotion_y = lambda g: locomotion(g, 'y')
     criterion = locomotion_x if direction == "x" else locomotion_x
     
-    ea = EvolutionAlgorithm(model=model, criterion=criterion,
+    ea = EvolutionAlgorithm(name=inFileName, model=model, criterion=criterion,
                             nPop=numPopulation)
     gene = ea.maximize(2 if testing else numGeneration)
     

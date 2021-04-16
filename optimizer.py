@@ -16,10 +16,11 @@ class Optimizer(object):
 
 
 class EvolutionAlgorithm(Optimizer):
-    def __init__(self, model=None, criterion=None, nPop=100, nHero=1,
+    def __init__(self, name, model=None, criterion=None, nPop=100, nHero=1,
                  mortality=0.9, pbCross=0.5, pbMut=0.04, pbCrossDig=0.05, pbMutDig=0.05):
         super().__init__(model)
         
+        self.name = name
         self.criterion = criterion
 
         self.lb = self.model.lb()
@@ -47,8 +48,8 @@ class EvolutionAlgorithm(Optimizer):
         
         # statistics
         self.history = {
-            'gens': [],
-            'fitss': [],
+            'genes': [],
+            'fits': [],
             'min': [],
             'max': [],
             'mean': []
@@ -115,11 +116,11 @@ class EvolutionAlgorithm(Optimizer):
         self.history['min'].append(minFit)
         self.history['max'].append(maxFit)
         self.history['mean'].append(meanFit)
-        self.history['gens'].append(self.pop.tolist())
-        self.history['fitss'].append(self.fits.tolist())
+        self.history['genes'] = self.pop.tolist()
+        self.history['fits'] = self.fits.tolist()
         
-        if self.nGen % 10 == 0:
-            outFileName = "{}/output/gen-{}_fit-{:.8f}".format(rootPath, self.nGen, self.fits.max())
+        if self.nGen % 5 == 0:
+            outFileName = "{}/output/{}_g{}_f{:.8f}".format(rootPath, self.name, self.nGen, self.fits.max())
             with open(outFileName, 'w') as ofile:
                 js = json.dumps(self.history)
                 ofile.write(js)
@@ -195,8 +196,8 @@ class EvolutionAlgorithm(Optimizer):
             self.load(self.policyName)
 
         self.history = {
-            'gens': [],
-            'fitss': [],
+            'genes': [],
+            'fits': [],
             'min': [],
             'max': [],
             'mean': []
