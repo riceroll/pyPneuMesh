@@ -281,11 +281,11 @@ class Model(object):
         
         if not visualize:
             if testing:
-                self.step(10)
+                ret = self.step(10)
             else:
                 ret = self.step(int(Model.numStepsAction * self.numActions * 4))
-                if not ret:
-                    return np.ones_like(self.v) * -1e6
+            if ret is False:
+                return np.ones_like(self.v) * -1e6
                 
         else:
             viewer = o3.visualization.VisualizerWithKeyCallback()
