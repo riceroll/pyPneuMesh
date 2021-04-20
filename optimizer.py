@@ -99,10 +99,10 @@ class EvolutionAlgorithm(Optimizer):
     def evaluate(self, disp=False):
         pops = [p for p in self.pop]
     
-        # with Pool(self.nWorkers if self.nWorkers else multiprocessing.cpu_count()) as p:
-        #     self.fits = np.array(p.map(self.criterion, pops))
+        with Pool(self.nWorkers if self.nWorkers else multiprocessing.cpu_count()) as p:
+            self.fits = np.array(p.map(self.criterion, pops))
         
-        self.fits = np.array([self.criterion(pop) for pop in pops])
+        # self.fits = np.array([self.criterion(pop) for pop in pops])
 
         meanFit = np.mean(self.fits)
         maxFit = np.max(self.fits)
