@@ -251,17 +251,18 @@ class Model(object):
             
             self.vel += Model.h * f
             
+            boolUnderground = self.v[:, 2] <= 0
+            self.vel[boolUnderground, :2] *= 1 - Model.frictionFactor
+
             self.vel *= Model.dampingRatio
             velMag = np.sqrt(np.sum(self.vel ** 2, 1))
             while (velMag > 5).any():
                 self.vel[(velMag > 5)] *= 0.9
                 velMag = np.sqrt(np.sum(self.vel ** 2, 1))
 
-            boolUnderground = self.v[:, 2] <= 0
-            self.vel[boolUnderground, :2] *= 1 - Model.frictionFactor
-            self.vel[boolUnderground, 2] *= -1
-
             self.v += Model.h * self.vel
+
+            self.vel[boolUnderground, 2] *= -1
             self.v[boolUnderground, 2] = 0
 
             if self.numSteps % Model.cornerCheckFrequency == 0:
