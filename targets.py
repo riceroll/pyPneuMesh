@@ -13,8 +13,8 @@ class Targets(object):
     def locomotion(vs):
         v = vs[-1]
         x = v.mean(0)[0]
-        y = abs(v.mean(0)[1])
-        return x - y * 10
+        dy = abs(v.mean(0)[1])
+        return x - dy * 10
     
     @staticmethod
     def heightConstraint(vs):
@@ -46,3 +46,12 @@ class Targets(object):
             fitness += targetFitness
         return fitness
 
+    def criterionScript(self, script):
+        fitness = 0
+        for iTarget, target in enumerate(self.targets):
+            vs = self.model.iterScript(script)
+            targetFitness = 0
+            for iSubtarget, subtarget in enumerate(target):
+                targetFitness += subtarget(vs)
+            fitness += targetFitness
+        return fitness

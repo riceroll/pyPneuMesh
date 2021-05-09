@@ -101,9 +101,9 @@ class EvolutionAlgorithm(Optimizer):
     
         with Pool(self.nWorkers if self.nWorkers else multiprocessing.cpu_count()) as p:
             self.fits = np.array(p.map(self.criterion, pops))
-        
-        # self.fits = np.array([self.criterion(pop) for pop in pops])
 
+        # self.fits = np.array([self.criterion(pop) for pop in pops])
+        
         meanFit = np.mean(self.fits)
         maxFit = np.max(self.fits)
         minFit = np.min(self.fits)
@@ -190,12 +190,12 @@ class EvolutionAlgorithm(Optimizer):
         plt.plot(np.arange(self.nGen + 1), self.history['max'])
         plt.plot(np.arange(self.nGen + 1), self.history['mean'])
         plt.show()
-
+        
     def maximize(self, nSteps=1, disp=True):
         self.initPop()
         if self.preTrained:
             self.load(self.policyName)
-
+            
         self.history = {
             'genes': [],
             'fits': [],

@@ -169,6 +169,7 @@ class Model(object):
             self.numSteps += 1
         
             # script
+            self.script = self.script.reshape(self.numChannels, self.numActions)
             if self.scripting:
                 if self.numSteps > ((self.iAction + 1) % self.numActions) * Model.numStepsPerAction:
                     self.iAction = int(np.floor(self.numSteps / Model.numStepsPerAction) % self.numActions)
@@ -288,6 +289,62 @@ class Model(object):
             viewer.destroy_window()
     
         return vs
+
+    def iterScript(self, script=None, visualize=False):
+        """
+        load the gene and run a series of steps
+        :param gene: the gene to load into the model, gene format is
+            edgeChannel : (ne, ) int, [0, self.numChannels)
+            contractionPercentLevel : (ne, ) int, [0, Model.contractionLevels)
+            script : (na, nc) int, {0, 1}
+        :param visualize: if True, visualize the iteration with open3D
+        :return: the vertices location of the model
+        """
+        if script is not None:
+            self.loadScript(script)
+        self.reset()
+    
+        vs = []
+        if not visualize:
+            if self.testing:
+                for i in range(5):
+                    ret = self.step(2)
+                    vs.append(ret)
+            else:
+                for i in range(1):
+                    ret = self.step(int(Model.numStepsPerAction * self.numActions))
+                    vs.append(ret)
+        else:
+            viewer = o3.visualization.VisualizerWithKeyCallback()
+            viewer.create_window()
+        
+            render_opt = viewer.get_render_option()
+            render_opt.mesh_show_back_face = True
+            render_opt.mesh_show_wireframe = True
+            render_opt.point_size = 8
+            render_opt.line_width = 10
+            render_opt.light_on = True
+        
+            ls = LineSet(self.v, self.e)
+            viewer.add_geometry(ls)
+        
+            def timerCallback(vis):
+                self.step(25)
+                ls.points = vector3d(self.v)
+                viewer.update_geometry(ls)
+        
+            viewer.register_animation_callback(timerCallback)
+        
+            # def key_step(vis):
+            #     pass
+        
+            # viewer.register_key_callback(65, key_step)
+        
+            drawGround(viewer)
+            viewer.run()
+            viewer.destroy_window()
+    
+        return vs
     # end stepping
     
     # checks =========================
@@ -348,19 +405,40 @@ class Model(object):
     def setTargets(self, targets):
         self.targets = targets
     
-    def lb(self):
+    def lb(self, channel=False, contraction=False, script=True):
         [nEdgeChannel, nMaxContraction, nScript] = self.geneSetSize()
-        nTargets = self.targets.numTargets()
-        return np.zeros(nEdgeChannel + nMaxContraction + nTargets * nScript, dtype=np.int64)
+        if self.targets:
+            digitScript = self.targets.numTargets() * nScript
+        else:
+            digitScript = nScript
+        
+        digitLb = 0
+        if channel:
+            digitLb += nEdgeChannel
+        if contraction:
+            digitLb += nMaxContraction
+        if script:
+            digitLb += digitScript
+        
+        return np.zeros(digitLb, dtype=np.int64)
     
-    def ub(self):
+    def ub(self, channel=False, contraction=False, script=True):
         # caution: the upper bound here is noninclusive
         [nEdgeChannel, nMaxContraction, nScript] = self.geneSetSize()
         
         ubEdgeChannel = np.ones(nEdgeChannel) * self.numChannels
         ubMaxContraction = np.ones(nMaxContraction) * Model.contractionLevels
         ubScript = np.ones(nScript * self.targets.numTargets()) * 2
-        return np.concatenate([ubEdgeChannel, ubMaxContraction, ubScript])
+        
+        output = []
+        if channel:
+            output.append(ubEdgeChannel)
+        if contraction:
+            output.append(ubMaxContraction)
+        if script:
+            output.append(ubScript)
+            
+        return np.concatenate(output)
     
     def loadGene(self, gene):
         nEdgeChannel = len(self.edgeChannel)
@@ -376,6 +454,9 @@ class Model(object):
         self.script = np.array(gene[:], dtype=bool).reshape(self.numChannels, self.numActions)
         
         self.edgeActive = np.ones_like(self.edgeActive, dtype=bool)
+    
+    def loadScript(self, script):
+        self.script = script
     
     def exportJSON(self, gene, inDir, appendix=None):
         """

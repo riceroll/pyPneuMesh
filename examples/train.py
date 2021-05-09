@@ -44,7 +44,6 @@ if visualize:
     LineSet = lambda v, e: o3.geometry.LineSet(points=vector3d(v), lines=vector2i(e))
     PointCloud = lambda v: o3.geometry.PointCloud(points=vector3d(v))
     
-    
     def drawGround(viewer):
         n = 20
         vs = []

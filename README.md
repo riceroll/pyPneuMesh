@@ -14,6 +14,6 @@ python examples/train.py --iFile fox --nPop 100 --nGen 1000 --nWorkers 8 --numCh
 
 To run a simulation with given file
 ```bash
-python examples/test --iFile fox --testing 1 --visualize 1
+python examples/test.py --iFile fox --testing 1 --visualize 1
 ```
 
