@@ -6,17 +6,14 @@ The simulation and optimization framework for trussBot.
 - pathos - 0.2.5
 - open3d - 0.10.0.0
 
-### Installation
-
-###Run
-
+### Examples
+To optimize a fox to move towards +x direction:
 ```bash
-python model (-h) (--visualize True) (--testing True) --iFile [file name] --nPop [n of pop] --nGen [n of gen] --direction [x or y]
+python examples/train.py --iFile fox --nPop 100 --nGen 1000 --nWorkers 8 --numChannels 3 --numActions 4 --targets moveForward
 ```
 
-### Examples
-
+To run a simulation with given file
 ```bash
-python model --iFile fox --nPop 100 --nGen 1000 --direction x
+python examples/test --iFile fox --testing 1 --visualize 1
 ```
 

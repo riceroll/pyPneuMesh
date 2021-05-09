@@ -29,7 +29,7 @@ class EvolutionAlgorithm(Optimizer):
         self.nStages = 4
         self.interval = (self.ub - self.lb) / self.nStages
         self.lbInt = self.lb
-        self.ubInt = self.ub + 1
+        self.ubInt = self.ub
 
         self.nPop = nPop
         self.mortality = mortality
@@ -67,7 +67,7 @@ class EvolutionAlgorithm(Optimizer):
         self.ub = self.model.ub()
         # self.interval = (self.ub - self.lb) / self.nStages
         self.lbInt = self.lb
-        self.ubInt = self.ub + 1
+        self.ubInt = self.ub
 
     def survivor(self, i=0):
         return self.pop[i]
