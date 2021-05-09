@@ -4,37 +4,40 @@ import time
 import json
 import argparse
 import numpy as np
-import open3d as o3
 from optimizer import EvolutionAlgorithm
 rootPath = os.path.split(os.path.realpath(__file__))[0]
 tPrev = time.time()
 
-# viewer
-vector3d = lambda v: o3.utility.Vector3dVector(v)
-vector3i = lambda v: o3.utility.Vector3iVector(v)
-vector2i = lambda v: o3.utility.Vector2iVector(v)
-LineSet = lambda v, e: o3.geometry.LineSet(points=vector3d(v), lines=vector2i(e))
-PointCloud = lambda v: o3.geometry.PointCloud(points=vector3d(v))
+visualize = False
 
-def drawGround(viewer):
-    n = 20
-    vs = []
-    es = []
-    for i, x in enumerate(np.arange(1 - n, n)):
-        vs.append([x, 1 - n, 0])
-        vs.append([x, n - 1, 0])
-        es.append([i * 2, i * 2 + 1])
-    lines = o3.geometry.LineSet(points=o3.utility.Vector3dVector(vs), lines=o3.utility.Vector2iVector(es))
-    viewer.add_geometry(lines)
+if visualize:
+    # viewer
+    import open3d as o3
+    vector3d = lambda v: o3.utility.Vector3dVector(v)
+    vector3i = lambda v: o3.utility.Vector3iVector(v)
+    vector2i = lambda v: o3.utility.Vector2iVector(v)
+    LineSet = lambda v, e: o3.geometry.LineSet(points=vector3d(v), lines=vector2i(e))
+    PointCloud = lambda v: o3.geometry.PointCloud(points=vector3d(v))
     
-    vs = []
-    es = []
-    for i, x in enumerate(np.arange(1 - n, n)):
-        vs.append([1 - n, x, 0])
-        vs.append([n - 1, x, 0])
-        es.append([i * 2, i * 2 + 1])
-    lines = o3.geometry.LineSet(points=o3.utility.Vector3dVector(vs), lines=o3.utility.Vector2iVector(es))
-    viewer.add_geometry(lines)
+    def drawGround(viewer):
+        n = 20
+        vs = []
+        es = []
+        for i, x in enumerate(np.arange(1 - n, n)):
+            vs.append([x, 1 - n, 0])
+            vs.append([x, n - 1, 0])
+            es.append([i * 2, i * 2 + 1])
+        lines = o3.geometry.LineSet(points=o3.utility.Vector3dVector(vs), lines=o3.utility.Vector2iVector(es))
+        viewer.add_geometry(lines)
+        
+        vs = []
+        es = []
+        for i, x in enumerate(np.arange(1 - n, n)):
+            vs.append([1 - n, x, 0])
+            vs.append([n - 1, x, 0])
+            es.append([i * 2, i * 2 + 1])
+        lines = o3.geometry.LineSet(points=o3.utility.Vector3dVector(vs), lines=o3.utility.Vector2iVector(es))
+        viewer.add_geometry(lines)
 
 # end of viewer ==================================
 
