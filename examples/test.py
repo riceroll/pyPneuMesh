@@ -28,6 +28,8 @@ numPopulation = args.nPop if not testing else 8
 numActions = args.numActions
 numStepsPerActionMultiplier = float(args.numStepsPerActionMultiplier)
 
+
+visualize = True
 if visualize:
     import open3d as o3
     
@@ -90,5 +92,5 @@ model.exportJSONs(geneSet, targets, inFileDir)
 if visualize:
     for iTarget in range(targets.numTargets()):
         model.iter(targets.extractGene(geneSet, iTarget), True)
-
+        
 model.iter(None, visualize)

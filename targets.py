@@ -10,6 +10,18 @@ class Targets(object):
         return len(self.targets)
     
     @staticmethod
+    def straightX(vs):
+        #  vs: v at every N time steps, N x nv x 3
+        xs = [v.mean(0)[0] for v in vs]
+        
+        fitness = 0
+        for i in range(len(xs)-1):
+            j = i + 1
+            dx = xs[j] - xs[i]
+            fitness += dx if dx > 0 else 10 * dx
+        return fitness
+    
+    @staticmethod
     def locomotion(vs):
         v = vs[-1]
         x = v.mean(0)[0]

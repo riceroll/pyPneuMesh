@@ -8,7 +8,7 @@ from optimizer import EvolutionAlgorithm
 rootPath = os.path.split(os.path.realpath(__file__))[0]
 tPrev = time.time()
 
-visualize = False
+visualize = True
 
 if visualize:
     # viewer
@@ -92,16 +92,17 @@ class Model(object):
         
         self.targets = None
         self.testing = False    # testing mode
+        self.inDirJSON = ""     # input json file directory
         
     # initialization =======================
-    def loadJson(self, name):
+    def loadJson(self, inDir):
         """
         load parameters from a json file into the model
-        :param name: dir of the json file
+        :param inDir: dir of the json file
         :return: data as a dictionary
         """
-        
-        with open(name) as ifile:
+        self.inDirJSON = inDir
+        with open(inDir) as ifile:
             content = ifile.read()
         data = json.loads(content)
         self.loadDict(data)
@@ -124,7 +125,7 @@ class Model(object):
         self.fixedVs = np.array(data['fixedVs'], dtype=np.int64)
         self.edgeChannel = np.array(data['edgeChannel'], dtype=np.int64)
         self.edgeActive = np.array(data['edgeActive'], dtype=bool)
-        self.script = np.array([0 for c in range(np.max(self.edgeChannel) + 1)], dtype=np.int64).reshape(-1, 1)
+        self.script = np.array(data['script'], dtype= np.int64)
         
         self.reset()
         
@@ -167,7 +168,8 @@ class Model(object):
         
         if not self.simulate:
             return True
-    
+        
+        vs = []     # self.v at each time step
         for i in range(n):
             self.numSteps += 1
         
@@ -235,7 +237,10 @@ class Model(object):
                 if (a - self.a0 > self.angleThreshold).any():
                     print("exceed angle")
                     return np.ones_like(self.v) * -1e6
-        return self.v
+            
+            if self.numSteps % 100 == 0:
+                vs.append(self.v)
+        return vs
 
     def iter(self, gene=None, visualize=False):
         """
@@ -461,7 +466,7 @@ class Model(object):
     def loadScript(self, script):
         self.script = script
     
-    def exportJSON(self, gene, inDir, appendix=None):
+    def exportJSON(self, gene, inDir=None, appendix=None):
         """
         export the gene into JSON, with original model from the JSON with name
         :param gene: name of the gene
@@ -469,6 +474,7 @@ class Model(object):
         :param appendix: appendix to the output filename
         """
         
+        inDir = inDir if inDir else self.inDirJSON
         with open(inDir) as iFile:
             content = iFile.read()
         data = json.loads(content)
@@ -484,7 +490,7 @@ class Model(object):
         with open('{}/output/{}_{}.json'.format(rootPath, name, appendix), 'w') as oFile:
             js = json.dumps(data)
             oFile.write(js)
-            
+        
     def exportJSONs(self, geneSet, targets, inDir):
         for iTarget in range(targets.numTargets()):
             gene = targets.extractGene(geneSet, iTarget)
