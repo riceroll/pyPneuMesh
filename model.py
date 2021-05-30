@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import datetime
 import json
 import argparse
 import numpy as np
@@ -42,26 +43,49 @@ if visualize:
 # end of viewer ==================================
 
 class Model(object):
-    k = 200000
-    h = 0.001
-    dampingRatio = 0.999
-    contractionInterval = 0.075
-    contractionLevels = 5
-    maxMaxContraction = round(contractionInterval * (contractionLevels - 1) * 100) / 100
-    contractionPercentRate = 1e-3
-    gravityFactor = 9.8 * 10
-    gravity = 1
-    defaultMinLength = 1.2
-    defaultMaxLength = defaultMinLength / (1 - maxMaxContraction)
-    frictionFactor = 0.8
-    numStepsPerAction = int(2 / h)
-    defaultNumActions = 1
-    defaultNumChannels = 4
-    angleThreshold = np.pi / 2
-    cornerCheckFrequency = numStepsPerAction / 20
+    # k = 200000
+    # h = 0.001
+    # dampingRatio = 0.999
+    # contractionInterval = 0.075
+    # contractionLevels = 5
+    # maxMaxContraction = round(contractionInterval * (contractionLevels - 1) * 100) / 100
+    # contractionPercentRate = 1e-3
+    # gravityFactor = 9.8 * 10
+    # gravity = 1
+    # defaultMinLength = 1.2
+    # defaultMaxLength = defaultMinLength / (1 - maxMaxContraction)
+    # frictionFactor = 0.8
+    # numStepsPerActuation = int(2 / h)
+    # defaultNumActions = 1
+    # defaultNumChannels = 4
+    # angleThreshold = np.pi / 2
+    # angleCheckFrequency = numStepsPerActuation / 20
+
+    @staticmethod
+    def configure():
+        with open("./data/config.json") as ifile:
+            content = ifile.read()
+            data = json.loads(content)
+            Model.k = data['k']
+            Model.h = data['h']
+            Model.dampingRatio = data['dampingRatio']
+            Model.contractionInterval = data['contractionInterval']
+            Model.contractionLevels = data['contractionLevels']
+            Model.maxMaxContraction = round(Model.contractionInterval * (Model.contractionLevels - 1) * 100) / 100
+            Model.contractionPercentRate = data['contractionPercentRate']
+            Model.gravityFactor = data['gravityFactor']
+            Model.gravity = data['gravity']
+            Model.defaultMinLength = data['defaultMinLength']
+            Model.defaultMaxLength = Model.defaultMinLength / (1 - Model.maxMaxContraction)
+            Model.frictionFactor = data['frictionFactor']
+            Model.numStepsPerActuation = int(data['numStepsActionMultiplier'] / Model.h)
+            Model.defaultNumActions = data['defaultNumActions']
+            Model.defaultNumChannels = data['defaultNumChannels']
+            Model.angleThreshold = data['angleThreshold']
+            Model.angleCheckFrequency = Model.numStepsPerActuation * data['angleCheckFrequencyMultiplier']
 
     def __init__(self):
-
+        
         # ======= variable =======
         self.v = None       # vertices locations    [nv x 3]
         self.e = None       # edge                  [ne x 2] int
@@ -78,7 +102,7 @@ class Model(object):
         self.vel = None     # velocity              [nv x 3]
         self.f = None
         self.l = None
-
+        
         self.iAction = 0
         self.numSteps = 0
         self.gravity = True
@@ -93,6 +117,8 @@ class Model(object):
         self.targets = None
         self.testing = False    # testing mode
         self.inDirJSON = ""     # input json file directory
+        
+        Model.configure()
         
     # initialization =======================
     def loadJson(self, inDir):
@@ -125,7 +151,7 @@ class Model(object):
         self.fixedVs = np.array(data['fixedVs'], dtype=np.int64)
         self.edgeChannel = np.array(data['edgeChannel'], dtype=np.int64)
         self.edgeActive = np.array(data['edgeActive'], dtype=bool)
-        self.script = np.array(data['script'], dtype= np.int64)
+        self.script = np.array(data['script'], dtype=np.int64)
         
         self.reset()
         
@@ -169,15 +195,14 @@ class Model(object):
         if not self.simulate:
             return True
         
-        vs = []     # self.v at each time step
         for i in range(n):
             self.numSteps += 1
         
             # script
-            self.script = self.script.reshape(self.numChannels, self.numActions)
+            self.script = self.script.reshape(self.numChannels, -1)
             if self.scripting:
-                if self.numSteps > ((self.iAction + 1) % self.numActions) * Model.numStepsPerAction:
-                    self.iAction = int(np.floor(self.numSteps / Model.numStepsPerAction) % self.numActions)
+                if self.numSteps > ((self.iAction + 1) % self.script.shape[1]) * Model.numStepsPerActuation:
+                    self.iAction = int(np.floor(self.numSteps / Model.numStepsPerActuation) % self.numActions)
                 
                     for iChannel in range(self.numChannels):
                         self.inflateChannel[iChannel] = self.script[iChannel, self.iAction]
@@ -200,16 +225,28 @@ class Model(object):
             v = self.v
             vec = v[iv1] - v[iv0]
             self.l = l = np.sqrt((vec ** 2).sum(1))
+            show = True
+            if show:
+                print(l[1])
+                print("vec", vec[5])
             
             l0 = np.copy(self.lMax)
             lMax = np.copy(self.lMax)
             lMin = lMax * (1 - self.maxContraction)
-
-            l0[self.edgeActive] = (lMax - self.contractionPercent[self.edgeChannel] * (lMax - lMin))[self.edgeActive]
             
+            l0[self.edgeActive] = (lMax - self.contractionPercent[self.edgeChannel] * (lMax - lMin))[self.edgeActive]
+            if show:
+                print("l", l[5])
+                print("cp", self.contractionPercent[self.edgeChannel[5]])
+                print("lMax", lMax[5])
+                print("lMin", lMin[5])
+                print("l0", l0[5])
             
             fMagnitude = (l - l0) * Model.k
             fEdge = vec / l.reshape(-1, 1) * fMagnitude.reshape(-1, 1)
+            if show:
+                print("d", (l-l0)[5])
+                print("fEdge", fEdge[5])
             np.add.at(f, iv0, fEdge)
             np.add.at(f, iv1, -fEdge)
         
@@ -221,28 +258,29 @@ class Model(object):
             boolUnderground = self.v[:, 2] <= 0
             self.vel[boolUnderground, :2] *= 1 - Model.frictionFactor
         
-            self.vel *= Model.dampingRatio
-            velMag = np.sqrt((self.vel ** 2).sum(1))
-            while (velMag > 5).any():
-                self.vel[(velMag > 5)] *= 0.9
-                velMag = np.sqrt((self.vel ** 2).sum(1))
+            self.vel *= Model.dampingRatio * 0.8
+            # velMag = np.sqrt((self.vel ** 2).sum(1))
+            # while (velMag > 5).any():
+            #     self.vel[(velMag > 5)] *= 0.9
+            #     velMag = np.sqrt((self.vel ** 2).sum(1))
         
             self.v += Model.h * self.vel
-        
+
+            boolUnderground = self.v[:, 2] <= 0
             self.vel[boolUnderground, 2] *= -1
             self.v[boolUnderground, 2] = 0
         
-            if self.numSteps % Model.cornerCheckFrequency == 0:
+            if False and self.numSteps % Model.angleCheckFrequency == 0:
                 a = self.getCornerAngles()
                 if (a - self.a0 > self.angleThreshold).any():
                     print("exceed angle")
                     return np.ones_like(self.v) * -1e6
             
-            if self.numSteps % 100 == 0:
-                vs.append(self.v)
-        return vs
+            # if self.numSteps % 100 == 0:
+            #     vs.append(self.v)
+        return self.v
 
-    def iter(self, gene=None, visualize=False):
+    def iter(self, gene=None, visualize=False, end=True, nRounds=1):
         """
         load the gene and run a series of steps
         :param gene: the gene to load into the model, gene format is
@@ -263,8 +301,8 @@ class Model(object):
                     ret = self.step(2)
                     vs.append(ret)
             else:
-                for i in range(4):
-                    ret = self.step(int(Model.numStepsPerAction * self.numActions))
+                for i in range(nRounds):
+                    ret = self.step(int(Model.numStepsPerActuation * self.numActions))
                     vs.append(ret)
         else:
             viewer = o3.visualization.VisualizerWithKeyCallback()
@@ -281,6 +319,8 @@ class Model(object):
             viewer.add_geometry(ls)
         
             def timerCallback(vis):
+                if end and self.numSteps > nRounds * int(Model.numStepsPerActuation * self.numActions):
+                    return
                 self.step(25)
                 ls.points = vector3d(self.v)
                 viewer.update_geometry(ls)
@@ -298,30 +338,32 @@ class Model(object):
     
         return vs
 
+    def show(self):
+        viewer = o3.visualization.VisualizerWithKeyCallback()
+        viewer.create_window()
+        
+        render_opt = viewer.get_render_option()
+        render_opt.mesh_show_back_face = True
+        render_opt.mesh_show_wireframe = True
+        render_opt.point_size = 8
+        render_opt.line_width = 10
+        render_opt.light_on = True
+    
+        ls = LineSet(self.v, self.e)
+        viewer.add_geometry(ls)
+        drawGround(viewer)
+        viewer.run()
+        viewer.destroy_window()
+
     def iterScript(self, script=None, visualize=False):
-        """
-        load the gene and run a series of steps
-        :param gene: the gene to load into the model, gene format is
-            edgeChannel : (ne, ) int, [0, self.numChannels)
-            contractionPercentLevel : (ne, ) int, [0, Model.contractionLevels)
-            script : (na, nc) int, {0, 1}
-        :param visualize: if True, visualize the iteration with open3D
-        :return: the vertices location of the model
-        """
         if script is not None:
             self.loadScript(script)
         self.reset()
     
-        vs = []
         if not visualize:
-            if self.testing:
-                for i in range(5):
-                    ret = self.step(2)
-                    vs.append(ret)
-            else:
-                for i in range(1):
-                    ret = self.step(int(Model.numStepsPerAction * self.numActions))
-                    vs.append(ret)
+            vs = self.step(int(Model.numStepsPerActuation * self.numActions))
+            return vs
+
         else:
             viewer = o3.visualization.VisualizerWithKeyCallback()
             viewer.create_window()
@@ -337,6 +379,8 @@ class Model(object):
             viewer.add_geometry(ls)
         
             def timerCallback(vis):
+                if self.numSteps > int(Model.numStepsPerActuation * self.numActions):
+                    return
                 self.step(25)
                 ls.points = vector3d(self.v)
                 viewer.update_geometry(ls)
@@ -345,19 +389,17 @@ class Model(object):
         
             # def key_step(vis):
             #     pass
-        
             # viewer.register_key_callback(65, key_step)
         
             drawGround(viewer)
             viewer.run()
             viewer.destroy_window()
-    
-        return vs
+
     # end stepping
     
     # checks =========================
     def updateCorner(self):
-        self.c = []
+        c = []
         
         for iv in range(len(self.v)):
             # get indices of neighbor vertices
@@ -365,17 +407,16 @@ class Model(object):
             for i in range(len(ids) - 1):
                 id0 = ids[i]
                 id1 = ids[i+1]
-                self.c.append([iv, id0, id1])
+                c.append([iv, id0, id1])
         
-        self.c = np.array(self.c)
-        
-        self.a0 = self.getCornerAngles()
+        c = np.array(c)
+        self.a0 = self.getCornerAngles(c)
     
-    def getCornerAngles(self):
+    def getCornerAngles(self, c):
         # return angles of self.c
-        O = self.v[self.c[:, 0]]
-        A = self.v[self.c[:, 1]]
-        B = self.v[self.c[:, 2]]
+        O = self.v[c[:, 0]]
+        A = self.v[c[:, 1]]
+        B = self.v[c[:, 2]]
         vec0 = A - O
         vec1 = B - O
         l0 = np.sqrt((vec0 ** 2).sum(1))
@@ -398,7 +439,7 @@ class Model(object):
         self.v -= self.centroid()
         self.v[:, 2] -= self.v[:, 2].min()
         self.v[:, 2] += self.v[:, 2].max()
-        self.step(Model.numStepsPerAction * 2)
+        self.step(int(Model.numStepsPerActuation * 1.5))
         self.v0 = self.v
     
     # end utility
@@ -466,7 +507,7 @@ class Model(object):
     def loadScript(self, script):
         self.script = script
     
-    def exportJSON(self, gene, inDir=None, appendix=None):
+    def exportJSON(self, gene=None, inDir=None, appendix=None):
         """
         export the gene into JSON, with original model from the JSON with name
         :param gene: name of the gene
@@ -478,15 +519,19 @@ class Model(object):
         with open(inDir) as iFile:
             content = iFile.read()
         data = json.loads(content)
-        self.loadGene(gene)
+        
+        if gene:
+            self.loadGene(gene)
+        
         data['edgeChannel'] = self.edgeChannel.tolist()
         data['edgeActive'] = self.edgeActive.tolist()
         data['maxContraction'] = self.maxContraction.tolist()
         data['script'] = self.script.tolist()
-        data['numChannels'] = self.numChannels
-        data['numActions'] = self.numActions
+        data['numChannels'] = self.script.shape[0]
+        data['numActions'] = self.script.shape[1]
         
-        name = inDir.split('/')[-1]
+        name = inDir.split('/')[-1].split('.')[0]
+        appendix = appendix if appendix else str(datetime.datetime.now()).split('.')[0]
         with open('{}/output/{}_{}.json'.format(rootPath, name, appendix), 'w') as oFile:
             js = json.dumps(data)
             oFile.write(js)

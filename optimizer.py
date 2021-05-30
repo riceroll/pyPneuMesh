@@ -6,30 +6,19 @@ import matplotlib.pyplot as plt
 import json
 rootPath = os.path.split(os.path.realpath(__file__))[0]
 
-
-class Optimizer(object):
-    def __init__(self, model=None):
-        self.model = model
-
-    def maximize(self):
-        raise NotImplementedError('Please implement maximize function.')
-
-
-class EvolutionAlgorithm(Optimizer):
-    def __init__(self, name, model=None, criterion=None, nWorkers=None, nPop=100, nHero=1,
-                 mortality=0.9, pbCross=0.5, pbMut=0.04, pbCrossDig=0.05, pbMutDig=0.05):
-        super().__init__(model)
+class EvolutionAlgorithm:
+    def __init__(self, name, lb, ub, criterion=None, nWorkers=None, nPop=100, nHero=1,
+                 mortality=0.9, pbCross=0.5, pbMut=0.04, pbCrossDig=0.05, pbMutDig=0.05,
+                 lenConverge=20):
         
         self.name = name
         self.nWorkers = nWorkers
         self.criterion = criterion
 
-        self.lb = self.model.lb()
-        self.ub = self.model.ub()
+        self.lb = lb
+        self.ub = ub
         self.nStages = 4
         self.interval = (self.ub - self.lb) / self.nStages
-        self.lbInt = self.lb
-        self.ubInt = self.ub
 
         self.nPop = nPop
         self.mortality = mortality
@@ -38,11 +27,14 @@ class EvolutionAlgorithm(Optimizer):
         self.pbMut = pbMut
         self.pbCrossDig = pbCrossDig
         self.pbMutDig = pbMutDig
+        self.lenConverge = lenConverge
 
         # variables
         self.oldPop = None
         self.pop = None
+        self.hero = []
         self.fits = None
+        self.fitsHero = []
         self.nGen = None
         self.preTrained = False     # if True, a gene will be loaded into population under ``load`` function
         self.policyName = None
@@ -62,41 +54,30 @@ class EvolutionAlgorithm(Optimizer):
         self.nGen = 0
         self.oldPop = None
         self.initPop()
-
-        self.lb = self.model.lb()
-        self.ub = self.model.ub()
-        # self.interval = (self.ub - self.lb) / self.nStages
-        self.lbInt = self.lb
-        self.ubInt = self.ub
-
-    def survivor(self, i=0):
-        return self.pop[i]
-
-    def load(self, policyName):
+        
+    def load(self, popDir):
         # load a pre-trained gene into population
         self.preTrained = True
-        self.policyName = policyName
-        name = os.path.join(rootPath, 'data/agent/', self.policyName + '.npy')
-        p = np.load(name, allow_pickle=True)
-        # p = self.popFloatToInt(p)
+        self.policyName = popDir
+        p = np.load(popDir, allow_pickle=True)
         assert(self.pop[0].shape == p.shape)
         self.pop[0] = p
 
-    def randPop(self, n):
-        return np.random.randint(self.lbInt, self.ubInt, size=(n, len(self.lbInt)))
+    def _generatePop(self, n):
+        # both bounds are included
+        return np.random.randint(self.lb, self.ub + 1, size=(n, len(self.lb)))
 
+    # GA operations
     def initPop(self):
-        self.pop = self.randPop(self.nPop)  # [nPop x len(lb)]
-
-    # def popIntToFloat(self, pop):
-    #     return pop * self.interval
-
-    # def popFloatToInt(self, pop):
-    #     pop = pop / self.interval
-    #     assert( (pop == pop.astype(np.int)).all() )
-    #     return pop
+        self.pop = self._generatePop(self.nPop)  # [nPop x len(lb)]
+        self.fits = np.zeros(self.nPop)
 
     def evaluate(self, disp=False):
+        """
+        use self.criterion to evaluate the fitness of all pops
+        :param disp: if true, print out the fitness
+        :return: self.fits: numpy.array [nPop, ] fitness of all pops
+        """
         pops = [p for p in self.pop]
     
         with Pool(self.nWorkers if self.nWorkers else multiprocessing.cpu_count()) as p:
@@ -126,29 +107,51 @@ class EvolutionAlgorithm(Optimizer):
                 js = json.dumps(self.history)
                 ofile.write(js)
         
+        return self.fits
+        
     def sort(self):
+        # sort pops based on their fitness
         order = np.array(np.argsort(self.fits)[::-1], dtype=np.int64)
         self.pop = self.pop[order]
         self.fits = self.fits[order]
 
     def shuffle(self):
+        # shuffle pops and their fitness
         order = np.array(np.random.permutation(len(self.pop)), dtype=np.int64)
         self.pop = self.pop[order]
         self.fits = self.fits[order]
 
-    def select(self):
+    def select(self, extinction=True):
+        """
+        only preserve a part of the gene
+        :param extinction: if true, kill and preserve hero if no progress for lenConverge generations
+        :return:
+        """
+        
         fitMin = np.min(self.fits)
         fitMax = np.max(self.fits)
         fitInterval = fitMax - fitMin + 1e-8
         distance = (fitMax - self.fits) / fitInterval  # normalized distance of the fitness to the max fitness
         pbDie = distance ** 3 * self.mortality
         pbDie[:self.nHero] = 0
-
+        
         dice = np.random.rand(len(self.pop))
         maskSurvived = np.invert(dice < pbDie)
-        self.oldPop = np.copy(self.pop)
         self.pop = self.pop[maskSurvived]
+        self.oldPop = np.copy(self.pop)
         self.fits = self.fits[maskSurvived]
+
+        noProgress = True
+        recentMaxFits = self.history['max'][-self.lenConverge:]
+        for m in recentMaxFits:
+            if m != recentMaxFits[0]:
+                noProgress = False
+
+        if noProgress and extinction and len(recentMaxFits) >= self.lenConverge:
+            print('kill')
+            self.hero += self.pop[:self.nHero].tolist()
+            self.fitsHero += self.fits[:self.nHero].tolist()
+            self.initPop()
 
     def crossOver(self):
         self.shuffle()
@@ -177,7 +180,7 @@ class EvolutionAlgorithm(Optimizer):
         mask = dice < self.pbMut
         maskDig = maskDig * mask[:, np.newaxis]
 
-        newPop = self.randPop(self.pop.shape[0])
+        newPop = self._generatePop(self.pop.shape[0])
         self.pop[maskDig] = newPop[maskDig]
 
     def regenerate(self):
@@ -191,6 +194,7 @@ class EvolutionAlgorithm(Optimizer):
         plt.plot(np.arange(self.nGen + 1), self.history['mean'])
         plt.show()
         
+    # GA maximize
     def maximize(self, nSteps=1, disp=True):
         self.initPop()
         if self.preTrained:
@@ -208,7 +212,7 @@ class EvolutionAlgorithm(Optimizer):
         self.sort()
         for i in range(nSteps):
             self.nGen += 1
-            self.select()
+            self.select(extinction=True)
             self.crossOver()
             self.mutate()
             self.regenerate()
@@ -217,4 +221,30 @@ class EvolutionAlgorithm(Optimizer):
         if disp:
             self.showHistory()
         
-        return self.survivor(0)
+        if len(self.hero) > 0:
+            self.pop = np.vstack([self.pop, np.array(self.hero)])
+            self.fits = np.hstack([self.fits, np.array(self.fitsHero)])
+            self.sort()
+            
+        return self.pop[0]
+
+if __name__ =="__main__":
+    
+    answer = "00000000000000000000"
+    answer = np.array([0 for char in answer])
+    answer_fake = "0001001000110101100111110"
+    answer_fake = np.array([1 for char in answer])
+    
+    def criterion(guess):
+        assert(len(guess) == len(answer))
+        assert(len(guess) == len(answer_fake))
+        fit = (guess == answer).sum() / len(answer)
+        fit_fake = (guess == answer_fake).sum() / len(answer) * 0.9
+        return max(fit, fit_fake)
+    
+    ea = EvolutionAlgorithm(name="test", lb=np.zeros(len(answer)), ub=np.ones(len(answer)), criterion=criterion,
+                            nWorkers=8,
+                            nPop=48,
+                            mortality=0.2, pbCross=0.5, pbMut=0.05, pbCrossDig=0.05, pbMutDig=0.05, lenConverge=40)
+    
+    geneSet = ea.maximize(300, True)

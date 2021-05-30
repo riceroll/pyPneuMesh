@@ -17,3 +17,7 @@ To run a simulation with given file
 python examples/test.py --iFile fox --testing 1 --visualize 1
 ```
 
+### To do MPC 
+```
+
+```

@@ -18,8 +18,9 @@ parser.add_argument("--targets", type=str, default="moveForward", help="type of 
 parser.add_argument("--numStepsPerActionMultiplier", type=str, default="2", help="# of steps per action")
 args = parser.parse_args()
 
+scripting = True
 visualize = args.visualize
-inFileDir = args.iFile
+inFileName = args.iFile
 testing = args.testing
 numWorkers = args.nWorkers
 numGeneration = args.nGen if not testing else 5
@@ -61,13 +62,34 @@ if visualize:
 
 
 # main
-# inFileDir = './data/{}.json'.format(inFileName)
+inFileDir = './data/{}.json'.format(inFileName)
 
 Model.numStepsPerActuation = int(numStepsPerActionMultiplier / Model.h)
 
 model = Model()
 model.loadJson(inFileDir)
+model.scripting = scripting
 model.testing = testing
-model.reset(resetScript=False)
+model.reset(resetScript=True, numActions=numActions)
 
-model.iterScript(None, visualize)
+targets = Targets(model)
+
+if args.targets == "moveForward":
+    targets.targets = [[targets.locomotion]]
+elif args.targets == "fox":
+    targets.targets = [[targets.locomotion], [targets.locomotion, targets.heightConstraint]]
+
+model.setTargets(targets)
+
+ea = EvolutionAlgorithm(name=inFileName, model=model, criterion=targets.criterionScript,
+                        nWorkers=numWorkers,
+                        nPop=numPopulation)
+geneSet = ea.maximize(numGeneration if testing else numGeneration)
+
+model.exportJSONs(geneSet, targets, inFileDir)
+
+if visualize:
+    for iTarget in range(targets.numTargets()):
+        model.iter(targets.extractGene(geneSet, iTarget), True)
+        
+model.iter(None, visualize)

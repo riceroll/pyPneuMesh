@@ -5,6 +5,9 @@ from model import Model
 from optimizer import EvolutionAlgorithm
 from targets import Targets
 
+from sko.GA import GA
+from sko.tools import set_run_mode
+
 # consts
 parser = argparse.ArgumentParser()
 parser.add_argument("--visualize", type=bool, default=False, help="whether to visualize the result")
@@ -15,9 +18,10 @@ parser.add_argument("--nGen", type=int, default=1000, help="whether in testing m
 parser.add_argument("--nPop", type=int, default=100, help="size of population")
 parser.add_argument("--numActions", type=int, default=-1, help="# of channels, -1: read the # from json")
 parser.add_argument("--targets", type=str, default="moveForward", help="type of target")
-parser.add_argument("--numStepsPerActionMultiplier", type=str, default="2", help="# of steps per action")
+parser.add_argument("--numStepsPerActionMultiplier", type=str, default="0.2", help="# of steps per action")
 args = parser.parse_args()
 
+scripting = True
 visualize = args.visualize
 inFileDir = args.iFile
 testing = args.testing
@@ -64,10 +68,29 @@ if visualize:
 # inFileDir = './data/{}.json'.format(inFileName)
 
 Model.numStepsPerActuation = int(numStepsPerActionMultiplier / Model.h)
-
 model = Model()
 model.loadJson(inFileDir)
+model.scripting = scripting
 model.testing = testing
-model.reset(resetScript=False)
+model.reset(resetScript=True, numActions=20)
 
-model.iterScript(None, visualize)
+
+def criterion(scriptList):
+    model = Model()
+    model.loadJson(inFileDir)
+    model.scripting = scripting
+    model.testing = testing
+    model.reset(resetScript=True, numActions=20)
+    
+    script = scriptList.reshape(model.script.shape)
+    v = model.iterScript(script)
+    x, y, z = v.mean(0)
+    print(x)
+    return -x
+
+# set_run_mode(criterion, "multithreading")
+# nDim = model.script.shape[0] * model.script.shape[1]
+# ga = GA(func=criterion, size_pop=10, n_dim=nDim, max_iter=10, lb=np.zeros(nDim), ub=np.ones(nDim), precision=1)
+
+# genes, fits = ga.run()
+
