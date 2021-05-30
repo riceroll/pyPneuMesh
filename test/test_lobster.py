@@ -105,14 +105,15 @@ def visualizeActions(actions, loop=False):
     viewer.destroy_window()
 
 
-model = getModel("./data/lobster2.json")
+model = getModel("./data/lobster3.json")
 actions = getActions(model, "./output/records/control_only/lobster2_g25_f111.78788591")
 model.inflateChannel = np.array([0, 0, 0, 0])
 model.numChannels = 4
+model.script = actions
 model.initializePos()
 
 # model.script = np.array([[0, 0, 1, 0]])
 
 # visualizeActions(np.array([[0,0,0,0]]), loop=True)
 
-visualizeActions(np.array([[0, 0, 0, 0]]), loop=True)
+visualizeActions(actions, loop=True)

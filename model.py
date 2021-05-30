@@ -225,28 +225,13 @@ class Model(object):
             v = self.v
             vec = v[iv1] - v[iv0]
             self.l = l = np.sqrt((vec ** 2).sum(1))
-            show = True
-            if show:
-                print(l[1])
-                print("vec", vec[5])
-            
             l0 = np.copy(self.lMax)
             lMax = np.copy(self.lMax)
             lMin = lMax * (1 - self.maxContraction)
             
             l0[self.edgeActive] = (lMax - self.contractionPercent[self.edgeChannel] * (lMax - lMin))[self.edgeActive]
-            if show:
-                print("l", l[5])
-                print("cp", self.contractionPercent[self.edgeChannel[5]])
-                print("lMax", lMax[5])
-                print("lMin", lMin[5])
-                print("l0", l0[5])
-            
             fMagnitude = (l - l0) * Model.k
             fEdge = vec / l.reshape(-1, 1) * fMagnitude.reshape(-1, 1)
-            if show:
-                print("d", (l-l0)[5])
-                print("fEdge", fEdge[5])
             np.add.at(f, iv0, fEdge)
             np.add.at(f, iv1, -fEdge)
         
@@ -258,12 +243,11 @@ class Model(object):
             boolUnderground = self.v[:, 2] <= 0
             self.vel[boolUnderground, :2] *= 1 - Model.frictionFactor
         
-            self.vel *= Model.dampingRatio * 0.8
-            # velMag = np.sqrt((self.vel ** 2).sum(1))
-            # while (velMag > 5).any():
-            #     self.vel[(velMag > 5)] *= 0.9
-            #     velMag = np.sqrt((self.vel ** 2).sum(1))
-        
+            self.vel *= Model.dampingRatio
+            velMag = np.sqrt((self.vel ** 2).sum(1))
+            if (velMag > 5).any():
+                self.vel[velMag > 5] *= np.power(0.9, np.ceil(np.log(5 / velMag[velMag > 5]) / np.log(0.9))).reshape(-1, 1)
+                
             self.v += Model.h * self.vel
 
             boolUnderground = self.v[:, 2] <= 0

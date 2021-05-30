@@ -18,7 +18,7 @@ def getModel(inFileDir):
     return model
 
 
-model = getModel("/Users/Roll/desktop/lobster3.json")
+model = getModel("./data/lobster3.json")
 model.script = np.array([0,0,0,0])
 
 #
