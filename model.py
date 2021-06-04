@@ -199,8 +199,8 @@ class Model(object):
             self.numSteps += 1
         
             # script
-            self.script = self.script.reshape(self.numChannels, -1)
             if self.scripting:
+                self.script = self.script.reshape(self.numChannels, -1)
                 if self.numSteps > ((self.iAction + 1) % self.script.shape[1]) * Model.numStepsPerActuation:
                     self.iAction = int(np.floor(self.numSteps / Model.numStepsPerActuation) % self.numActions)
                 
@@ -426,6 +426,9 @@ class Model(object):
         self.step(int(Model.numStepsPerActuation * 1.5))
         self.v0 = self.v
     
+    def noActive(self):
+        self.maxContraction[np.array((self.edgeActive + 1) % 2, dtype=np.bool)] = 0
+    
     # end utility
 
     # optimization ===========================
@@ -510,7 +513,7 @@ class Model(object):
         data['edgeChannel'] = self.edgeChannel.tolist()
         data['edgeActive'] = self.edgeActive.tolist()
         data['maxContraction'] = self.maxContraction.tolist()
-        data['script'] = self.script.tolist()
+        data['script'] = self.script.transpose().tolist()
         data['numChannels'] = self.script.shape[0]
         data['numActions'] = self.script.shape[1]
         
@@ -519,6 +522,7 @@ class Model(object):
         with open('{}/output/{}_{}.json'.format(rootPath, name, appendix), 'w') as oFile:
             js = json.dumps(data)
             oFile.write(js)
+            print('{}/output/{}_{}.json'.format(rootPath, name, appendix))
         
     def exportJSONs(self, geneSet, targets, inDir):
         for iTarget in range(targets.numTargets()):
