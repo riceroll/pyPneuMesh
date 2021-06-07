@@ -9,7 +9,7 @@ rootPath = os.path.split(os.path.realpath(__file__))[0]
 class EvolutionAlgorithm:
     def __init__(self, name, lb, ub, criterion=None, nWorkers=None, nPop=100, nHero=1,
                  mortality=0.9, pbCross=0.5, pbMut=0.04, pbCrossDig=0.05, pbMutDig=0.05,
-                 lenConverge=20):
+                 lenConverge=20, pop=None, save=False):
         
         self.name = name
         self.nWorkers = nWorkers
@@ -31,13 +31,14 @@ class EvolutionAlgorithm:
 
         # variables
         self.oldPop = None
-        self.pop = None
+        self.pop = pop
         self.hero = []
         self.fits = None
         self.fitsHero = []
         self.nGen = None
         self.preTrained = False     # if True, a gene will be loaded into population under ``load`` function
         self.policyName = None
+        self.save = save
         
         # statistics
         self.history = {
@@ -69,9 +70,14 @@ class EvolutionAlgorithm:
 
     # GA operations
     def initPop(self):
-        self.pop = self._generatePop(self.nPop)  # [nPop x len(lb)]
+        nPop = self.nPop if self.pop is None else self.nPop - len(self.pop)
+        newPop = self._generatePop(nPop)  # [nPop x len(lb)]
+        if self.pop is not None:
+            self.pop = np.vstack([self.pop, newPop])
+        else:
+            self.pop = newPop
         self.fits = np.zeros(self.nPop)
-
+        
     def evaluate(self, disp=False):
         """
         use self.criterion to evaluate the fitness of all pops
@@ -79,7 +85,7 @@ class EvolutionAlgorithm:
         :return: self.fits: numpy.array [nPop, ] fitness of all pops
         """
         pops = [p for p in self.pop]
-    
+        
         with Pool(self.nWorkers if self.nWorkers else multiprocessing.cpu_count()) as p:
             self.fits = np.array(p.map(self.criterion, pops))
 
@@ -95,18 +101,18 @@ class EvolutionAlgorithm:
             print('max: ', maxFit)
             print('min: ', minFit)
         
-        self.history['min'].append(minFit)
-        self.history['max'].append(maxFit)
-        self.history['mean'].append(meanFit)
-        self.history['genes'] = self.pop.tolist()
-        self.history['fits'] = self.fits.tolist()
-        
-        if self.nGen % 5 == 0:
-            outFileName = "{}/output/{}_g{}_f{:.8f}".format(rootPath, self.name, self.nGen, self.fits.max())
-            with open(outFileName, 'w') as ofile:
-                js = json.dumps(self.history)
-                ofile.write(js)
-        
+        if self.save:
+            self.history['min'].append(minFit)
+            self.history['max'].append(maxFit)
+            self.history['mean'].append(meanFit)
+            self.history['genes'] = self.pop.tolist()
+            self.history['fits'] = self.fits.tolist()
+            
+            if self.nGen % 5 == 0:
+                outFileName = "{}/output/{}_g{}_f{:.8f}".format(rootPath, self.name, self.nGen, self.fits.max())
+                with open(outFileName, 'w') as ofile:
+                    js = json.dumps(self.history)
+                    ofile.write(js)
         return self.fits
         
     def sort(self):
@@ -127,7 +133,6 @@ class EvolutionAlgorithm:
         :param extinction: if true, kill and preserve hero if no progress for lenConverge generations
         :return:
         """
-        
         fitMin = np.min(self.fits)
         fitMax = np.max(self.fits)
         fitInterval = fitMax - fitMin + 1e-8
@@ -227,6 +232,149 @@ class EvolutionAlgorithm:
             self.sort()
             
         return self.pop[0]
+
+class EvolutionConfig(EvolutionAlgorithm):
+    def __init__(self, name, lb, ub, criterion=None, nWorkers=None, nPop=100, nHero=1,
+                 mortality=0.9, pbCross=0.5, pbMut=0.04, pbCrossDig=0.05, pbMutDig=0.05,
+                 lenConverge=20):
+        super().__init__(name, lb, ub, criterion, nWorkers, nPop, nHero,
+                 mortality, pbCross, pbMut, pbCrossDig, pbMutDig, lenConverge)
+        
+        self.actionSeqss = []   # list of actionSeqs corresponding to genes(config)
+        self.actionSeqsHero = []  # list of actionSeqs corresponding to genes(config)
+        self.targets = []   # [] of target, each target is a [] of one or multiple subtargets, each subtarget is function give vs and output fitness
+        self.weights = []   # [] same length as targets
+        self.subWeights = []    # [[x, x], [x, x, x]] same length as targets, each item includes subweight for all subtargets
+        
+    def evaluate(self, disp=False):
+        """
+        use self.criterion to evaluate the fitness of all pops
+        :param self.pop, configPop
+        :param disp: if true, print out the fitness
+        :return:
+            actionSeqss: [], each actionSeq is corresponding to a config
+            fitnesses: [], each fintess is corresponding to a config and its best actionSeqs
+        """
+        configPop = [p for p in self.pop]
+        actionSeqss = [a for a in self.actionSeqss]
+    
+        # with Pool(self.nWorkers if self.nWorkers else multiprocessing.cpu_count()) as p:
+        #     self.fits = np.array(p.map(self.criterion, configPop))
+    
+        self.fits = []
+        for i in range(len(configPop)):
+            config = configPop[i]
+            actionSeqs = actionSeqss[i]
+            actionSeqs, fitness = self.criterion(config, actionSeqs, self.targets, self.weights, self.subWeights)
+            self.actionSeqss.append(actionSeqs)
+            self.fits.append(fitness)
+    
+        meanFit = np.mean(self.fits)
+        maxFit = np.max(self.fits)
+        minFit = np.min(self.fits)
+        self.sort()
+        if disp:
+            print('nGen: ', self.nGen)
+            print('mean: ', meanFit)
+            print('max: ', maxFit)
+            print('min: ', minFit)
+    
+        self.history['min'].append(minFit)
+        self.history['max'].append(maxFit)
+        self.history['mean'].append(meanFit)
+    
+        self.history['genes'] = self.pop.tolist()
+        self.history['fits'] = self.fits.tolist()
+        self.history['actionSeqss'] = self.actionSeqss.tolist()
+
+        if self.nGen % 5 == 0:
+            outFileName = "{}/output/{}_g{}_f{:.8f}".format(rootPath, self.name, self.nGen, self.fits.max())
+            with open(outFileName, 'w') as ofile:
+                js = json.dumps(self.history)
+                ofile.write(js)
+    
+        return self.fits, self.actionSeqss
+
+    def sort(self):
+        # sort pops based on their fitness
+        order = np.array(np.argsort(self.fits)[::-1], dtype=np.int64)
+        self.pop = self.pop[order]
+        self.fits = self.fits[order]
+        self.actionSeqss = self.actionSeqss[order]
+
+    def select(self, extinction=True):
+        """
+        only preserve a part of the gene
+        :param extinction: if true, kill and preserve hero if no progress for lenConverge generations
+        :return:
+        """
+        fitMin = np.min(self.fits)
+        fitMax = np.max(self.fits)
+        fitInterval = fitMax - fitMin + 1e-8
+        distance = (fitMax - self.fits) / fitInterval  # normalized distance of the fitness to the max fitness
+        pbDie = distance ** 3 * self.mortality
+        pbDie[:self.nHero] = 0
+    
+        dice = np.random.rand(len(self.pop))
+        maskSurvived = np.invert(dice < pbDie)
+        self.pop = self.pop[maskSurvived]
+        self.oldPop = np.copy(self.pop)
+        self.fits = self.fits[maskSurvived]
+        self.actionSeqss = self.actionSeqss[maskSurvived]
+    
+        noProgress = True
+        recentMaxFits = self.history['max'][-self.lenConverge:]
+        for m in recentMaxFits:
+            if m != recentMaxFits[0]:
+                noProgress = False
+    
+        if noProgress and extinction and len(recentMaxFits) >= self.lenConverge:
+            print('kill')
+            self.hero += self.pop[:self.nHero].tolist()
+            self.fitsHero += self.fits[:self.nHero].tolist()
+            self.actionSeqsHero += self.actionSeqss[:self.nHero].tolist()
+            self.initPop()
+            
+    def regenerate(self):
+        nDead = self.nPop - len(self.pop)
+        self.pop = np.append(self.pop, self.oldPop[:nDead], axis=0)
+        self.fits = np.pad(self.fits, (0, nDead), 'wrap')
+        for i in range(nDead):
+            self.actionSeqss.append(self.actionSeqss[-1].copy())        # TODO
+            
+    def maximize(self, nSteps=1, disp=True):
+        self.initPop()
+        if self.preTrained:
+            self.load(self.policyName)
+    
+        self.history = {
+            'genes': [],
+            'fits': [],
+            'min': [],
+            'max': [],
+            'mean': []
+        }
+    
+        self.evaluate(True)
+        self.sort()
+        for i in range(nSteps):
+            self.nGen += 1
+            self.select(extinction=True)
+            self.crossOver()
+            self.mutate()
+            self.regenerate()
+            self.evaluate(True)
+    
+        if disp:
+            self.showHistory()
+    
+        if len(self.hero) > 0:
+            self.pop = np.vstack([self.pop, np.array(self.hero)])
+            self.fits = np.hstack([self.fits, np.array(self.fitsHero)])
+            self.sort()
+    
+        return self.pop[0]
+
 
 if __name__ =="__main__":
     

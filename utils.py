@@ -20,7 +20,6 @@ def import_visualizer():
     LineSet = lambda v, e: o3.geometry.LineSet(points=vector3d(v), lines=vector2i(e))
     PointCloud = lambda v: o3.geometry.PointCloud(points=vector3d(v))
     
-    
     def drawGround(viewer):
         n = 20
         vs = []
@@ -42,7 +41,6 @@ def import_visualizer():
         viewer.add_geometry(lines)
     
     return o3, vector3d, vector3i, vector2i, LineSet, PointCloud, drawGround
-
 
 def visualizeActions(model, actions, loop=False):
     """
@@ -123,4 +121,18 @@ def getActions(model, inFileDir):
         actions = np.array(data['genes'][0]).reshape(model.numChannels, -1)
     return actions
 
-
+def parseArgs():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--visualize", type=bool, default=False, help="whether to visualize the result")
+    parser.add_argument("--testing", type=bool, default=False, help="whether in testing mode")
+    parser.add_argument("--nWorkers", type=int, default=8, help="number of workers")
+    parser.add_argument("--nGen", type=int, default=100, help="whether in testing mode")
+    parser.add_argument("--nPop", type=int, default=8, help="size of population")
+    parser.add_argument("--numActions", type=int, default=4, help="# of actions, -1: read the # from json")
+    parser.add_argument("--numChannels", type=int, default=4, help="# of channels, -1: read the # from json")
+    parser.add_argument("--targets", type=str, default="moveForward", help="type of target")
+    parser.add_argument("--numStepsPerActionMultiplier", type=float, default=0.2, help="# of steps per action")
+    parser.add_argument("--inFile", type=str, default="./data/lobster3.json", help="infile")
+    args = parser.parse_args()
+    return args

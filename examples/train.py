@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 from model import Model
 from optimizer import EvolutionAlgorithm
-from targets import Targets
+from targetFuncs import Targets
 
 # consts
 parser = argparse.ArgumentParser()

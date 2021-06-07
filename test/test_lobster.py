@@ -6,7 +6,7 @@ import json
 import numpy as np
 from model import Model
 from optimizer import EvolutionAlgorithm
-from targets import Targets
+from targetFuncs import Targets
 from tqdm import tqdm
 from utils import visualizeActions, getModel, getActions
 

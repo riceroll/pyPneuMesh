@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 from model import Model
 from optimizer import EvolutionAlgorithm
-from targets import Targets
+from targetFuncs import Targets
 
 from sko.GA import GA
 from sko.tools import set_run_mode

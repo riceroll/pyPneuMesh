@@ -9,7 +9,7 @@ from optimizer import EvolutionAlgorithm
 rootPath = os.path.split(os.path.realpath(__file__))[0]
 tPrev = time.time()
 
-visualize = True
+visualize = False
 
 if visualize:
     # viewer
@@ -262,7 +262,7 @@ class Model(object):
             
             # if self.numSteps % 100 == 0:
             #     vs.append(self.v)
-        return self.v
+        return self.v.copy()
 
     def iter(self, gene=None, visualize=False, end=True, nRounds=1):
         """
