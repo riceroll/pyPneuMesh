@@ -1,4 +1,4 @@
-## TrussBot
+# TrussBot
 The simulation and optimization framework for trussBot.
 
 ### Dependency
@@ -17,7 +17,11 @@ To run a simulation with given file
 python examples/test.py --iFile fox --testing 1 --visualize 1
 ```
 
-### To do MPC 
+### Testing
+#### Test Genetic Algorithm
 ```
+python geneticAlgorithm.py -test [-all]
+```
+``-all``: test all functions \
+``-[function name]``: test specific functions
 
-```

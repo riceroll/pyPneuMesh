@@ -66,7 +66,7 @@ if visualize:
 # inFileDir = './data/{}.json'.format(inFileName)
 def getModel():
     model = Model()
-    model.loadJson(inFileDir)
+    model.load(inFileDir)
     model.scripting = False
     model.testing = testing
     model.reset(resetScript=True, numActions=20)

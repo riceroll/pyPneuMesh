@@ -69,7 +69,7 @@ if visualize:
 
 Model.numStepsPerActuation = int(numStepsPerActionMultiplier / Model.h)
 model = Model()
-model.loadJson(inFileDir)
+model.load(inFileDir)
 model.scripting = scripting
 model.testing = testing
 model.reset(resetScript=True, numActions=20)
@@ -77,7 +77,7 @@ model.reset(resetScript=True, numActions=20)
 
 def criterion(scriptList):
     model = Model()
-    model.loadJson(inFileDir)
+    model.load(inFileDir)
     model.scripting = scripting
     model.testing = testing
     model.reset(resetScript=True, numActions=20)

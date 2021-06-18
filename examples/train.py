@@ -68,7 +68,7 @@ if visualize:
 inFileDir = './data/{}.json'.format(inFileName)
 
 model = Model()
-model.loadJson(inFileDir)
+model.load(inFileDir)
 model.scripting = scripting
 model.testing = testing
 model.reset(resetScript=True, numChannels=numChannels, numActions=numActions)

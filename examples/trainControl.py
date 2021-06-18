@@ -67,7 +67,7 @@ inFileDir = './data/{}.json'.format(inFileName)
 Model.numStepsPerActuation = int(numStepsPerActionMultiplier / Model.h)
 
 model = Model()
-model.loadJson(inFileDir)
+model.load(inFileDir)
 model.scripting = scripting
 model.testing = testing
 model.reset(resetScript=True, numActions=numActions)

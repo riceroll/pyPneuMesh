@@ -5,7 +5,6 @@ import datetime
 import json
 import argparse
 import numpy as np
-from model import Model
 from optimizer import EvolutionAlgorithm
 rootPath = os.path.split(os.path.realpath(__file__))[0]
 tPrev = time.time()
@@ -39,7 +38,40 @@ def import_visualizer():
             es.append([i * 2, i * 2 + 1])
         lines = o3.geometry.LineSet(points=o3.utility.Vector3dVector(vs), lines=o3.utility.Vector2iVector(es))
         viewer.add_geometry(lines)
-    
+
+        vs = []
+        es = []
+        cs = []
+        vs.append([0, 0, 0.5])
+        vs.append([1, 0, 0.5])
+        es.append([0, 1])
+        cs.append([1, 0, 0])
+        lines = o3.geometry.LineSet(points=o3.utility.Vector3dVector(vs), lines=o3.utility.Vector2iVector(es))
+        lines.colors=o3.utility.Vector3dVector(cs)
+        viewer.add_geometry(lines)
+        
+        vs = []
+        es = []
+        cs = []
+        vs.append([0, 0, 0.5])
+        vs.append([0, 1, 0.5])
+        es.append([0, 1])
+        cs.append([0, 1, 0])
+        lines = o3.geometry.LineSet(points=o3.utility.Vector3dVector(vs), lines=o3.utility.Vector2iVector(es))
+        lines.colors=o3.utility.Vector3dVector(cs)
+        viewer.add_geometry(lines)
+        
+        vs = []
+        es = []
+        cs = []
+        vs.append([0, 0, 0.5])
+        vs.append([0, 0, 1.5])
+        es.append([0, 1])
+        cs.append([0, 0, 1])
+        lines = o3.geometry.LineSet(points=o3.utility.Vector3dVector(vs), lines=o3.utility.Vector2iVector(es))
+        lines.colors=o3.utility.Vector3dVector(cs)
+        viewer.add_geometry(lines)
+
     return o3, vector3d, vector3i, vector2i, LineSet, PointCloud, drawGround
 
 def visualizeActions(model, actions, loop=False):
@@ -68,15 +100,17 @@ def visualizeActions(model, actions, loop=False):
     
     actions = actions.reshape(model.numChannels, -1)
     
-    print(Model.numStepsPerActuation)
+    # print(Model.numStepsPerActuation)
     
-    model.inflateChannel = actions[-1]
+    model.inflateChannel = actions[:, -1]
     model.numSteps = 0
     model.script = actions
+    print(1)
     model.initializePos()
+    print(2)
     
     def timerCallback(vis):
-        iAction = model.numSteps // Model.numStepsPerActuation
+        iAction = model.numSteps // model.numStepsPerActuation
         
         if loop:
             iAction = iAction % len(actions)
@@ -84,7 +118,7 @@ def visualizeActions(model, actions, loop=False):
         if iAction >= len(actions):
             return
         
-        model.inflateChannel = actions[iAction]
+        model.inflateChannel = actions[:, iAction]
         
         model.step(25)
         ls.points = vector3d(model.v)
@@ -106,11 +140,9 @@ def getModel(inFileDir):
     :param inFileDir: the json file of the input configuration
     :return: the model with loaded json configuration
     """
+    from model import Model
     model = Model()
-    model.loadJson(inFileDir)
-    model.scripting = False
-    model.script = np.array([0])
-    # model.testing = testing
+    model.load(inFileDir)
     model.reset()
     return model
 
@@ -136,3 +168,58 @@ def parseArgs():
     parser.add_argument("--inFile", type=str, default="./data/lobster3.json", help="infile")
     args = parser.parse_args()
     return args
+
+# min||np.dot(vecf, vecs) - np.dot(vecf0, vecs0)||
+
+def getFrontDirection(vs0, vs, vf0=np.array([1, 0, 0])):
+    """
+    calculate the front direction of the robot
+    
+    :param vs0: np.array, [nV, 3], initial positions of vertices
+    :param vs: np.array, [nV, 3], current positions of vertices
+    :param vf0: np.array, [3, ] initial vector of the front, default along x axis
+    :return: vf: np.array, [3, ] current vector of the front
+    """
+    vs0 = vs0[:, :2]
+    vs = vs[:, :2]
+    vf0 = vf0[:2]
+    
+    vf0 = vf0.reshape(-1, 1)
+    center = vs0.mean(0).reshape([1, -1])
+    vecs0 = vs0 - center
+    dots0 = vecs0 @ vf0    # nv x 1
+    # print(vs, vecs0, vf0)
+    # print('dots0: ', dots0)
+    
+    def alignEnergy(vf):
+        # print()
+        # print('vf: ', vf)
+        vf = vf.reshape(-1, 1)
+        vf = np.true_divide(vf, (vf ** 2).sum() ** 0.5)
+        dots = (vs - center) @ vf.reshape(-1, 1)
+        # print('dots:', dots)
+        diff = ((dots - dots0) ** 2).sum()
+        # print('diff: ', diff)
+        return diff
+
+    from scipy import optimize
+    
+    vf0 = vf0.reshape(-1)
+    sols = optimize.least_squares(alignEnergy, vf0.copy(), diff_step=np.ones_like(vf0)*1e-7)
+    
+    # print(sols)
+    
+    vf = sols.x / (sols.x ** 2).sum() ** 0.5
+    vf = np.concatenate([vf, np.array([0])])
+    
+    return vf
+
+def test(inFileDir, edgeChannel, maxContraction, actions):
+    # model load inFile(v, e)
+    # model set edgeChannel
+    # model set maxContraction
+    # model initpos
+    # model play acitons and record vs
+    # TODO
+    pass
+

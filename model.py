@@ -5,42 +5,11 @@ import datetime
 import json
 import argparse
 import numpy as np
+
+import utils
 from optimizer import EvolutionAlgorithm
 rootPath = os.path.split(os.path.realpath(__file__))[0]
 tPrev = time.time()
-
-visualize = False
-
-if visualize:
-    # viewer
-    import open3d as o3
-    vector3d = lambda v: o3.utility.Vector3dVector(v)
-    vector3i = lambda v: o3.utility.Vector3iVector(v)
-    vector2i = lambda v: o3.utility.Vector2iVector(v)
-    LineSet = lambda v, e: o3.geometry.LineSet(points=vector3d(v), lines=vector2i(e))
-    PointCloud = lambda v: o3.geometry.PointCloud(points=vector3d(v))
-    
-    def drawGround(viewer):
-        n = 20
-        vs = []
-        es = []
-        for i, x in enumerate(np.arange(1 - n, n)):
-            vs.append([x, 1 - n, 0])
-            vs.append([x, n - 1, 0])
-            es.append([i * 2, i * 2 + 1])
-        lines = o3.geometry.LineSet(points=o3.utility.Vector3dVector(vs), lines=o3.utility.Vector2iVector(es))
-        viewer.add_geometry(lines)
-        
-        vs = []
-        es = []
-        for i, x in enumerate(np.arange(1 - n, n)):
-            vs.append([1 - n, x, 0])
-            vs.append([n - 1, x, 0])
-            es.append([i * 2, i * 2 + 1])
-        lines = o3.geometry.LineSet(points=o3.utility.Vector3dVector(vs), lines=o3.utility.Vector2iVector(es))
-        viewer.add_geometry(lines)
-
-# end of viewer ==================================
 
 class Model(object):
     # k = 200000
@@ -107,7 +76,6 @@ class Model(object):
         self.numSteps = 0
         self.gravity = True
         self.simulate = True
-        self.scripting = True
         
         self.inflateChannel = None
         self.contractionPercent = None
@@ -116,46 +84,37 @@ class Model(object):
         
         self.targets = None
         self.testing = False    # testing mode
-        self.inDirJSON = ""     # input json file directory
+        self.modelDir = ""     # input json file directory
         
         Model.configure()
-        
+    
     # initialization =======================
-    def loadJson(self, inDir):
+    def load(self, modelDir):
         """
         load parameters from a json file into the model
-        :param inDir: dir of the json file
+        :param modelDir: dir of the json file
         :return: data as a dictionary
         """
-        self.inDirJSON = inDir
-        with open(inDir) as ifile:
+        self.modelDir = modelDir
+        with open(modelDir) as ifile:
             content = ifile.read()
         data = json.loads(content)
-        self.loadDict(data)
-        return data
-        
-    def loadDict(self, data):
-        """
-        load the data into the model as the initial state
-        :param data: data as a dictionary (from self.loadJSON)
-        """
+
         self.v = np.array(data['v'])
-        # self.v -= self.v.mean(0)    # center the model
-        self.v0 = np.array(self.v)
+        self.v0 = self.v.copy()
         self.e = np.array(data['e'], dtype=np.int64)
         
         self.lMax = np.array(data['lMax'])
-        self.maxContraction = np.array(data['maxContraction'])
-        if len(self.maxContraction) == 0:
-            self.maxContraction = np.zeros_like(self.lMax)
-        self.fixedVs = np.array(data['fixedVs'], dtype=np.int64)
         self.edgeChannel = np.array(data['edgeChannel'], dtype=np.int64)
         self.edgeActive = np.array(data['edgeActive'], dtype=bool)
-        self.script = np.array(data['script'], dtype=np.int64)
+        self.maxContraction = np.array(data['maxContraction'])
+        self.fixedVs = np.array(data['fixedVs'], dtype=np.int64)
         
+        assert((self.lMax[self.edgeActive] == self.lMax[self.edgeActive][0]).all())
+        assert(len(self.e) == len(self.lMax) == len(self.edgeChannel) == len(self.edgeActive) and len(self.maxContraction))
         self.reset()
         
-    def reset(self, resetScript=False, numChannels=None, numActions=None):
+    def reset(self, resetScript=False):
         """
         reset the model to the initial state with input options
         :param resetScript: if True, reset script to zero with numChannels and numActions
@@ -163,7 +122,7 @@ class Model(object):
         :param numActions: if -1, use the default value from self.numActions or self.script[0]
         """
         
-        self.v = np.array(self.v0)
+        self.v = self.v0.copy()
         self.vel = np.zeros_like(self.v)
 
         self.iAction = 0
@@ -171,18 +130,10 @@ class Model(object):
         self.gravity = True
         self.simulate = True
         
-        self.numChannels = numChannels if numChannels and numChannels != -1 \
-            else self.numChannels if self.numChannels \
-            else int(np.max(self.edgeChannel) + 1)
-        
-        self.numActions = numActions if numActions and numActions != -1 \
-            else self.numActions if self.numActions \
-            else len(self.script[0])
+        self.numChannels = self.edgeChannel.max() + 1
         self.inflateChannel = np.zeros(self.numChannels)
         self.contractionPercent = np.ones(self.numChannels)
-        if resetScript:
-            self.script = np.zeros([self.numChannels, self.numActions])
-        self.updateCorner()
+        self.updateCornerAngles()
     # end initialization
     
     # stepping =======================
@@ -197,15 +148,6 @@ class Model(object):
         
         for i in range(n):
             self.numSteps += 1
-        
-            # script
-            if self.scripting:
-                self.script = self.script.reshape(self.numChannels, -1)
-                if self.numSteps > ((self.iAction + 1) % self.script.shape[1]) * Model.numStepsPerActuation:
-                    self.iAction = int(np.floor(self.numSteps / Model.numStepsPerActuation) % self.numActions)
-                
-                    for iChannel in range(self.numChannels):
-                        self.inflateChannel[iChannel] = self.script[iChannel, self.iAction]
         
             # contractionPercent
             for iChannel in range(len(self.inflateChannel)):
@@ -229,160 +171,61 @@ class Model(object):
             lMax = np.copy(self.lMax)
             lMin = lMax * (1 - self.maxContraction)
             
+            # edge strain
             l0[self.edgeActive] = (lMax - self.contractionPercent[self.edgeChannel] * (lMax - lMin))[self.edgeActive]
             fMagnitude = (l - l0) * Model.k
             fEdge = vec / l.reshape(-1, 1) * fMagnitude.reshape(-1, 1)
             np.add.at(f, iv0, fEdge)
             np.add.at(f, iv1, -fEdge)
-        
+            
+            # gravity
             f[:, 2] -= Model.gravityFactor * Model.gravity
             self.f = f
-        
+            
             self.vel += Model.h * f
-        
+
             boolUnderground = self.v[:, 2] <= 0
-            self.vel[boolUnderground, :2] *= 1 - Model.frictionFactor
-        
+            self.vel[boolUnderground, :2] *= 1 - Model.frictionFactor       # uniform friction
+            # damping
             self.vel *= Model.dampingRatio
             velMag = np.sqrt((self.vel ** 2).sum(1))
             if (velMag > 5).any():
                 self.vel[velMag > 5] *= np.power(0.9, np.ceil(np.log(5 / velMag[velMag > 5]) / np.log(0.9))).reshape(-1, 1)
+
+            # directional surface
+            if True:
+                frontVec = utils.getFrontDirection(self.v0, self.v).reshape(-1, 1)
+                # frontVec = np.array([1, 0, 0]).reshape(-1, 1)
+                vel = self.vel.copy()
+                vel[2] *= 0
+    
+                dot = (vel @ frontVec)
+                ids = (dot < 0).reshape(-1) * boolUnderground
+                self.vel[ids] -= dot[ids] * frontVec.reshape(1, -1)
                 
             self.v += Model.h * self.vel
 
             boolUnderground = self.v[:, 2] <= 0
             self.vel[boolUnderground, 2] *= -1
+            self.vel[boolUnderground, 2] *= 0
             self.v[boolUnderground, 2] = 0
         
-            if False and self.numSteps % Model.angleCheckFrequency == 0:
-                a = self.getCornerAngles()
-                if (a - self.a0 > self.angleThreshold).any():
-                    print("exceed angle")
-                    return np.ones_like(self.v) * -1e6
+            # angle check
+            # if False and self.numSteps % Model.angleCheckFrequency == 0:
+            #     a = self.getCornerAngles()
+            #     if (a - self.a0 > self.angleThreshold).any():
+            #         print("exceed angle")
+            #         return np.ones_like(self.v) * -1e6
             
             # if self.numSteps % 100 == 0:
             #     vs.append(self.v)
+            
         return self.v.copy()
-
-    def iter(self, gene=None, visualize=False, end=True, nRounds=1):
-        """
-        load the gene and run a series of steps
-        :param gene: the gene to load into the model, gene format is
-            edgeChannel : (ne, ) int, [0, self.numChannels)
-            contractionPercentLevel : (ne, ) int, [0, Model.contractionLevels)
-            script : (na, nc) int, {0, 1}
-        :param visualize: if True, visualize the iteration with open3D
-        :return: the vertices location of the model
-        """
-        if gene is not None:
-            self.loadGene(gene)
-        self.reset()
-        
-        vs = []
-        if not visualize:
-            if self.testing:
-                for i in range(5):
-                    ret = self.step(2)
-                    vs.append(ret)
-            else:
-                for i in range(nRounds):
-                    ret = self.step(int(Model.numStepsPerActuation * self.numActions))
-                    vs.append(ret)
-        else:
-            viewer = o3.visualization.VisualizerWithKeyCallback()
-            viewer.create_window()
-        
-            render_opt = viewer.get_render_option()
-            render_opt.mesh_show_back_face = True
-            render_opt.mesh_show_wireframe = True
-            render_opt.point_size = 8
-            render_opt.line_width = 10
-            render_opt.light_on = True
-        
-            ls = LineSet(self.v, self.e)
-            viewer.add_geometry(ls)
-        
-            def timerCallback(vis):
-                if end and self.numSteps > nRounds * int(Model.numStepsPerActuation * self.numActions):
-                    return
-                self.step(25)
-                ls.points = vector3d(self.v)
-                viewer.update_geometry(ls)
-        
-            viewer.register_animation_callback(timerCallback)
-        
-            # def key_step(vis):
-            #     pass
-        
-            # viewer.register_key_callback(65, key_step)
-        
-            drawGround(viewer)
-            viewer.run()
-            viewer.destroy_window()
     
-        return vs
-
-    def show(self):
-        viewer = o3.visualization.VisualizerWithKeyCallback()
-        viewer.create_window()
-        
-        render_opt = viewer.get_render_option()
-        render_opt.mesh_show_back_face = True
-        render_opt.mesh_show_wireframe = True
-        render_opt.point_size = 8
-        render_opt.line_width = 10
-        render_opt.light_on = True
-    
-        ls = LineSet(self.v, self.e)
-        viewer.add_geometry(ls)
-        drawGround(viewer)
-        viewer.run()
-        viewer.destroy_window()
-
-    def iterScript(self, script=None, visualize=False):
-        if script is not None:
-            self.loadScript(script)
-        self.reset()
-    
-        if not visualize:
-            vs = self.step(int(Model.numStepsPerActuation * self.numActions))
-            return vs
-
-        else:
-            viewer = o3.visualization.VisualizerWithKeyCallback()
-            viewer.create_window()
-        
-            render_opt = viewer.get_render_option()
-            render_opt.mesh_show_back_face = True
-            render_opt.mesh_show_wireframe = True
-            render_opt.point_size = 8
-            render_opt.line_width = 10
-            render_opt.light_on = True
-        
-            ls = LineSet(self.v, self.e)
-            viewer.add_geometry(ls)
-        
-            def timerCallback(vis):
-                if self.numSteps > int(Model.numStepsPerActuation * self.numActions):
-                    return
-                self.step(25)
-                ls.points = vector3d(self.v)
-                viewer.update_geometry(ls)
-        
-            viewer.register_animation_callback(timerCallback)
-        
-            # def key_step(vis):
-            #     pass
-            # viewer.register_key_callback(65, key_step)
-        
-            drawGround(viewer)
-            viewer.run()
-            viewer.destroy_window()
-
     # end stepping
     
     # checks =========================
-    def updateCorner(self):
+    def updateCornerAngles(self):
         c = []
         
         for iv in range(len(self.v)):
@@ -408,6 +251,7 @@ class Model(object):
         cos = (vec0 * vec1).sum(1) / l0 / l1
         angles = np.arccos(cos)
         return angles
+    
     # end checks
     
     # utility ===========================
@@ -425,109 +269,74 @@ class Model(object):
         self.v[:, 2] += self.v[:, 2].max()
         self.step(int(Model.numStepsPerActuation * 1.5))
         self.v0 = self.v
+        
+    def loadEdgeChannel(self, edgeChannel):
+        """
+        load edgeChannel
+        :param edgeChannel: np.array int [numEdge, ]
+        """
+        assert(type(edgeChannel) == np.ndarray)
+        assert(edgeChannel.dtype == int)
+        assert(edgeChannel.shape == (len(self.e),) )
+        self.edgeChannel = edgeChannel
     
-    def noActive(self):
-        self.maxContraction[np.array((self.edgeActive + 1) % 2, dtype=np.bool)] = 0
-    
-    # end utility
+    def loadMaxContraction(self, maxContraction):
+        """
+        load maxContraction
+        :param maxContraction: np.array float [numEdge, ]
+        """
+        exactDivisible = lambda dividend, divisor, threshold=1e-6: \
+            (dividend - (dividend / divisor).round() * divisor).mean() < threshold
+        
+        assert(type(maxContraction) == np.ndarray)
+        assert(maxContraction.shape == (len(self.e),))
+        assert(exactDivisible(maxContraction, Model.contractionInterval))
+        assert(maxContraction / Model.contractionInterval + 1e-6 < Model.contractionLevels - 1)
+        self.maxContraction = maxContraction
+        
+    def exportJSON(self, modelDir=None,
+                   edgeChannel=None,
+                   maxContraction=None,
+                   actions=np.zeros([4, 1]),
+                   save=True):
+        """
+        export the model into JSON, with original model from the JSON as name
 
-    # optimization ===========================
-    def geneSetSize(self):
-        nEdgeChannel = len(self.edgeChannel)
-        nMaxContraction = len(self.maxContraction)
-        nScript = self.script.shape[0] * self.script.shape[1]
-        return nEdgeChannel, nMaxContraction, nScript
-    
-    def setTargets(self, targets):
-        self.targets = targets
-    
-    def lb(self, channel=False, contraction=False, script=True):
-        [nEdgeChannel, nMaxContraction, nScript] = self.geneSetSize()
-        if self.targets:
-            digitScript = self.targets.numTargets() * nScript
-        else:
-            digitScript = nScript
-        
-        digitLb = 0
-        if channel:
-            digitLb += nEdgeChannel
-        if contraction:
-            digitLb += nMaxContraction
-        if script:
-            digitLb += digitScript
-        
-        return np.zeros(digitLb, dtype=np.int64)
-    
-    def ub(self, channel=False, contraction=False, script=True):
-        # caution: the upper bound here is noninclusive
-        [nEdgeChannel, nMaxContraction, nScript] = self.geneSetSize()
-        
-        ubEdgeChannel = np.ones(nEdgeChannel) * self.numChannels
-        ubMaxContraction = np.ones(nMaxContraction) * Model.contractionLevels
-        ubScript = np.ones(nScript * self.targets.numTargets()) * 2
-        
-        output = []
-        if channel:
-            output.append(ubEdgeChannel)
-        if contraction:
-            output.append(ubMaxContraction)
-        if script:
-            output.append(ubScript)
-            
-        return np.concatenate(output)
-    
-    def loadGene(self, gene):
-        nEdgeChannel = len(self.edgeChannel)
-        nMaxContraction = len(self.maxContraction)
-        nScript = len(self.script.reshape(-1))
-        
-        self.edgeChannel = np.array(gene[:nEdgeChannel], dtype=np.int64)
-        gene = gene[nEdgeChannel:]
-        
-        self.maxContraction = np.array(gene[:nMaxContraction] * Model.contractionInterval)
-        gene = gene[nMaxContraction:]
-        
-        self.script = np.array(gene[:], dtype=bool).reshape(self.numChannels, self.numActions)
-        
-        self.edgeActive = np.ones_like(self.edgeActive, dtype=bool)
-    
-    def loadScript(self, script):
-        self.script = script
-    
-    def exportJSON(self, gene=None, inDir=None, appendix=None):
+        :param modelDir: name of the imported json file
+        :param edgeChannel: np.array int [numEdge, ]
+        :param maxContraction: np.array float [numEdgeActive, ]
+        :param actions: np.array [numChannel, numActions]
         """
-        export the gene into JSON, with original model from the JSON with name
-        :param gene: name of the gene
-        :param inDir: name of the imported json file
-        :param appendix: appendix to the output filename
-        """
+        modelDir = modelDir if modelDir else self.modelDir
+        self.load(modelDir)
         
-        inDir = inDir if inDir else self.inDirJSON
-        with open(inDir) as iFile:
+        with open(modelDir) as iFile:
             content = iFile.read()
-        data = json.loads(content)
+            data = json.loads(content)
+
+        if edgeChannel is not None:
+            self.loadEdgeChannel(edgeChannel)
+            data['edgeChannel'] = self.edgeChannel.tolist()
+        if maxContraction is not None:
+            self.maxContraction(maxContraction)
+            data['maxContraction'] = self.maxContraction.tolist()
+        if actions is not None:
+            data['script'] = actions.tolist()
+            data['numChannels'] = actions.shape[0]
+            data['numActions'] = actions.shape[1]
+        js = json.dumps(data)
+
+        name = modelDir.split('/')[-1].split('.')[0]
+        now = datetime.datetime.now()
+        timeStr = "{}{}-{}:{}:{}".format(now.month, now.day, now.hour, now.minute, now.second)
         
-        if gene:
-            self.loadGene(gene)
-        
-        data['edgeChannel'] = self.edgeChannel.tolist()
-        data['edgeActive'] = self.edgeActive.tolist()
-        data['maxContraction'] = self.maxContraction.tolist()
-        data['script'] = self.script.transpose().tolist()
-        data['numChannels'] = self.script.shape[0]
-        data['numActions'] = self.script.shape[1]
-        
-        name = inDir.split('/')[-1].split('.')[0]
-        appendix = appendix if appendix else str(datetime.datetime.now()).split('.')[0]
-        with open('{}/output/{}_{}.json'.format(rootPath, name, appendix), 'w') as oFile:
-            js = json.dumps(data)
-            oFile.write(js)
-            print('{}/output/{}_{}.json'.format(rootPath, name, appendix))
-        
-    def exportJSONs(self, geneSet, targets, inDir):
-        for iTarget in range(targets.numTargets()):
-            gene = targets.extractGene(geneSet, iTarget)
-            self.exportJSON(gene, inDir, str(iTarget))
+        if save:
+            with open('{}/output/{}_{}.json'.format(rootPath, name, timeStr), 'w') as oFile:
+                oFile.write(js)
+                print('Save to {}/output/{}_{}.json'.format(rootPath, name, timeStr))
+                
+        return js
+
     # end optimization
     
 

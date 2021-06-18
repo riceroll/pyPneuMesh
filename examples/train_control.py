@@ -79,3 +79,4 @@ if visualize:
     ea.showHistory()
     visualizeActions(model, ea.pop[0], True)
     model.exportJSON()
+
