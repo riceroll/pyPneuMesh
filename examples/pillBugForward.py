@@ -31,7 +31,7 @@ if False:
     iActionSeq = 0
     
     model, actionSeqs = decodeGene(mmoSetting, heroes[iHero])
-    model.exportJSON(actionSeq=actionSeqs)
+    model.exportJSON(actionSeq=actionSeqs[0])
     from utils.visualizer import visualizeActions
     visualizeActions(model, actionSeqs[iActionSeq])
 

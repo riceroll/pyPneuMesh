@@ -316,7 +316,6 @@ class Model(object):
         :param actionSeq: np.array [numChannel, numActions]
         """
         modelDir = modelDir if modelDir else self.modelDir
-        self.load(modelDir)
         
         with open(modelDir) as iFile:
             content = iFile.read()
@@ -331,6 +330,7 @@ class Model(object):
         data['maxContraction'] = self.maxContraction.tolist()
         
         if actionSeq is not None:
+            print("No actionSeq give.")
             data['script'] = actionSeq.tolist()
             data['numChannels'] = actionSeq.shape[0]
             data['numActions'] = actionSeq.shape[1]
