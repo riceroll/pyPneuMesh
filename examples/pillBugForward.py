@@ -23,6 +23,16 @@ settingGA['nGenMax'] = 80
 ga.loadSetting(settingGA)
 heroes, ratingsHero = ga.run()
 
-model, actionSeqs = decodeGene(mmoSetting, heroes[0])
-from utils.visualizer import visualizeActions
-visualizeActions(model, actionSeqs[0])
+
+print("ratingsHero: ")
+print(ga.ratingsHero)
+
+if False:
+    iHero = 0
+    iActionSeq = 0
+    
+    model, actionSeqs = decodeGene(mmoSetting, heroes[iHero])
+    model.exportJSON(actionSeq=actionSeqs)
+    from utils.visualizer import visualizeActions
+    visualizeActions(model, actionSeqs[iActionSeq])
+
