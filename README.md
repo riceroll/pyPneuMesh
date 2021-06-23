@@ -1,27 +1,26 @@
 # TrussBot
-The simulation and optimization framework for trussBot.
+The simulation and multi-objective optimization framework for trussBot.
 
-### Dependency
-- numpy - 1.20.0
-- pathos - 0.2.5
-- open3d - 0.10.0.0
-
-### Examples
-To optimize a fox to move towards +x direction:
+### Installation
 ```bash
-python examples/train.py --iFile fox --nPop 100 --nGen 1000 --nWorkers 8 --numChannels 3 --numActions 4 --targets moveForward
+pip install -r requirements.txt
 ```
 
-To run a simulation with given file
+### Examples
+To optimize a pill-bug to move forward and stay in one direction
 ```bash
-python examples/test.py --iFile fox --testing 1 --visualize 1
+ipython
+run examples/pillBugForward.py
 ```
 
 ### Testing
-#### Test Genetic Algorithm
+
+```bash
+ipython
+run test/test.py [all] [<moduleName>] [plot] [unmute]  
 ```
-python geneticAlgorithm.py -test [-all]
-```
-``-all``: test all functions \
-``-[function name]``: test specific functions
+`all`: test all functions \
+`<moduleName>`: test specific testing module \
+`plot`: enable plotting \
+`unmute`: enable printing info
 

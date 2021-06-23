@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 
 import utils
-from optimizer import EvolutionAlgorithm
+from utils.geometry import getFrontDirection
 rootPath = os.path.split(os.path.realpath(__file__))[0]
 tPrev = time.time()
 
@@ -52,7 +52,7 @@ class Model(object):
             Model.defaultNumChannels = data['defaultNumChannels']
             Model.angleThreshold = data['angleThreshold']
             Model.angleCheckFrequency = Model.numStepsPerActuation * data['angleCheckFrequencyMultiplier']
-
+    
     def __init__(self):
         
         # ======= variable =======
@@ -71,6 +71,8 @@ class Model(object):
         self.vel = None     # velocity              [nv x 3]
         self.f = None
         self.l = None
+        
+        self.frontVec = None
         
         self.iAction = 0
         self.numSteps = 0
@@ -105,16 +107,20 @@ class Model(object):
         self.e = np.array(data['e'], dtype=np.int64)
         
         self.lMax = np.array(data['lMax'])
-        self.edgeChannel = np.array(data['edgeChannel'], dtype=np.int64)
         self.edgeActive = np.array(data['edgeActive'], dtype=bool)
+        self.edgeChannel = np.array(data['edgeChannel'], dtype=np.int64)
         self.maxContraction = np.array(data['maxContraction'])
+        
         self.fixedVs = np.array(data['fixedVs'], dtype=np.int64)
         
         assert((self.lMax[self.edgeActive] == self.lMax[self.edgeActive][0]).all())
         assert(len(self.e) == len(self.lMax) == len(self.edgeChannel) == len(self.edgeActive) and len(self.maxContraction))
-        self.reset()
+        self._reset()
         
-    def reset(self, resetScript=False):
+    def reload(self):
+        self.load(self.modelDir)
+        
+    def _reset(self, resetScript=False):
         """
         reset the model to the initial state with input options
         :param resetScript: if True, reset script to zero with numChannels and numActions
@@ -125,14 +131,15 @@ class Model(object):
         self.v = self.v0.copy()
         self.vel = np.zeros_like(self.v)
 
+        self.numChannels = self.edgeChannel.max() + 1
+        self.inflateChannel = np.zeros(self.numChannels)
+        self.contractionPercent = np.ones(self.numChannels)
+
         self.iAction = 0
         self.numSteps = 0
         self.gravity = True
         self.simulate = True
         
-        self.numChannels = self.edgeChannel.max() + 1
-        self.inflateChannel = np.zeros(self.numChannels)
-        self.contractionPercent = np.ones(self.numChannels)
         self.updateCornerAngles()
     # end initialization
     
@@ -194,14 +201,15 @@ class Model(object):
 
             # directional surface
             if True:
-                frontVec = utils.getFrontDirection(self.v0, self.v).reshape(-1, 1)
-                # frontVec = np.array([1, 0, 0]).reshape(-1, 1)
+                if self.numSteps % (Model.numStepsPerActuation / 20) == 0 or self.frontVec is None:
+                    self.frontVec = getFrontDirection(self.v0, self.v).reshape(-1, 1)
+                # self.frontVec = np.array([1, 0, 0]).reshape(-1, 1)
                 vel = self.vel.copy()
                 vel[2] *= 0
     
-                dot = (vel @ frontVec)
+                dot = (vel @ self.frontVec)
                 ids = (dot < 0).reshape(-1) * boolUnderground
-                self.vel[ids] -= dot[ids] * frontVec.reshape(1, -1)
+                self.vel[ids] -= dot[ids] * self.frontVec.reshape(1, -1)
                 
             self.v += Model.h * self.vel
 
@@ -338,35 +346,42 @@ class Model(object):
         return js
 
     # end optimization
-    
 
-# if __name__ == "__main__":
-#     inFileDir = '{}/data/{}.json'.format(rootPath, inFileName)
-#
-#     model = Model()
-#     model.loadJson(inFileDir)
-#     model.scripting = scripting
-#     model.reset(resetScript=True, numChannels=numChannels, numActions=numActions)
-#
-#     def locomotion(gene, direction='x'):
-#         v = model.iter(gene)
-#         centroid = v.mean(0)
-#         if direction == 'x':
-#             return centroid[0] - abs(centroid[1]) * 10
-#         elif direction == 'y':
-#             return centroid[1] - abs(centroid[0]) * 10
-#
-#     locomotion_x = lambda g : locomotion(g, 'x')
-#     locomotion_y = lambda g: locomotion(g, 'y')
-#     criterion = locomotion_x if direction == "x" else locomotion_x
-#
-#     ea = EvolutionAlgorithm(name=inFileName, model=model, criterion=criterion,
-#                             nWorkers=numWorkers,
-#                             nPop=numPopulation)
-#     gene = ea.maximize(10 if testing else numGeneration)
-#
-#     model.loadGene(gene)
-#     model.exportJSON(gene, inFileDir)
-#
-#     if visualize:
-#         model.iter(gene, True)
+
+def testModelStep(argv):
+    from utils.modelInterface import getModel
+    
+    model = getModel("./test/data/lobsterIn.json")
+    v = model.step(200)
+    js = model.exportJSON(save=False)
+    with open('./test/data/lobsterOut.json') as iFile:
+        jsTrue = iFile.read()
+        assert (js == jsTrue)
+    
+    vTrue = np.load('./test/data/lobsterOutV.npy')
+    assert ((v == vTrue).all())
+
+    
+tests = {
+    'step': testModelStep,
+}
+
+def testAll(argv):
+    for key in tests:
+        print('test{}{}():'.format(key[0].upper(), key[1:]))
+        tests[key](argv)
+        print('Pass.\n')
+   
+
+if __name__ == "__main__":
+    import sys
+    
+    if 'test' in sys.argv:
+        if 'all' in sys.argv:
+            testAll(sys.argv)
+        else:
+            for key in tests:
+                if key in sys.argv:
+                    print('test{}{}():'.format(key[0].upper(), key[1:]))
+                    tests[key](sys.argv)
+                    print('Pass.\n')
