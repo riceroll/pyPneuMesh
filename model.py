@@ -324,10 +324,12 @@ class Model(object):
 
         if edgeChannel is not None:
             self.loadEdgeChannel(edgeChannel)
-            data['edgeChannel'] = self.edgeChannel.tolist()
+        data['edgeChannel'] = self.edgeChannel.tolist()
+        
         if maxContraction is not None:
             self.maxContraction(maxContraction)
-            data['maxContraction'] = self.maxContraction.tolist()
+        data['maxContraction'] = self.maxContraction.tolist()
+        
         if actionSeq is not None:
             data['script'] = actionSeq.tolist()
             data['numChannels'] = actionSeq.shape[0]

@@ -23,7 +23,6 @@ settingGA['nGenMax'] = 80
 ga.loadSetting(settingGA)
 heroes, ratingsHero = ga.run()
 
-
 print("ratingsHero: ")
 print(ga.ratingsHero)
 
