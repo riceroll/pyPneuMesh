@@ -118,7 +118,9 @@ class Model(object):
         self._reset()
         
     def reload(self):
-        self.load(self.modelDir)
+        modelDir = self.modelDir
+        self.__init__()
+        self.load(modelDir)
         
     def _reset(self, resetScript=False):
         """
