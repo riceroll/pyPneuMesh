@@ -24,7 +24,5 @@ ga.loadSetting(settingGA)
 heroes, ratingsHero = ga.run()
 
 model, actionSeqs = decodeGene(mmoSetting, heroes[0])
-
 from utils.visualizer import visualizeActions
-
 visualizeActions(model, actionSeqs[0])

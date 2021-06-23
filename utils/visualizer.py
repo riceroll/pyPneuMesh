@@ -74,10 +74,13 @@ def visualizeActions(model, actionSeq, nLoop=1):
     :param actionSeq: the actions of the model, equals to the script of the model, np.array, [numChannel, numActions]
     :param loop: if true, the actions will be repeated
     """
-    
-    o3, vector3d, vector3i, vector2i, LineSet, PointCloud, drawGround = _importVisualizer()
-    viewer = o3.visualization.VisualizerWithKeyCallback()
-    viewer.create_window()
+    try:
+        o3, vector3d, vector3i, vector2i, LineSet, PointCloud, drawGround = _importVisualizer()
+        viewer = o3.visualization.VisualizerWithKeyCallback()
+        viewer.create_window()
+    except Exception as e:
+        print(e)
+        return
     
     render_opt = viewer.get_render_option()
     render_opt.mesh_show_back_face = True
@@ -171,3 +174,9 @@ if __name__ == "__main__":
                     tests[key](sys.argv)
                     print('Pass.\n')
     
+    else:
+        from utils.modelInterface import getModel, getActionSeq
+        modelDir = sys.argv[1]
+        model = getModel(modelDir)
+        actionSeq = getActionSeq(modelDir)
+        vs = visualizeActions(model, actionSeq, nLoop=1)

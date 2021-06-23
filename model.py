@@ -303,9 +303,9 @@ class Model(object):
         self.maxContraction = maxContraction
         
     def exportJSON(self, modelDir=None,
+                   actionSeq=np.zeros([4, 1]),
                    edgeChannel=None,
                    maxContraction=None,
-                   actions=np.zeros([4, 1]),
                    save=True):
         """
         export the model into JSON, with original model from the JSON as name
@@ -313,7 +313,7 @@ class Model(object):
         :param modelDir: name of the imported json file
         :param edgeChannel: np.array int [numEdge, ]
         :param maxContraction: np.array float [numEdgeActive, ]
-        :param actions: np.array [numChannel, numActions]
+        :param actionSeq: np.array [numChannel, numActions]
         """
         modelDir = modelDir if modelDir else self.modelDir
         self.load(modelDir)
@@ -328,10 +328,10 @@ class Model(object):
         if maxContraction is not None:
             self.maxContraction(maxContraction)
             data['maxContraction'] = self.maxContraction.tolist()
-        if actions is not None:
-            data['script'] = actions.tolist()
-            data['numChannels'] = actions.shape[0]
-            data['numActions'] = actions.shape[1]
+        if actionSeq is not None:
+            data['script'] = actionSeq.tolist()
+            data['numChannels'] = actionSeq.shape[0]
+            data['numActions'] = actionSeq.shape[1]
         js = json.dumps(data)
 
         name = modelDir.split('/')[-1].split('.')[0]

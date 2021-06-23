@@ -505,7 +505,10 @@ class GeneticAlgorithm(object):
                 self.saveHistory(startTime=startTime, iGen=iGen, appendix=self.history.ratingsBestHero[-1])
         
         if self.setting.plot:
-            plot(self.history, self)
+            try:
+                plot(self.history, self)
+            except Exception as e:
+                print(e)
         
         return self.getBest()
 
