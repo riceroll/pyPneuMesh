@@ -1,6 +1,6 @@
 from utils.mmoCriterion import getCriterion
 from utils.mmo import MMO
-from utils.objectives import objMoveForward, objFaceForward
+from utils.objectives import objMoveForward, objFaceForward, objTurnLeft
 from GA import GeneticAlgorithm
 
 setting = {
@@ -14,7 +14,7 @@ setting = {
         2: -1,
         3: -1,
     },
-    'objectives': [(objMoveForward, objFaceForward)]
+    'objectives': [[objMoveForward, objFaceForward], [objTurnLeft]]
 }
 
 mmo = MMO(setting)
@@ -25,8 +25,8 @@ mmo.check()
 ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
 
 settingGA = ga.getDefaultSetting()
-settingGA['nPop'] = 8
-settingGA['nGenMax'] = 40
+settingGA['nPop'] = 16
+settingGA['nGenMax'] = 80
 ga.loadSetting(settingGA)
 heroes, ratingsHero = ga.run()
 
@@ -34,12 +34,11 @@ print("ratingsHero: ")
 print(ga.ratingsHero)
 
 if False:
-    iHero = 1
+    iHero = 2
     iActionSeq = 0
     
-    _, actionSeqs = mmo.loadGene(heroes[iHero])
-    mmo.refreshModel()
-    mmo.model.exportJSON(actionSeq=actionSeqs[0])
+    model, actionSeqs = decodeGene(mmo, heroes[iHero])
+    model.exportJSON(actionSeq=actionSeqs[0])
     from utils.visualizer import visualizeActions
-    visualizeActions(mmo.model, actionSeqs[iActionSeq], nLoop=5)
+    visualizeActions(model, actionSeqs[iActionSeq])
 

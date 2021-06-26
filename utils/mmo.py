@@ -149,7 +149,7 @@ class MMO:
         gene = np.array(edgeChannelHalf + edgeChannelMiddle + maxContractionLevel + actionSeqs, dtype=int)
         return gene
     
-    def loadGene(self, gene: np.ndarray) -> (Model, List):  # load gene into model and actionSeqs
+    def loadGene(self, gene: np.ndarray) -> (Model, np.ndarray):  # load gene into model and actionSeqs
         if gene.shape == ():
             return self.model, self.actionSeqs
         edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = self._getGeneSpaces()

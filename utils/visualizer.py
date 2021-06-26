@@ -1,3 +1,4 @@
+import json
 import numpy as np
 from model import Model
 
@@ -173,18 +174,19 @@ def visualizeSymmetry(model):
     viewer.run()
 
 
-#  tests
+ #tests
 def testVisualizeActions(argv):
     if 'plot' not in argv:
         print('no "plot" parameter')
         return
-    
+
     from utils.modelInterface import getModel, getActionSeq
     modelDir = './test/data/pillBugIn.json'
-    model = getModel(modelDir)
-    # model.gravity *= 10
-    # breakpoint()
-    actionSeq = getActionSeq(modelDir)
+    model = Model()
+    model.load(modelDir)
+    with open(modelDir) as iFile:
+        data = json.load(iFile)
+        actionSeq = np.array(data['script'])
     
     vs = visualizeActions(model, actionSeq, nLoop=1)
     vsTruth = np.load('./test/data/pillBugOutV.npy')
@@ -206,7 +208,7 @@ def testVisualizeSymmetry(argv):
     visualizeSymmetry(model)
 
 tests = {
-    # 'visualizeActions': testVisualizeActions,
+    'visualizeActions': testVisualizeActions,
     'testVisualizeSymmetry': testVisualizeSymmetry,
 }
 
@@ -229,10 +231,12 @@ if __name__ == "__main__":
                     print('Pass.\n')
     
     else:
-        from utils.modelInterface import getModel, getActionSeq
         modelDir = sys.argv[1]
-        model = getModel(modelDir)
-        actionSeq = getActionSeq(modelDir)
+        model = Model()
+        model.load(modelDir)
+        with open(modelDir) as iFile:
+            data = json.load(iFile)
+            actionSeq = np.array(data['script'])
         nLoop = 1
         if "loop" in sys.argv:
             nLoop = 10
