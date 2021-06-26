@@ -1,6 +1,5 @@
-from utils.modelInterface import getModel, encodeGeneSpace, decodeGene, simulate
 from utils.mmoCriterion import getCriterion
-from utils.mmoSetting import MMOSetting
+from utils.mmo import MMO
 from utils.objectives import objMoveForward, objFaceForward
 from GA import GeneticAlgorithm
 
@@ -8,13 +7,21 @@ setting = {
     'modelDir': './test/data/pillBugIn.json',
     'numChannels': 4,
     'numActions': 4,
-    'objectives': [[objMoveForward, objFaceForward]]
+    'numObjectives': 1,
+    "channelMirrorMap": {
+        0: 1,
+        1: 0,
+        2: -1,
+        3: -1,
+    },
+    'objectives': [(objMoveForward, objFaceForward)]
 }
 
-mmoSetting = MMOSetting(setting)
-lb, ub = encodeGeneSpace(mmoSetting=mmoSetting)
+mmo = MMO(setting)
+lb, ub = mmo.getGeneSpace()
 
-criterion = getCriterion(mmoSetting)
+criterion = getCriterion(mmo)
+mmo.check()
 ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
 
 settingGA = ga.getDefaultSetting()
@@ -27,10 +34,10 @@ print("ratingsHero: ")
 print(ga.ratingsHero)
 
 if False:
-    iHero = 0
+    iHero = 2
     iActionSeq = 0
     
-    model, actionSeqs = decodeGene(mmoSetting, heroes[iHero])
+    model, actionSeqs = decodeGene(mmo, heroes[iHero])
     model.exportJSON(actionSeq=actionSeqs[0])
     from utils.visualizer import visualizeActions
     visualizeActions(model, actionSeqs[iActionSeq])

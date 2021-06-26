@@ -84,9 +84,9 @@ class Model(object):
         self.numChannels = None
         self.numActions = None
         
-        self.targets = None
         self.testing = False    # testing mode
-        self.modelDir = ""     # input json file directory
+        self.vertexMirrorMap = dict()
+        self.edgeMirrorMap = dict()
         
         Model.configure()
     
@@ -121,7 +121,7 @@ class Model(object):
         modelDir = self.modelDir
         self.__init__()
         self.load(modelDir)
-        
+    
     def _reset(self, resetScript=False):
         """
         reset the model to the initial state with input options
@@ -143,6 +143,7 @@ class Model(object):
         self.simulate = True
         
         self.updateCornerAngles()
+        self.computeSymmetry()
     # end initialization
     
     # stepping =======================
@@ -280,6 +281,59 @@ class Model(object):
         self.step(int(Model.numStepsPerActuation * 1.5))
         self.v0 = self.v
         
+    def computeSymmetry(self):
+        """
+        assuming that the model is centered and aligned with +x
+        """
+        vertexMirrorMap = dict()
+        ys = self.v[:, 1]
+        xzs = self.v[:, [0, 2]]
+        for iv, v in enumerate(self.v):
+            if iv not in vertexMirrorMap:
+                if abs(v[1]) < 0.1:
+                    vertexMirrorMap[iv] = -1    # on the mirror plane
+                else:       # mirrored with another vertex
+                    boolMirrored = ((v[[0, 2]] - xzs) ** 2).sum(1) < 1
+                    ivsMirrored = np.where(boolMirrored)[0]
+                    ivMirrored = ivsMirrored[np.argmin(abs(v[1] + self.v[ivsMirrored][:, 1]))]
+                    assert(ivMirrored not in vertexMirrorMap)
+                    vertexMirrorMap[iv] = ivMirrored
+                    vertexMirrorMap[ivMirrored] = iv
+
+        edgeMirrorMap = dict()
+        
+        for ie, e in enumerate(self.e):
+            if ie in edgeMirrorMap:
+                continue
+            
+            iv0 = e[0]
+            iv1 = e[1]
+            if vertexMirrorMap[iv0] == -1:
+                ivM0 = iv0  # itself
+            else:
+                ivM0 = vertexMirrorMap[iv0]
+            if vertexMirrorMap[iv1] == -1:
+                ivM1 = iv1
+            else:
+                ivM1 = vertexMirrorMap[iv1]
+            eM = [ivM0, ivM1]
+            if ivM0 == iv0 and ivM1 == iv1:     # edge on the mirror plane
+                edgeMirrorMap[ie] = -1
+            else:
+                iesMirrored = (eM == self.e).all(1) + (eM[::-1] == self.e).all(1)
+                assert(iesMirrored.sum() == 1)
+                ieMirrored = np.where(iesMirrored)[0][0]
+                assert(ieMirrored not in edgeMirrorMap)
+                if ieMirrored == ie:            # edge rides across the mirror plane
+                    edgeMirrorMap[ie] = -1
+                else:
+                    edgeMirrorMap[ie] = ieMirrored
+                    edgeMirrorMap[ieMirrored] = ie
+        
+        self.vertexMirrorMap = vertexMirrorMap
+        self.edgeMirrorMap = edgeMirrorMap
+        return vertexMirrorMap, edgeMirrorMap
+    
     def loadEdgeChannel(self, edgeChannel):
         """
         load edgeChannel
@@ -318,7 +372,6 @@ class Model(object):
         :param actionSeq: np.array [numChannel, numActions]
         """
         modelDir = modelDir if modelDir else self.modelDir
-        
         with open(modelDir) as iFile:
             content = iFile.read()
             data = json.loads(content)
@@ -332,7 +385,7 @@ class Model(object):
         data['maxContraction'] = self.maxContraction.tolist()
         
         if actionSeq is not None:
-            print("No actionSeq give.")
+            print("No actionSeq given........", end="")
             data['script'] = actionSeq.tolist()
             data['numChannels'] = actionSeq.shape[0]
             data['numActions'] = actionSeq.shape[1]
@@ -353,21 +406,33 @@ class Model(object):
 
 
 def testModelStep(argv):
-    from utils.modelInterface import getModel
-    
-    model = getModel("./test/data/lobsterIn.json")
+    model = Model()
+    model.load("./test/data/lobsterIn.json")
     v = model.step(200)
     js = model.exportJSON(save=False)
     with open('./test/data/lobsterOut.json') as iFile:
         jsTrue = iFile.read()
         assert (js == jsTrue)
-    
+        
     vTrue = np.load('./test/data/lobsterOutV.npy')
     assert ((v == vTrue).all())
 
+def testComputeSymmetry(argv):
+    model = Model()
+    model.load("./test/data/pillBugIn.json")
+    model.computeSymmetry()
+    assert(model.vertexMirrorMap == {0: -1, 1: 2, 2: 1, 3: -1, 4: 5, 5: 4, 6: 7, 7: 6, 8: -1, 9: -1, 10: 11, 11: 10, 12: 13, 13: 12, 14: 15, 15: 14, 16: 17, 17: 16})
+    assert(model.edgeMirrorMap == {0: -1, 1: 2, 2: 1, 3: 4, 4: 3, 5: -1, 6: 10, 10: 6, 7: 9, 9: 7, 8: 11, 11: 8, 12: 16, 16: 12, 13: 15, 15: 13, 14: 17, 17: 14, 18: 19, 19: 18, 20: -1, 21: 22, 22: 21, 23: -1, 24: 28, 28: 24, 25: 27, 27: 25, 26: 29, 29: 26, 30: 34, 34: 30, 31: 33, 33: 31, 32: 35, 35: 32, 36: 40, 40: 36, 37: 39, 39: 37, 38: 41, 41: 38, 42: 46, 46: 42, 43: 45, 45: 43, 44: 47, 47: 44})
+
+    model = Model()
+    model.load("./test/data/lobsterIn.json")
+    model.computeSymmetry()
+    assert(model.vertexMirrorMap == {0: -1, 1: 2, 2: 1, 3: -1, 4: 5, 5: 4, 6: 7, 7: 6, 8: -1, 9: 10, 10: 9, 11: 21, 21: 11, 12: 22, 22: 12, 13: 23, 23: 13, 14: 24, 24: 14, 15: 25, 25: 15, 16: 26, 26: 16, 17: 19, 19: 17, 18: -1, 20: -1, 27: 30, 30: 27, 28: 31, 31: 28, 29: 32, 32: 29, 33: 35, 35: 33, 34: -1, 36: 37, 37: 36, 38: -1, 39: -1, 40: 42, 42: 40, 41: 43, 43: 41, 44: 45, 45: 44, 46: -1, 47: 48, 48: 47})
+    assert(model.edgeMirrorMap == {0: -1, 1: 2, 2: 1, 3: 4, 4: 3, 5: -1, 6: 10, 10: 6, 7: 9, 9: 7, 8: 11, 11: 8, 12: 16, 16: 12, 13: 15, 15: 13, 14: 17, 17: 14, 18: -1, 19: 20, 20: 19, 21: 25, 25: 21, 22: 24, 24: 22, 23: 26, 26: 23, 27: 58, 58: 27, 28: 57, 57: 28, 29: 59, 59: 29, 30: 61, 61: 30, 31: 60, 60: 31, 32: 62, 62: 32, 33: 64, 64: 33, 34: 63, 63: 34, 35: 65, 65: 35, 36: 67, 67: 36, 37: 66, 66: 37, 38: 68, 68: 38, 39: 70, 70: 39, 40: 69, 69: 40, 41: 71, 71: 41, 42: 73, 73: 42, 43: 72, 72: 43, 44: 74, 74: 44, 45: 133, 133: 45, 46: 52, 52: 46, 47: 134, 134: 47, 48: -1, 49: 132, 132: 49, 50: 53, 53: 50, 51: -1, 54: -1, 55: 56, 56: 55, 75: 85, 85: 75, 76: 84, 84: 76, 77: 86, 86: 77, 78: 88, 88: 78, 79: 87, 87: 79, 80: 89, 89: 80, 81: 91, 91: 81, 82: 90, 90: 82, 83: 92, 92: 83, 93: 100, 100: 93, 94: 135, 135: 94, 95: 99, 99: 95, 96: -1, 97: -1, 98: 101, 101: 98, 102: 105, 105: 102, 103: 106, 106: 103, 104: 136, 136: 104, 107: -1, 108: 110, 110: 108, 109: -1, 111: 112, 112: 111, 113: -1, 114: 121, 121: 114, 115: 120, 120: 115, 116: 122, 122: 116, 117: 124, 124: 117, 118: 123, 123: 118, 119: 125, 125: 119, 126: 130, 130: 126, 127: 129, 129: 127, 128: 131, 131: 128, 137: -1, 138: 139, 139: 138})
     
 tests = {
     'step': testModelStep,
+    'computeSymmetry': testComputeSymmetry,
 }
 
 def testAll(argv):
@@ -376,7 +441,6 @@ def testAll(argv):
         tests[key](argv)
         print('Pass.\n')
    
-
 if __name__ == "__main__":
     import sys
     

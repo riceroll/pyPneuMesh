@@ -1,8 +1,7 @@
 
 def testMMO(argv):
-    from utils.modelInterface import getModel, encodeGeneSpace, decodeGene, simulate
     from utils.mmoCriterion import getCriterion
-    from utils.mmoSetting import MMOSetting
+    from utils.mmo import MMO
     from utils.objectives import objMoveForward, objFaceForward
     from GA import GeneticAlgorithm
 
@@ -10,13 +9,21 @@ def testMMO(argv):
         'modelDir': './test/data/pillBugIn.json',
         'numChannels': 4,
         'numActions': 4,
+        'numObjectives': 1,
+        "channelMirrorMap": {
+            0: 1,
+            1: 0,
+            2: -1,
+            3: -1,
+        },
         'objectives': [(objMoveForward, objFaceForward)]
     }
     
-    mmoSetting = MMOSetting(setting)
-    lb, ub = encodeGeneSpace(mmoSetting=mmoSetting)
+    mmo = MMO(setting)
+    lb, ub = mmo.getGeneSpace()
     
-    criterion = getCriterion(mmoSetting)
+    criterion = getCriterion(mmo)
+    mmo.check()
     ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
     
     settingGA = ga.getDefaultSetting()
@@ -24,56 +31,76 @@ def testMMO(argv):
     settingGA['nGenMax'] = 1
     settingGA['saveHistory'] = False
     settingGA['nWorkers'] = -1
-    settingGA['mute'] = True
+    settingGA['mute'] = "unmute" not in argv
     settingGA['plot'] = False
     ga.loadSetting(settingGA)
     heroes, ratingsHero = ga.run()
     
+    mmo.loadGene(heroes[0])
+    
 def testGetCriterion(argv):
-    from utils.modelInterface import getModel, getActionSeq, encodeGene, encodeGeneSpace, decodeGene, simulate
     from utils.mmoCriterion import getCriterion
-    from utils.mmoSetting import MMOSetting
+    from utils.mmo import MMO
     from utils.objectives import objMoveForward, objFaceForward
     from GA import GeneticAlgorithm
     import numpy as np
     
-    def assertCriterion(model, actionSeqs, criterion, ratingTruth):
-        gene = encodeGene(model, actionSeqs)
-        rating = criterion(gene)
+    def assertCriterion(mmo: MMO, criterion, ratingTruth):
+        rating = criterion(mmo.getGene())
         assert ((rating == ratingTruth).all())
         
-    def subTestGetCriterion(objectives, actionSeqs, truth):
-        modelDir = './test/data/pillBugIn.json'
-        
-        setting = {
-            'modelDir': modelDir,
-            'numChannels': actionSeqs[0].shape[0],
-            'numActions': actionSeqs[0].shape[1],
-            'objectives': objectives
-        }
-        
-        mmoSetting = MMOSetting(setting)
-        model = getModel(modelDir)
-        criterion = getCriterion(mmoSetting)
-        
-        assertCriterion(model, actionSeqs, criterion, truth)
         
     # 1
     modelDir = './test/data/pillBugIn.json'
 
     objectives1 = [[objMoveForward], [objFaceForward]]
     objectives2 = [[objMoveForward, objFaceForward]]
-
-    actionSeq3 = getActionSeq(modelDir)
+    
+    setting = {
+        'modelDir': modelDir,
+        'numChannels': 4,
+        'numActions': 4,
+        'numObjectives': 2,
+        "channelMirrorMap": {
+            0: 2,
+            1: -1,
+            2: 0,
+            3: -1,
+        },
+        'objectives': objectives1,
+    }
+    mmo = MMO(setting)
+    
+    actionSeq3 = mmo.actionSeqs[0].copy()
     actionSeq3[0, 1] = (actionSeq3[0, 1] + 1) % 2
     actionSeqs3 = np.vstack([np.expand_dims(actionSeq3, 0), np.expand_dims(actionSeq3, 0)])
-    subTestGetCriterion(objectives1, actionSeqs3, (0.20214075691321778, 0.9974059986505434))
+    mmo.actionSeqs = actionSeqs3
+    
+    criterion = getCriterion(mmo)
+    assertCriterion(mmo, criterion, (0.20214075691321778, 0.9974059986505434))
 
-    actionSeq33 = getActionSeq(modelDir)
+    setting = {
+        'modelDir': modelDir,
+        'numChannels': 4,
+        'numActions': 4,
+        'numObjectives': 1,
+        "channelMirrorMap": {
+            0: 2,
+            1: -1,
+            2: 0,
+            3: -1,
+        },
+        'objectives': objectives2,
+    }
+    mmo = MMO(setting)
+    
+    actionSeq33 = mmo.actionSeqs[0].copy()
     actionSeq33[0, 1] = (actionSeq33[0, 1] + 1) % 2
     actionSeqs33 = np.expand_dims(actionSeq33, 0)
-    subTestGetCriterion(objectives2, actionSeqs33, (0.20214075691321778, 0.9974059986505434))
-    
+    mmo.actionSeqs = actionSeqs33
+
+    criterion = getCriterion(mmo)
+    assertCriterion(mmo, criterion, (0.20214075691321778, 0.9974059986505434))
     
 tests = {
     'getCriterion': testGetCriterion,
@@ -83,25 +110,26 @@ tests = {
 if __name__ == "__main__":
     import sys
 
-    from utils.modelInterface import tests as testsUtilsModelInterface
     from utils.visualizer import tests as testsUtilsVisualizer
     from utils.geometry import tests as testsUtilsGeometry
     from model import tests as testsModel
     from GA import tests as testsGA
+    from utils.objectives import tests as testUtilsObjectives
+    from utils.mmo import tests as testUtilsMMO
     
     testsDict = {
         'model.py': testsModel,
-        'utils/modelInterface.py': testsUtilsModelInterface,
         'utils/visualizer.py': testsUtilsVisualizer,
         'utils/geometry.py': testsUtilsGeometry,
+        'utils/objective.py': testUtilsObjectives,
         'GA.py': testsGA,
-        'test/test.py': tests,
+        'utils/mmo.py': testUtilsMMO,
+        'test': tests,
     }
     
     for testsName in testsDict:
         if "all" not in sys.argv and testsName not in sys.argv:
             continue
-        
         print(testsName, flush=True)
         tests = testsDict[testsName]
         for testName in tests:

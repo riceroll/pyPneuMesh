@@ -66,8 +66,20 @@ def _importVisualizer():
     
     return o3, vector3d, vector3i, vector2i, LineSet, PointCloud, drawGround
 
+def _create_window(o3):
+    viewer = o3.visualization.VisualizerWithKeyCallback()
+    viewer.create_window()
 
-def visualizeActions(model, actionSeq, nLoop=1):
+    render_opt = viewer.get_render_option()
+    render_opt.mesh_show_back_face = True
+    render_opt.mesh_show_wireframe = True
+    render_opt.point_size = 8
+    render_opt.line_width = 10
+    render_opt.light_on = True
+    
+    return viewer
+    
+def visualizeActions(model : Model, actionSeq: np.ndarray, nLoop=1):
     """
 
     :param model: the model
@@ -76,18 +88,10 @@ def visualizeActions(model, actionSeq, nLoop=1):
     """
     try:
         o3, vector3d, vector3i, vector2i, LineSet, PointCloud, drawGround = _importVisualizer()
-        viewer = o3.visualization.VisualizerWithKeyCallback()
-        viewer.create_window()
+        viewer = _create_window(o3)
     except Exception as e:
         print(e)
         return
-    
-    render_opt = viewer.get_render_option()
-    render_opt.mesh_show_back_face = True
-    render_opt.mesh_show_wireframe = True
-    render_opt.point_size = 8
-    render_opt.line_width = 10
-    render_opt.light_on = True
     
     ls = LineSet(model.v, model.e)
     viewer.add_geometry(ls)
@@ -124,7 +128,7 @@ def visualizeActions(model, actionSeq, nLoop=1):
         model.step(25)
         ls.points = vector3d(model.v)
         viewer.update_geometry(ls)
-        
+    
     viewer.register_animation_callback(timerCallback)
     
     # def key_step(vis):
@@ -135,9 +139,44 @@ def visualizeActions(model, actionSeq, nLoop=1):
     viewer.run()
     return vs
 
+def visualizeSymmetry(model):
+    try:
+        from matplotlib import cm
+        o3, vector3d, vector3i, vector2i, LineSet, PointCloud, drawGround = _importVisualizer()
+        viewer = _create_window(o3)
+    except Exception as e:
+        print(e)
+        return
+    
+    cmap = cm.get_cmap('rainbow')
+    
+    edgeColors = [None] * len(model.e)
+    ieVisited = set()
+    for ie in sorted(model.edgeMirrorMap.keys()):
+        if ie in ieVisited:
+            continue
+            
+        t = np.random.randint(100, 256)
+        if model.edgeMirrorMap[ie] == -1:
+            t = 0
+        edgeColor = cmap(t)[:3]
+        edgeColors[ie] = edgeColor
+        
+        if model.edgeMirrorMap[ie] != -1:
+            edgeColors[model.edgeMirrorMap[ie]] = edgeColor
+            ieVisited.add(ie)
+    
+    ls = LineSet(model.v, model.e)
+    ls.colors = vector3d(edgeColors)
+    viewer.add_geometry(ls)
+    
+    viewer.run()
 
+
+#  tests
 def testVisualizeActions(argv):
     if 'plot' not in argv:
+        print('no "plot" parameter')
         return
     
     from utils.modelInterface import getModel, getActionSeq
@@ -151,8 +190,24 @@ def testVisualizeActions(argv):
     vsTruth = np.load('./test/data/pillBugOutV.npy')
     assert(((vs - vsTruth) < 1e-5).all())
 
+def testVisualizeSymmetry(argv):
+    if 'plot' not in argv:
+        print('no "plot" parameter')
+        return
+    
+    model = Model()
+    model.load("./test/data/pillBugIn.json")
+    model.computeSymmetry()
+    visualizeSymmetry(model)
+
+    model = Model()
+    model.load("./test/data/lobsterIn.json")
+    model.computeSymmetry()
+    visualizeSymmetry(model)
+
 tests = {
-    'visualizeActions': testVisualizeActions,
+    # 'visualizeActions': testVisualizeActions,
+    'testVisualizeSymmetry': testVisualizeSymmetry,
 }
 
 def testAll(argv):
@@ -160,7 +215,6 @@ def testAll(argv):
         print('test{}{}():'.format(key[0].upper(), key[1:]))
         tests[key](argv)
         print('Pass.\n')
-
 
 if __name__ == "__main__":
     import sys
@@ -179,4 +233,7 @@ if __name__ == "__main__":
         modelDir = sys.argv[1]
         model = getModel(modelDir)
         actionSeq = getActionSeq(modelDir)
-        vs = visualizeActions(model, actionSeq, nLoop=1)
+        nLoop = 1
+        if "loop" in sys.argv:
+            nLoop = 10
+        vs = visualizeActions(model, actionSeq, nLoop=nLoop)

@@ -1,22 +1,20 @@
 # multi-objective optimization
 from typing import Callable
 import numpy as np
-from utils.modelInterface import getModel, encodeGeneSpace, decodeGene, simulate
-from utils.mmoSetting import MMOSetting
+from utils.mmo import MMO
 
-def getCriterion(mmoSetting: MMOSetting) -> Callable[[np.ndarray], np.ndarray]:
+def getCriterion(mmo: MMO) -> Callable[[np.ndarray], np.ndarray]:
     def criterion(gene: np.ndarray) -> np.ndarray:
-        ms = mmoSetting
-        model, actionSeqs = decodeGene(mmoSetting=mmoSetting, gene=gene)
-        assert(len(ms.objectives) == len(actionSeqs))
         
+        mmo.loadGene(gene)
         rating = []
-        for i in range(len(actionSeqs)):
-            actionSeq = actionSeqs[i]
-            model, actionSeqs = decodeGene(mmoSetting=mmoSetting, gene=gene)
-            vs = simulate(model, actionSeq)
+        for i in range(len(mmo.actionSeqs)):
+            actionSeq = mmo.actionSeqs[i]
+            mmo.refreshModel()
             
-            objective = ms.objectives[i]
+            vs = mmo.simulate(actionSeq)
+            
+            objective = mmo.objectives[i]
             for subObjective in objective:
                 score = subObjective(vs)
                 rating.append(score)

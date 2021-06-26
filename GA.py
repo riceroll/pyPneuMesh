@@ -189,7 +189,17 @@ def regenerate(pop, nPop, lb, ub):
     newPop = np.vstack([pop, generatedPop])
     return newPop
 
-def plot(history, ga):
+def loadHistory(historyDir):
+    """
+    used with `plot(history)`
+    """
+    with open(historyDir) as iFile:
+        js = iFile.read()
+        history = GeneticAlgorithm.History()
+        history.loadJSON(js)
+        return history
+
+def plot(history):
     import matplotlib.pyplot as plt
     
     if np.array(history.ratingsBest).ndim == 1:
@@ -265,7 +275,7 @@ class GeneticAlgorithm(object):
                 'nEraRevive': 4,
         
                 'nGenMax': 200,
-                'nWorkers': 8,
+                'nWorkers': -1,
                 'plot': True,
                 'mute': False,
                 'saveHistory': True,
@@ -285,9 +295,9 @@ class GeneticAlgorithm(object):
         
         def toJSON(self):
             history = {
-                'fitsBestHero': np.array(self.ratingsBestHero).tolist(),
-                'fitsBest': np.array(self.ratingsBest).tolist(),  # best fitness at the current generation
-                'fitsMean': np.array(self.ratingsMean).tolist(),  # mean fitness at the current generation
+                'ratingsBestHero': np.array(self.ratingsBestHero).tolist(),
+                'ratingsBest': np.array(self.ratingsBest).tolist(),  # best fitness at the current generation
+                'ratingsMean': np.array(self.ratingsMean).tolist(),  # mean fitness at the current generation
                 'genesBest': np.array(self.genesBest).tolist(),  # best gene at the current generation
                 'iExtinctions': np.array(self.iExtinctions).tolist(),     # ids of generation of extinctions
                 'iRevivals': np.array(self.iRevivals).tolist()     # ids of generation of revivals
@@ -464,6 +474,14 @@ class GeneticAlgorithm(object):
                 self.ratings[:len(self.heroes)] = self.ratingsHero
 
         self.sort()
+
+        if not self.setting.mute:
+            string = ""
+            if extinct:
+                string += "Extinction "
+            if reviving:
+                string += "Revival"
+            print(string)
         
         return extinct, reviving, nExtinctions
         
@@ -506,7 +524,7 @@ class GeneticAlgorithm(object):
         
         if self.setting.plot:
             try:
-                plot(self.history, self)
+                plot(self.history)
             except Exception as e:
                 print(e)
         
