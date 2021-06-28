@@ -1,9 +1,11 @@
+import os
 import json
 import datetime
 from pathlib import Path
 import numpy as np
 from pathos.multiprocessing import ProcessPool as Pool
 import multiprocessing
+from typing import List
 
 def initPop(nPop, lb, ub):
     """
@@ -333,6 +335,8 @@ class GeneticAlgorithm(object):
         self.criterion = criterion
         
         self.history = self.History()
+        self.startTime = None
+        self.folderDir = None
         
         assert (self.lb.shape == self.ub.shape)
         assert (self.lb.ndim == self.ub.ndim == 1)
@@ -386,16 +390,38 @@ class GeneticAlgorithm(object):
             
             print('gen: {}\tfbh: {}\tfb: {}'.format(iGen, ratingBestHero, ratingBest))
         
-    def saveHistory(self, startTime, iGen, appendix):
-        t = startTime
-        folderName = 'GA_{}{}-{}:{}:{}'.format(t.month, t.day, t.hour, t.minute, t.second)
-        folderPath = './output/' + folderName
+    def saveHistory(self, iGen, appendix:np.ndarray):
+        folderPath = self.folderDir
         Path(folderPath).mkdir(parents=True, exist_ok=True)
         if type(appendix) is np.ndarray:
             appendix = ','.join(["{:.2f}".format(i) for i in appendix.tolist()])
-        with open(folderPath + '/g{}_{}'.format(iGen, appendix), 'w') as oFile:
+        with open(folderPath + '/g{}_{}.hs'.format(iGen, appendix), 'w') as oFile:
             js = self.history.toJSON()
             oFile.write(js)
+            
+    def loadHistory(self, historyDir: str = ""):
+        if historyDir == "":
+            fileNames = os.listdir(self.folderDir)
+            historyDir = os.path.join(self.folderDir, sorted(fileNames)[-1])
+
+        with open(historyDir) as iFile:
+            js = iFile.read()
+            self.history.loadJSON(js)
+            
+    def getHeroes(self, historyDir: str = ""):
+        self.loadHistory(historyDir)
+        heroes = self.history.heroes
+        ratingsHero = self.history.ratingsHero
+        Path(historyDir).mkdir(parents=True, exist_ok=True)
+        fileDirs = []
+        for i in range(len(heroes)):
+            fileNameSeqs = []
+            for score in ratingsHero[i]:
+                fileNameSeqs.append("{.2f}".format(float(score)))
+            fileName = "-".join(fileNameSeqs) + "_tg{}.json".format(i)
+            fileDir = os.path.join(historyDir, fileName)
+            fileDirs.append(fileDir)
+        return heroes, fileDirs
             
     def sort(self):
         self.pop, self.ratings, self.Rs, self.CDs = \
@@ -493,9 +519,13 @@ class GeneticAlgorithm(object):
         return self.pop[ids][0], self.ratings[ids][0]
         
     def run(self):
-        startTime = datetime.datetime.now()
+        self.startTime = t = datetime.datetime.now()
+        t = self.startTime
+        folderName = 'GA_{}{}-{}:{}:{}'.format(t.month, t.day, t.hour, t.minute, t.second)
+        self.folderDir = './output/' + folderName
+        
         if not self.setting.mute:
-            print("\nBegin at {}.".format(startTime))
+            print("\nBegin at {}.".format(self.startTime))
             data = self.setting.data()
             for key in data:
                 print("{}: {}".format(key, data[key]))
@@ -520,7 +550,7 @@ class GeneticAlgorithm(object):
             
             self.log(  extinct=extinct, reviving=reviving)
             if iGen % 5 == 0 and self.setting.saveHistory:
-                self.saveHistory(startTime=startTime, iGen=iGen, appendix=self.history.ratingsBestHero[-1])
+                self.saveHistory(iGen=iGen, appendix=self.history.ratingsBestHero[-1])
         
         if self.setting.plot:
             try:

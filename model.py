@@ -362,6 +362,7 @@ class Model(object):
                    actionSeq=np.zeros([4, 1]),
                    edgeChannel=None,
                    maxContraction=None,
+                   saveDir=None,
                    save=True):
         """
         export the model into JSON, with original model from the JSON as name
@@ -385,7 +386,6 @@ class Model(object):
         data['maxContraction'] = self.maxContraction.tolist()
         
         if actionSeq is not None:
-            print("No actionSeq given........", end="")
             data['script'] = actionSeq.tolist()
             data['numChannels'] = actionSeq.shape[0]
             data['numActions'] = actionSeq.shape[1]
@@ -394,9 +394,11 @@ class Model(object):
         name = modelDir.split('/')[-1].split('.')[0]
         now = datetime.datetime.now()
         timeStr = "{}{}-{}:{}:{}".format(now.month, now.day, now.hour, now.minute, now.second)
+        if saveDir is None:
+            saveDir = '{}/output/{}_{}.json'.format(rootPath, name, timeStr)
         
         if save:
-            with open('{}/output/{}_{}.json'.format(rootPath, name, timeStr), 'w') as oFile:
+            with open(saveDir, 'w') as oFile:
                 oFile.write(js)
                 print('Save to {}/output/{}_{}.json'.format(rootPath, name, timeStr))
                 

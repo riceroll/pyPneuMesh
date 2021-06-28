@@ -266,8 +266,8 @@ class MMO:
             assert(self.numChannels == self.model.edgeChannel.max() + 1)
         if len(self.objectives) != 0:
             assert(len(self.objectives) == self.numObjectives)
-        if self.actionSeqs.shape != ():
-            assert(self.actionSeqs.shape == (self.numObjectives, self.numChannels, self.numActions))
+        # if self.actionSeqs.shape != ():
+        #     assert(self.actionSeqs.shape == (self.numObjectives, self.numChannels, self.numActions))
         
     
 def testMMO(argv):

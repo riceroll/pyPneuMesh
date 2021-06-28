@@ -42,6 +42,59 @@ def getFrontDirection(v0, v, vf0=np.array([1, 0, 0])):
     return vf
 
 
+def getClosestVector(a, b, c, d):
+  # return closest vector connecting ab to cd
+  # return None if skew or parallel
+
+  l1 = np.linalg.norm(b - a)
+  l2 = np.linalg.norm(d - c)
+  v1 = (b - a) / l1
+  v2 = (d - c) / l2
+
+  v1xv2 = np.cross(v1, v2)
+  v1xv2normsqr = np.linalg.norm(v1xv2) ** 2
+
+  if v1xv2normsqr == 0:
+    # parallel
+    return None
+  else:
+    m1 = np.zeros([3,3])
+    m1[0] = c - a
+    m1[1] = v2
+    m1[2] = v1xv2
+
+    t = np.linalg.det(m1) / v1xv2normsqr
+
+    m2 = m1.copy()
+    m2[1] = v1
+    s = np.linalg.det(m2) / v1xv2normsqr
+
+    N1 = a + v1 * t
+    N2 = c + v2 * s
+
+    if t > l1 or s > l2:
+      # skew
+      return None
+
+    return N2 - N1
+
+
+def testGetClosestVector(argv):
+    a = np.array([0, 0, 0])
+    b = np.array([5, 0, 0])
+    c = np.array([5, -1, 1])
+    d = np.array([0.4, 1, 1])
+    ret = getClosestVector(a, b, c, d)
+    assert(np.linalg.norm(ret - np.array([0, 0, 1])) < 1e-8)
+    
+    d = np.array([5, 1, 1])
+    ret = getClosestVector(a, b, c, d)
+    assert(np.linalg.norm(ret - np.array([0,0,1])) < 1e-8)
+    
+    d = np.array([5.1, 1, 1])
+    ret = getClosestVector(a, b, c, d)
+    assert (ret is None)
+    
 def testGetFrontDirection(argv):
     from utils.visualizer import _importVisualizer
     import numpy as np
@@ -87,9 +140,11 @@ def testGetFrontDirection(argv):
         
         viewer.run()
         viewer.destroy_window()
-    
+
+
 tests = {
     'getFrontDirection': testGetFrontDirection,
+    'getClosestVector': testGetClosestVector,
 }
 
 if __name__ == "__main__":

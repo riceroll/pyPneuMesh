@@ -7,7 +7,7 @@ setting = {
     'modelDir': './test/data/pillBugIn.json',
     'numChannels': 4,
     'numActions': 4,
-    'numObjectives': 1,
+    'numObjectives': 2,
     "channelMirrorMap": {
         0: 1,
         1: 0,
@@ -25,8 +25,8 @@ mmo.check()
 ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
 
 settingGA = ga.getDefaultSetting()
-settingGA['nPop'] = 16
-settingGA['nGenMax'] = 80
+settingGA['nPop'] = 24
+settingGA['nGenMax'] = 200
 ga.loadSetting(settingGA)
 heroes, ratingsHero = ga.run()
 

@@ -1,6 +1,7 @@
 import json
 import numpy as np
 from model import Model
+from matplotlib import cm
 
 def _importVisualizer():
     import open3d as o3
@@ -95,6 +96,15 @@ def visualizeActions(model : Model, actionSeq: np.ndarray, nLoop=1):
         return
     
     ls = LineSet(model.v, model.e)
+    cs = []
+    cmap = cm.get_cmap("rainbow")
+    iEdgeMax = model.edgeChannel.max()
+    for ie in range(len(model.edgeChannel)):
+        ic = model.edgeChannel[ie]
+        c = cmap(ic / iEdgeMax)
+        cs.append(c[:3])
+    colors = vector3d(np.array(cs))
+    ls.colors = colors
     viewer.add_geometry(ls)
     
     assert(actionSeq.ndim == 2)
@@ -180,7 +190,6 @@ def testVisualizeActions(argv):
         print('no "plot" parameter')
         return
 
-    from utils.modelInterface import getModel, getActionSeq
     modelDir = './test/data/pillBugIn.json'
     model = Model()
     model.load(modelDir)
@@ -229,7 +238,7 @@ if __name__ == "__main__":
                     print('test{}{}():'.format(key[0].upper(), key[1:]))
                     tests[key](sys.argv)
                     print('Pass.\n')
-    
+                    
     else:
         modelDir = sys.argv[1]
         model = Model()
