@@ -235,7 +235,7 @@ class MMO:
         
         return self.model, self.actionSeqs
     
-    def simulate(self, actionSeq, nLoops=1, visualize=False, testing=False) -> np.ndarray:
+    def simulate(self, actionSeq, nLoops=1, visualize=False, testing=False) -> (np.ndarray, np.ndarray):
         assert (actionSeq.ndim == 2)
         assert (actionSeq.shape[0] >= 1)
         assert (actionSeq.shape[1] >= 1)
@@ -258,7 +258,7 @@ class MMO:
         vs = np.array(vs)
         assert (vs.shape == (nLoops * len(actionSeq[0]) + 1, len(model.v), 3))
     
-        return vs
+        return vs, self.model.e.copy()
     
     def check(self):
         if len(self.channelMirrorMap) != 0:

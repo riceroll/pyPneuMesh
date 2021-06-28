@@ -12,11 +12,11 @@ def getCriterion(mmo: MMO) -> Callable[[np.ndarray], np.ndarray]:
             actionSeq = mmo.actionSeqs[i]
             mmo.refreshModel()
             
-            vs = mmo.simulate(actionSeq)
+            vs, es = mmo.simulate(actionSeq)
             
             objective = mmo.objectives[i]
             for subObjective in objective:
-                score = subObjective(vs)
+                score = subObjective(vs, es)
                 rating.append(score)
                 
         rating = np.array(rating)
