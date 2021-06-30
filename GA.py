@@ -705,7 +705,6 @@ def testGA1D(argv):
     pop, ratings = ga.run()
     assert((pop[0] == 0).all())
 
-
 def testGA2D(argv):
     nDigs = 16
     z = np.zeros([nDigs, 2])

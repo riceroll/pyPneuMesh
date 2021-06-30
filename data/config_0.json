@@ -2,7 +2,7 @@
   "k": 200000,
   "h": 0.001,
   "dampingRatio": 0.999,
-  "contractionInterval": 0.05625,
+  "contractionInterval": 0.075,
   "contractionLevels": 5,
   "contractionPercentRate": 1e-3,
   "gravityFactor": 98,
