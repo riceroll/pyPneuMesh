@@ -1,6 +1,6 @@
 from utils.mmoCriterion import getCriterion
 from utils.mmo import MMO
-from utils.objectives import objMoveForward, objFaceForward, objTurnLeft
+from utils.objectives import objMoveForward, objFaceForward, objTurnLeft, objTurnRight
 from GA import GeneticAlgorithm
 
 setting = {
@@ -14,7 +14,7 @@ setting = {
         2: -1,
         3: -1,
     },
-    'objectives': [[objMoveForward, objFaceForward], [objTurnLeft]]
+    'objectives': [[objMoveForward, objFaceForward], [objTurnLeft], [objTurnRight]]
 }
 
 mmo = MMO(setting)

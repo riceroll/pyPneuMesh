@@ -255,11 +255,11 @@ class MMO:
         #  initialize with the last action
         self.refreshModel()
         model = self.model
-        
+    
         model.inflateChannel = actionSeq[:, -1]
         v = model.step(T, ret=True)
         vs = [v]
-        
+    
         for iLoop in range(nLoops):
             for iAction in range(len(actionSeq[0])):
                 model.inflateChannel = actionSeq[:, iAction]
