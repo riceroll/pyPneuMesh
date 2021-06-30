@@ -6,16 +6,6 @@ def objMoveForward(vs: np.ndarray, es: np.ndarray):
     velX = dx
     return velX
 
-def objMoveForwardEnoughBug(vs: np.ndarray, es: np.ndarray):
-    """
-    if velocity is over 0.5 that is good enough
-    """
-    dx = (vs[-1].mean(0) - vs[0].mean(0))[0]
-    velX = dx / len(vs)
-    if velX > 0.5:
-        velX = 0.5
-    return velX
-
 def objFaceForward(vs: np.ndarray, es: np.ndarray):
     # 2d direction
     vecFront = getFrontDirection(vs[0], vs[-1])     # unit Vector
@@ -38,6 +28,8 @@ def objTurnRight(vs: np.ndarray, es: np.ndarray):
     alignment = (vecFront * vecL).sum()
     return alignment
 
+def objGrabLobster(vs: np.ndarray, es: np.ndarray):
+    return -((vs[:, 32] - vs[:, 29])**2).sum(1).mean()
 
 def testTurn(argv):
     vs = np.array([

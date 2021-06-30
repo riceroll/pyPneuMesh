@@ -302,7 +302,9 @@ class GeneticAlgorithm(object):
                 'ratingsMean': np.array(self.ratingsMean).tolist(),  # mean fitness at the current generation
                 'genesBest': np.array(self.genesBest).tolist(),  # best gene at the current generation
                 'iExtinctions': np.array(self.iExtinctions).tolist(),     # ids of generation of extinctions
-                'iRevivals': np.array(self.iRevivals).tolist()     # ids of generation of revivals
+                'iRevivals': np.array(self.iRevivals).tolist(),     # ids of generation of revivals
+                'heroes': np.array(self.heroes).tolist(),
+                'ratingsHero': np.array(self.ratingsHero).tolist(),
             }
             js = json.dumps(history)
             return js
@@ -368,8 +370,8 @@ class GeneticAlgorithm(object):
         self.history.ratingsBestHero.append(ratingBestHero)
         self.history.ratingsMean.append(ratingMean)
         
-        self.history.ratingsHero.append(np.array(self.ratingsHero).copy())
-        self.history.heroes.append(np.array(self.heroes).copy())
+        self.history.ratingsHero = np.array(self.ratingsHero).copy()
+        self.history.heroes = np.array(self.heroes).copy()
         
         iGen = len(self.history.ratingsBest) - 1
         if extinct:
@@ -407,9 +409,11 @@ class GeneticAlgorithm(object):
         with open(historyDir) as iFile:
             js = iFile.read()
             self.history.loadJSON(js)
+        return historyDir
             
     def getHeroes(self, historyDir: str = ""):
-        self.loadHistory(historyDir)
+        historyDir = self.loadHistory(historyDir)
+        historyDir = historyDir[:-3]
         heroes = self.history.heroes
         ratingsHero = self.history.ratingsHero
         Path(historyDir).mkdir(parents=True, exist_ok=True)
@@ -417,8 +421,8 @@ class GeneticAlgorithm(object):
         for i in range(len(heroes)):
             fileNameSeqs = []
             for score in ratingsHero[i]:
-                fileNameSeqs.append("{.2f}".format(float(score)))
-            fileName = "-".join(fileNameSeqs) + "_tg{}.json".format(i)
+                fileNameSeqs.append("{:.2f}".format(float(score)))
+            fileName = ",".join(fileNameSeqs) + ".json"
             fileDir = os.path.join(historyDir, fileName)
             fileDirs.append(fileDir)
         return heroes, fileDirs

@@ -1,20 +1,20 @@
 from utils.mmoCriterion import getCriterion
 from utils.mmo import MMO
-from utils.objectives import objMoveForward, objFaceForward
+from utils.objectives import objMoveForward, objFaceForward, objTurnLeft, objTurnRight, objGrabLobster
 from GA import GeneticAlgorithm
 
 setting = {
-    'modelDir': './test/data/pillBugIn.json',
+    'modelDir': './test/data/lobsterIn.json',
     'numChannels': 4,
     'numActions': 4,
-    'numObjectives': 1,
+    'numObjectives': 2,
     "channelMirrorMap": {
         0: 1,
         1: 0,
         2: -1,
         3: -1,
     },
-    'objectives': [(objMoveForward, objFaceForward)]
+    'objectives': [[objMoveForward, objFaceForward], [objGrabLobster]]
 }
 
 mmo = MMO(setting)
@@ -26,13 +26,12 @@ ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
 
 settingGA = ga.getDefaultSetting()
 settingGA['nPop'] = 48
-settingGA['nGenMax'] = 2
+settingGA['nGenMax'] = 2500
 ga.loadSetting(settingGA)
 heroes, ratingsHero = ga.run()
 
 print("ratingsHero: ")
 print(ga.ratingsHero)
-
 
 genes, fileDirs = ga.getHeroes()
 for i in range(len(genes)):

@@ -401,7 +401,7 @@ class Model(object):
         if save:
             with open(saveDir, 'w') as oFile:
                 oFile.write(js)
-                print('Save to {}/output/{}_{}.json'.format(rootPath, name, timeStr))
+                print('Save to {}'.format(saveDir))
                 
         return js
 

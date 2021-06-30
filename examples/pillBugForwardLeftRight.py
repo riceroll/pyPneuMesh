@@ -7,7 +7,7 @@ setting = {
     'modelDir': './test/data/pillBugIn.json',
     'numChannels': 4,
     'numActions': 4,
-    'numObjectives': 2,
+    'numObjectives': 3,
     "channelMirrorMap": {
         0: 1,
         1: 0,
@@ -33,12 +33,11 @@ heroes, ratingsHero = ga.run()
 print("ratingsHero: ")
 print(ga.ratingsHero)
 
-if False:
-    iHero = 2
-    iActionSeq = 0
-    
-    model, actionSeqs = decodeGene(mmo, heroes[iHero])
-    model.exportJSON(actionSeq=actionSeqs[0])
-    from utils.visualizer import visualizeActions
-    visualizeActions(model, actionSeqs[iActionSeq])
+genes, fileDirs = ga.getHeroes()
+for i in range(len(genes)):
+    gene = genes[i]
 
+    _, actionSeqs = mmo.loadGene(gene)
+    mmo.refreshModel()
+    for iActionSeq in range(mmo.numObjectives):
+        mmo.model.exportJSON(actionSeq=actionSeqs[iActionSeq], saveDir=fileDirs[i])
