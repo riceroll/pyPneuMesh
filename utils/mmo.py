@@ -6,6 +6,11 @@ from typing import List, Dict, Tuple
 from model import Model
 
 class MMO:
+    class Setting:
+        def __init__(self):
+            self.nStepsPerCapture = 400  # number of steps to capture one frame of v
+            self.modelConfigDir = './data/config.json'
+    
     def __init__(self, setting):
         self.modelDir: str = ""
         self.numChannels: int = -1
@@ -16,16 +21,20 @@ class MMO:
         self.objectives: List = []
         self.actionSeqs: np.ndarray = np.zeros([])
         self.gene: np.ndarray = np.zeros([])
-        
+
         self.model: Model = Model()
-        
+        self.setting = MMO.Setting()
         self._loadSetting(setting)
     
     def _loadSetting(self, setting: Dict):
         for key in setting:
-            assert (hasattr(self, key))
-            assert (type(setting[key])==type(getattr(self, key)))
-            setattr(self, key, setting[key])
+            if hasattr(self, key):
+                assert (type(setting[key]) == type(getattr(self, key)))
+                setattr(self, key, setting[key])
+            else:
+                assert (hasattr(self.setting, key))
+                assert (type(setting[key]) == type(getattr(self.setting, key)))
+                setattr(self.setting, key, setting[key])
         
         keysRequired = ['modelDir', 'numChannels', 'numActions', 'numObjectives']
         for key in keysRequired:
@@ -67,7 +76,7 @@ class MMO:
     
     def _loadModel(self):   # load model from modelDir
         assert (isinstance(self.modelDir, str) and len(self.modelDir) != 0)
-        self.model = Model()
+        self.model = Model(self.setting.modelConfigDir)
         self.model.load(self.modelDir)
     
     def refreshModel(self):
@@ -241,22 +250,29 @@ class MMO:
         assert (actionSeq.shape[1] >= 1)
     
         T = Model.numStepsPerActuation
+        nStepsPerCapture = self.setting.nStepsPerCapture
     
         #  initialize with the last action
         self.refreshModel()
         model = self.model
         
         model.inflateChannel = actionSeq[:, -1]
-        v = model.step(T)
+        v = model.step(T, ret=True)
         vs = [v]
-    
+        
         for iLoop in range(nLoops):
             for iAction in range(len(actionSeq[0])):
                 model.inflateChannel = actionSeq[:, iAction]
-                v = model.step(T)
-                vs.append(v)
+                for iStep in range(T):
+                    # append at the beginning of every nStepsPerCapture including frame 0
+                    if model.numSteps % nStepsPerCapture == 0:
+                        v = model.step(ret=True)
+                        vs.append(v)
+                    else:
+                        model.step()
+        vs.append(model.v.copy())   # last frame
         vs = np.array(vs)
-        assert (vs.shape == (nLoops * len(actionSeq[0]) + 1, len(model.v), 3))
+        assert (vs.shape == (vs.shape[0], len(model.v), 3))
     
         return vs, self.model.e.copy()
     
@@ -281,6 +297,7 @@ def testMMO(argv):
             0: -1,
             1: -1,
         },
+        "modelConfigDir": "./data/config_0.json",
     })
     
     mmo = MMO(setting)
@@ -313,6 +330,7 @@ def testMMO(argv):
             2: 3,
             3: 2,
         },
+        "modelConfigDir": "./data/config_0.json",
     })
 
     mmo = MMO(setting)
@@ -344,6 +362,7 @@ def testMMO(argv):
             2: 3,
             3: 2,
         },
+        "modelConfigDir": "./data/config_0.json",
     })
 
     mmo = MMO(setting)
@@ -379,6 +398,7 @@ def testMMO(argv):
             2: -1,
             3: -1,
         },
+        "modelConfigDir": "./data/config_0.json",
     })
 
     mmo = MMO(setting)
@@ -432,6 +452,7 @@ def testMMO(argv):
             2: 3,
             3: 2,
         },
+        "modelConfigDir": "./data/config_0.json",
     })
 
     mmo = MMO(setting)
@@ -486,6 +507,7 @@ def testGetGene(argv):
             2: 3,
             3: 2,
         },
+        "modelConfigDir": "./data/config_0.json",
     })
     
     mmo = MMO(setting)
@@ -508,6 +530,7 @@ def testGetGene(argv):
             2: 3,
             3: 2,
         },
+        "modelConfigDir": "./data/config_0.json",
     })
 
     mmo = MMO(setting)
@@ -531,6 +554,7 @@ def testGetGene(argv):
             2: 3,
             3: 2,
         },
+        "modelConfigDir": "./data/config_0.json",
     })
 
     mmo = MMO(setting)
@@ -554,6 +578,7 @@ def testGetGene(argv):
             2: -1,
             3: -1,
         },
+        "modelConfigDir": "./data/config_0.json",
     })
 
     mmo = MMO(setting)
@@ -577,6 +602,7 @@ def testGetGene(argv):
             2: -1,
             3: -1,
         },
+        "modelConfigDir": "./data/config_0.json",
     })
 
     mmo = MMO(setting)

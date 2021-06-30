@@ -142,9 +142,16 @@ def visualizeActions(model : Model, actionSeq: np.ndarray, nLoop=1):
     
     viewer.register_animation_callback(timerCallback)
     
-    # def key_step(vis):
-    #     pass
-    # viewer.register_key_callback(65, key_step)
+    def pause(vis):
+        model.simulate = False
+        print('p')
+
+    def start(vis):
+        model.simulate = True
+        print('s')
+        
+    viewer.register_key_callback(80, pause)  # p
+    viewer.register_key_callback(83, start)  # s
     
     drawGround(viewer)
     viewer.run()

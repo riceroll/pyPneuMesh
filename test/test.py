@@ -48,8 +48,7 @@ def testGetCriterion(argv):
     def assertCriterion(mmo: MMO, criterion, ratingTruth):
         rating = criterion(mmo.getGene())
         assert ((rating == ratingTruth).all())
-        
-        
+    
     # 1
     modelDir = './test/data/pillBugIn.json'
 
@@ -68,6 +67,7 @@ def testGetCriterion(argv):
             3: -1,
         },
         'objectives': objectives1,
+        "modelConfigDir": "./data/config_0.json",
     }
     mmo = MMO(setting)
     
@@ -77,7 +77,7 @@ def testGetCriterion(argv):
     mmo.actionSeqs = actionSeqs3
     
     criterion = getCriterion(mmo)
-    assertCriterion(mmo, criterion, (0.20214075691321778, 0.9974059986505434))
+    assertCriterion(mmo, criterion, (1.010703784566089, 0.9974059986505434))
 
     setting = {
         'modelDir': modelDir,
@@ -91,6 +91,7 @@ def testGetCriterion(argv):
             3: -1,
         },
         'objectives': objectives2,
+        "modelConfigDir": "./data/config_0.json",
     }
     mmo = MMO(setting)
     
@@ -100,7 +101,7 @@ def testGetCriterion(argv):
     mmo.actionSeqs = actionSeqs33
 
     criterion = getCriterion(mmo)
-    assertCriterion(mmo, criterion, (0.20214075691321778, 0.9974059986505434))
+    assertCriterion(mmo, criterion, (1.010703784566089, 0.9974059986505434))
     
 tests = {
     'getCriterion': testGetCriterion,

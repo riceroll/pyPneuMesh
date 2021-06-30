@@ -3,7 +3,7 @@ from utils.geometry import getFrontDirection
 
 def objMoveForward(vs: np.ndarray, es: np.ndarray):
     dx = (vs[-1].mean(0) - vs[0].mean(0))[0]
-    velX = dx / len(vs)
+    velX = dx
     return velX
 
 def objMoveForwardEnoughBug(vs: np.ndarray, es: np.ndarray):

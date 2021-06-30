@@ -31,8 +31,8 @@ class Model(object):
     # angleCheckFrequency = numStepsPerActuation / 20
 
     @staticmethod
-    def configure():
-        with open("./data/config.json") as ifile:
+    def configure(configDir):
+        with open(configDir) as ifile:
             content = ifile.read()
             data = json.loads(content)
             Model.k = data['k']
@@ -53,7 +53,7 @@ class Model(object):
             Model.angleThreshold = data['angleThreshold']
             Model.angleCheckFrequency = Model.numStepsPerActuation * data['angleCheckFrequencyMultiplier']
     
-    def __init__(self):
+    def __init__(self, configDir="./data/config.json"):
         
         # ======= variable =======
         self.v = None       # vertices locations    [nv x 3]
@@ -88,7 +88,7 @@ class Model(object):
         self.vertexMirrorMap = dict()
         self.edgeMirrorMap = dict()
         
-        Model.configure()
+        Model.configure(configDir)
     
     # initialization =======================
     def load(self, modelDir):
@@ -147,7 +147,7 @@ class Model(object):
     # end initialization
     
     # stepping =======================
-    def step(self, n=1):
+    def step(self, n=1, ret=False):
         """
         step simulation of the model if self.simulate is True
         :param n: number of steps
@@ -230,8 +230,9 @@ class Model(object):
             
             # if self.numSteps % 100 == 0:
             #     vs.append(self.v)
-            
-        return self.v.copy()
+        
+        if ret:
+            return self.v.copy()
     
     # end stepping
     
@@ -410,7 +411,7 @@ class Model(object):
 def testModelStep(argv):
     model = Model()
     model.load("./test/data/lobsterIn.json")
-    v = model.step(200)
+    v = model.step(200, ret=True)
     js = model.exportJSON(save=False)
     with open('./test/data/lobsterOut.json') as iFile:
         jsTrue = iFile.read()
