@@ -426,7 +426,17 @@ class GeneticAlgorithm(object):
             fileDir = os.path.join(historyDir, fileName)
             fileDirs.append(fileDir)
         return heroes, fileDirs
-            
+    
+    def saveHeros(self, mmo):
+        genes, fileDirs = self.getHeroes()
+        for i in range(len(genes)):
+            gene = genes[i]
+        
+            _, actionSeqs = mmo.loadGene(gene)
+            mmo.refreshModel()
+            for iActionSeq in range(mmo.numObjectives):
+                mmo.model.exportJSON(actionSeq=actionSeqs[iActionSeq], saveDir=fileDirs[i], appendix=iActionSeq)
+
     def sort(self):
         self.pop, self.ratings, self.Rs, self.CDs = \
             sortPop(pop=self.pop, ratings=self.ratings, Rs=self.Rs, CDs=self.CDs)
