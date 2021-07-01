@@ -7,14 +7,14 @@ setting = {
     'modelDir': './test/data/lobsterIn.json',
     'numChannels': 4,
     'numActions': 4,
-    'numObjectives': 2,
+    'numObjectives': 1,
     "channelMirrorMap": {
         0: 1,
         1: 0,
         2: -1,
         3: -1,
     },
-    'objectives': [[objMoveForward, objFaceForward], [objGrabLobster]]
+    'objectives': [[objMoveForward, objFaceForward, objGrabLobster]]
 }
 
 mmo = MMO(setting)
@@ -25,8 +25,8 @@ mmo.check()
 ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
 
 settingGA = ga.getDefaultSetting()
-settingGA['nPop'] = 48
-settingGA['nGenMax'] = 2500
+settingGA['nPop'] = 24
+settingGA['nGenMax'] = 500
 ga.loadSetting(settingGA)
 heroes, ratingsHero = ga.run()
 

@@ -511,7 +511,8 @@ class GeneticAlgorithm(object):
                 string += "Extinction "
             if reviving:
                 string += "Revival"
-            print(string)
+            if extinct or reviving:
+                print(string)
         
         return extinct, reviving, nExtinctions
         
