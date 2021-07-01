@@ -4,7 +4,7 @@ from utils.objectives import objMoveForward, objFaceForward, objTurnLeft, objTur
 from GA import GeneticAlgorithm
 
 setting = {
-    'modelDir': './test/data/lobsterIn.json',
+    'modelDir': './data/lobsterIn_noport.json',
     'numChannels': 4,
     'numActions': 4,
     'numObjectives': 1,
@@ -25,7 +25,7 @@ mmo.check()
 ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
 
 settingGA = ga.getDefaultSetting()
-settingGA['nPop'] = 24
+settingGA['nPop'] = 48
 settingGA['nGenMax'] = 500
 ga.loadSetting(settingGA)
 heroes, ratingsHero = ga.run()

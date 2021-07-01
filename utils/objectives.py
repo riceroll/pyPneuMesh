@@ -29,7 +29,7 @@ def objTurnRight(vs: np.ndarray, es: np.ndarray):
     return alignment
 
 def objGrabLobster(vs: np.ndarray, es: np.ndarray):
-    return -((vs[:, 32] - vs[:, 29])**2).sum(1).max()
+    return -np.sqrt(((vs[:, 32] - vs[:, 29])**2).sum(1).max())
 
 def testTurn(argv):
     vs = np.array([
