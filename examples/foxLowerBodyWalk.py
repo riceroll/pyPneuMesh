@@ -1,20 +1,20 @@
 from utils.mmoCriterion import getCriterion
 from utils.mmo import MMO
-from utils.objectives import objMoveForward, objFaceForward, objTurnLeft, objTurnRight
+from utils.objectives import objMoveForward, objFaceForward, objTurnLeft, objTurnRight, objLowerBodyMean, objLowerBodyMax
 from GA import GeneticAlgorithm
 
 setting = {
-    'modelDir': './test/data/pillBugIn.json',
+    'modelDir': './test/data/fox.json',
     'numChannels': 4,
     'numActions': 4,
-    'numObjectives': 3,
+    'numObjectives': 1,
     "channelMirrorMap": {
         0: 1,
         1: 0,
         2: -1,
         3: -1,
     },
-    'objectives': [[objMoveForward, objFaceForward], [objTurnLeft], [objTurnRight]]
+    'objectives': [[objMoveForward, objFaceForward, objLowerBodyMax, objLowerBodyMean]]
 }
 
 mmo = MMO(setting)
@@ -25,8 +25,8 @@ mmo.check()
 ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
 
 settingGA = ga.getDefaultSetting()
-settingGA['nPop'] = 8
-settingGA['nGenMax'] = 2
+settingGA['nPop'] = 24
+settingGA['nGenMax'] = 2000
 ga.loadSetting(settingGA)
 heroes, ratingsHero = ga.run()
 

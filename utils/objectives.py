@@ -31,6 +31,12 @@ def objTurnRight(vs: np.ndarray, es: np.ndarray):
 def objGrabLobster(vs: np.ndarray, es: np.ndarray):
     return -np.sqrt(((vs[:, 32] - vs[:, 29])**2).sum(1).max())
 
+def objLowerBodyMax(vs: np.ndarray, es:np.ndarray):
+    return -vs[:,:,2].max()
+
+def objLowerBodyMean(vs: np.ndarray, es:np.ndarray):
+    return -vs[:, :, 2].mean()
+
 def testTurn(argv):
     vs = np.array([
         [
