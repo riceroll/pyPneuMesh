@@ -364,6 +364,7 @@ class Model(object):
                    edgeChannel=None,
                    maxContraction=None,
                    saveDir=None,
+                   appendix="",
                    save=True):
         """
         export the model into JSON, with original model from the JSON as name
@@ -401,7 +402,7 @@ class Model(object):
         if save:
             with open(saveDir, 'w') as oFile:
                 oFile.write(js)
-                print('Save to {}'.format(saveDir))
+                print('Save to {}_{}.json'.format(saveDir, str(appendix)))
                 
         return js
 

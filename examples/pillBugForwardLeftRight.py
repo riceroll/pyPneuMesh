@@ -25,13 +25,14 @@ mmo.check()
 ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
 
 settingGA = ga.getDefaultSetting()
-settingGA['nPop'] = 48
-settingGA['nGenMax'] = 2500
+settingGA['nPop'] = 8
+settingGA['nGenMax'] = 2
 ga.loadSetting(settingGA)
 heroes, ratingsHero = ga.run()
 
 print("ratingsHero: ")
 print(ga.ratingsHero)
+
 
 genes, fileDirs = ga.getHeroes()
 for i in range(len(genes)):
@@ -40,4 +41,4 @@ for i in range(len(genes)):
     _, actionSeqs = mmo.loadGene(gene)
     mmo.refreshModel()
     for iActionSeq in range(mmo.numObjectives):
-        mmo.model.exportJSON(actionSeq=actionSeqs[iActionSeq], saveDir=fileDirs[i])
+        mmo.model.exportJSON(actionSeq=actionSeqs[iActionSeq], saveDir=fileDirs[i], appendix=iActionSeq)

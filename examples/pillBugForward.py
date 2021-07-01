@@ -41,4 +41,4 @@ for i in range(len(genes)):
     _, actionSeqs = mmo.loadGene(gene)
     mmo.refreshModel()
     for iActionSeq in range(mmo.numObjectives):
-        mmo.model.exportJSON(actionSeq=actionSeqs[iActionSeq], saveDir=fileDirs[i])
+        mmo.model.exportJSON(actionSeq=actionSeqs[iActionSeq], saveDir=fileDirs[i], appendix=iActionSeq)

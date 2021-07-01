@@ -422,7 +422,7 @@ class GeneticAlgorithm(object):
             fileNameSeqs = []
             for score in ratingsHero[i]:
                 fileNameSeqs.append("{:.2f}".format(float(score)))
-            fileName = ",".join(fileNameSeqs) + ".json"
+            fileName = ",".join(fileNameSeqs)
             fileDir = os.path.join(historyDir, fileName)
             fileDirs.append(fileDir)
         return heroes, fileDirs
