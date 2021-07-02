@@ -4,7 +4,7 @@ from utils.objectives import objMoveForward, objFaceForward, objTurnLeft, objTur
 from GA import GeneticAlgorithm
 
 setting = {
-    'modelDir': './test/data/fox.json',
+    'modelDir': './data/foxIn.json',
     'numChannels': 4,
     'numActions': 4,
     'numObjectives': 1,
@@ -42,3 +42,5 @@ for i in range(len(genes)):
     mmo.refreshModel()
     for iActionSeq in range(mmo.numObjectives):
         mmo.model.exportJSON(actionSeq=actionSeqs[iActionSeq], saveDir=fileDirs[i], appendix=iActionSeq)
+    
+    

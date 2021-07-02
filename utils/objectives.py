@@ -35,7 +35,7 @@ def objLowerBodyMax(vs: np.ndarray, es:np.ndarray):
     return -vs[:,:,2].max()
 
 def objLowerBodyMean(vs: np.ndarray, es:np.ndarray):
-    return -vs[:, :, 2].mean()
+    return -vs[:, :, 2].max(1).mean()
 
 def testTurn(argv):
     vs = np.array([

@@ -250,10 +250,14 @@ if __name__ == "__main__":
         modelDir = sys.argv[1]
         model = Model()
         model.load(modelDir)
-        with open(modelDir) as iFile:
-            data = json.load(iFile)
-            actionSeq = np.array(data['script'])
-        nLoop = 1
-        if "loop" in sys.argv:
-            nLoop = 10
-        vs = visualizeActions(model, actionSeq, nLoop=nLoop)
+        if "sym" in sys.argv:
+            visualizeSymmetry(model)
+        else:
+
+            with open(modelDir) as iFile:
+                data = json.load(iFile)
+                actionSeq = np.array(data['script'])
+            nLoop = 1
+            if "loop" in sys.argv:
+                nLoop = 10
+            vs = visualizeActions(model, actionSeq, nLoop=nLoop)
