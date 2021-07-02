@@ -25,8 +25,10 @@ mmo.check()
 ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
 
 settingGA = ga.getDefaultSetting()
-settingGA['nPop'] = 8
-settingGA['nGenMax'] = 2
+settingGA['nPop'] = 48
+settingGA['nGenMax'] = 2000
+settingGA['lenEra'] = 40
+settingGA['nEraRevive'] = 2
 ga.loadSetting(settingGA)
 heroes, ratingsHero = ga.run()
 

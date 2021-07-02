@@ -253,7 +253,6 @@ if __name__ == "__main__":
         if "sym" in sys.argv:
             visualizeSymmetry(model)
         else:
-
             with open(modelDir) as iFile:
                 data = json.load(iFile)
                 actionSeq = np.array(data['script'])

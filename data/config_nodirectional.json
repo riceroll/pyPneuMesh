@@ -14,5 +14,5 @@
   "defaultNumChannels": 4,
   "angleThreshold": 1.5708,
   "angleCheckFrequencyMultiplier": 0.05,
-  "directionalFriction": 1
+  "directionalFriction": 0
 }

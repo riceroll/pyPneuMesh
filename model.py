@@ -52,6 +52,7 @@ class Model(object):
             Model.defaultNumChannels = data['defaultNumChannels']
             Model.angleThreshold = data['angleThreshold']
             Model.angleCheckFrequency = Model.numStepsPerActuation * data['angleCheckFrequencyMultiplier']
+            Model.directionalFriction = bool(data['directionalFriction'])
     
     def __init__(self, configDir="./data/config.json"):
         
@@ -203,7 +204,7 @@ class Model(object):
                 self.vel[velMag > 5] *= np.power(0.9, np.ceil(np.log(5 / velMag[velMag > 5]) / np.log(0.9))).reshape(-1, 1)
 
             # directional surface
-            if True:
+            if Model.directionalFriction:
                 if self.numSteps % (Model.numStepsPerActuation / 20) == 0 or self.frontVec is None:
                     self.frontVec = getFrontDirection(self.v0, self.v).reshape(-1, 1)
                 # self.frontVec = np.array([1, 0, 0]).reshape(-1, 1)

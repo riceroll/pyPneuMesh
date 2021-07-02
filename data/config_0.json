@@ -13,5 +13,6 @@
   "defaultNumActions": 1,
   "defaultNumChannels": 4,
   "angleThreshold": 1.5708,
-  "angleCheckFrequencyMultiplier": 0.05
+  "angleCheckFrequencyMultiplier": 0.05,
+  "directionalFriction": 1
 }
