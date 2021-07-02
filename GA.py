@@ -186,10 +186,13 @@ def regenerate(pop, nPop, lb, ub):
     :return: newPop: np.ndarray, int, [nPop, len(pop[0])]
     """
     assert(type(pop) is np.ndarray and pop.ndim == 2)
-    assert(nPop > len(pop))
-    generatedPop = initPop(nPop - len(pop), lb, ub)
-    newPop = np.vstack([pop, generatedPop])
-    return newPop
+    assert(nPop >= len(pop))
+    if nPop == len(pop):
+        return pop.copy()
+    else:
+        generatedPop = initPop(nPop - len(pop), lb, ub)
+        newPop = np.vstack([pop, generatedPop])
+        return newPop
 
 def loadHistory(historyDir):
     """
@@ -555,7 +558,7 @@ class GeneticAlgorithm(object):
         nExtinctions = 0
         for iGen in range(self.setting.nGenMax):
             extinct, reviving, nExtinctions = self.disaster(nExtinctions=nExtinctions)
-
+            
             self.select()
             self.cross()
             self.mutate()

@@ -194,7 +194,7 @@ def visualizeSymmetry(model):
  #tests
 def testVisualizeActions(argv):
     if 'plot' not in argv:
-        print('no "plot" parameter')
+        print('no "plot" parameter', end="")
         return
 
     modelDir = './test/data/pillBugIn.json'

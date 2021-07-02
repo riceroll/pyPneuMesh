@@ -26,8 +26,8 @@ mmo.check()
 ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
 
 settingGA = ga.getDefaultSetting()
-settingGA['nPop'] = 48
-settingGA['nGenMax'] = 4000
+settingGA['nPop'] = 32
+settingGA['nGenMax'] = 2500
 settingGA['lenEra'] = 40
 settingGA['nEraRevive'] = 2
 ga.loadSetting(settingGA)
