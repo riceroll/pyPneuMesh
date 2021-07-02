@@ -4,7 +4,7 @@ from utils.objectives import objMoveForward, objFaceForward, objTurnLeft, objTur
 from GA import GeneticAlgorithm
 
 setting = {
-    'modelDir': './data/foxIn_all_active.json',
+    'modelDir': './data/pillBugIn.json',
     'numChannels': 4,
     'numActions': 4,
     'numObjectives': 1,

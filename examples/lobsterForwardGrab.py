@@ -4,7 +4,7 @@ from utils.objectives import objMoveForward, objFaceForward, objTurnLeft, objTur
 from GA import GeneticAlgorithm
 
 setting = {
-    'modelDir': './data/lobsterIn_noport.json',
+    'modelDir': './data/lobsterIn_all_active.json',
     'numChannels': 4,
     'numActions': 4,
     'numObjectives': 1,
