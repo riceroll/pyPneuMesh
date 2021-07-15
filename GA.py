@@ -216,6 +216,7 @@ def plot(history):
         fitsBest = np.array(history.ratingsBest)
         fitsBestExtinctions = fitsBest[history.iExtinctions]
         fitsBestRevivals = fitsBest[history.iRevivals]
+        
         plt.plot(history.iExtinctions, fitsBestExtinctions, 'o', color='red')
         plt.plot(history.iRevivals, fitsBestRevivals, 'o', color='green')
         plt.show()
@@ -223,19 +224,22 @@ def plot(history):
     if np.array(history.ratingsBest).ndim == 2:
         ax = plt.axes(projection='3d')
         ids = np.arange(len(history.ratingsBest))
-        # ax.scatter3D(np.array(history.ratingsBestHero)[:, 0], np.array(history.ratingsBestHero)[:, 1], ids, color='red', marker='.')
         ax.scatter3D(np.array(history.ratingsBest)[:, 0], np.array(history.ratingsBest)[:, 1], ids, color='green', marker='.')
         ax.scatter3D(np.array(history.ratingsMean)[:, 0], np.array(history.ratingsMean)[:, 1], ids, color='blue', marker='.')
-        # ax.plot(ga.ratings[:, 0], ga.ratings[:, 1], 'o', color='purple' )
         ax.scatter3D(np.zeros(len(history.iExtinctions)), np.zeros(len(history.iExtinctions)), history.iExtinctions, color='pink', marker='o')
-        # ax.scatter3D(0, 0, history.iExtinctions, color='pink', marker='o')
         
-        for i in range(len(history.heroes)):
-            if i % 100 == 0:
-                ax.scatter3D(history.ratingsHero[i][:, 0], history.ratingsHero[i][:, 1], i, color='black', marker='o')
-                
+        ax.scatter3D(history.ratingsHero[:, 0], history.ratingsHero[:, 1], len(history.heroes) - 1, color='black', marker='o')
         
         plt.show()
+
+def plotDir(historyDir):
+    with open(historyDir) as iFile:
+        js = iFile.read()
+
+    h = GeneticAlgorithm.History()
+    h.loadJSON(js)
+
+    plot(h)
 
 class GeneticAlgorithm(object):
     class Setting:
@@ -316,7 +320,7 @@ class GeneticAlgorithm(object):
             history = json.loads(js)
             for key in history:
                 assert(hasattr(self, key))
-                value = [np.array(v) for v in history[key]]
+                value =     np.array([np.array(v) for v in history[key]])
                 setattr(self, key, value)
     
     def __init__(self, criterion=None, lb=None, ub=None, setting=None):
@@ -394,7 +398,7 @@ class GeneticAlgorithm(object):
             ratingBest = appendix
             
             print('gen: {}\tfbh: {}\tfb: {}'.format(iGen, ratingBestHero, ratingBest))
-        
+    
     def saveHistory(self, iGen, appendix:np.ndarray):
         folderPath = self.folderDir
         Path(folderPath).mkdir(parents=True, exist_ok=True)
@@ -403,17 +407,20 @@ class GeneticAlgorithm(object):
         with open(folderPath + '/g{}_{}.hs'.format(iGen, appendix), 'w') as oFile:
             js = self.history.toJSON()
             oFile.write(js)
-            
+    
     def loadHistory(self, historyDir: str = ""):
         if historyDir == "":
             fileNames = os.listdir(self.folderDir)
-            historyDir = os.path.join(self.folderDir, sorted(fileNames)[-1])
-
+            iGens = [int(fileName.split('_')[0][1:]) for fileName in fileNames]
+            idsSorted = np.argsort(iGens)
+            idLast = idsSorted[-1]
+            historyDir = os.path.join(self.folderDir, fileNames[idLast])
+            
         with open(historyDir) as iFile:
             js = iFile.read()
             self.history.loadJSON(js)
         return historyDir
-            
+    
     def getHeroes(self, historyDir: str = ""):
         historyDir = self.loadHistory(historyDir)
         historyDir = historyDir[:-3]
@@ -429,9 +436,9 @@ class GeneticAlgorithm(object):
             fileDir = os.path.join(historyDir, fileName)
             fileDirs.append(fileDir)
         return heroes, fileDirs
-    
-    def saveHeros(self, mmo):
-        genes, fileDirs = self.getHeroes()
+        
+    def saveHeroes(self, mmo, hsDir):
+        genes, fileDirs = self.getHeroes(hsDir)
         for i in range(len(genes)):
             gene = genes[i]
         
@@ -575,7 +582,7 @@ class GeneticAlgorithm(object):
                 plot(self.history)
             except Exception as e:
                 print(e)
-        
+                
         return self.getBest()
 
 # testings ========================
@@ -689,7 +696,7 @@ def testSortNSelect(argv):
                                                    surviveRatio=0.99)
         assert(len(newPop) == 99)
         assert((newRatings == ratings[:-1]).all())
-        
+
 def testGA1D(argv):
     nDigs = 16
     z = np.zeros(nDigs)
@@ -762,7 +769,13 @@ def testGA2D(argv):
         print(pop[0].reshape(-1, 2), criterion(pop[0]))
     assert((pop[0] == 1).all())
     
-
+def testPlot(argv):
+    # plot the evolution process with a graph
+    historyDir = "/Volumes/Macintosh HD/Users/Roll/Desktop/pyPneuMesh/output/_GA_71-10-50-52_lobster_forward_grab/g1995_2.17,1.00,-4.99.hs"
+    plotDir(historyDir)
+    
+    
+    
 tests = {
     'cross': testCross,
     'mutate': testMutate,
@@ -772,6 +785,7 @@ tests = {
     'sortNSelect': testSortNSelect,
     'ga1d': testGA1D,
     'ga2d': testGA2D,
+    'testPlot': testPlot,
     }
 
 def testAll(argv):
@@ -791,7 +805,7 @@ def test():
                     print('test{}{}():'.format(key[0].upper(), key[1:]))
                     tests[key](sys.argv)
                     print('Pass.\n')
-  
+
 if __name__ == "__main__":
     # eg. run GA test all plot unmute
     
