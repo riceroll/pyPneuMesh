@@ -81,7 +81,7 @@ def _create_window(o3):
     
     return viewer
     
-def visualizeActions(model : Model, actionSeq: np.ndarray, nLoop=1):
+def visualizeActions(model : Model, actionSeq: np.ndarray, nLoop=1, exportFrames=False):
     """
 
     :param model: the model
@@ -118,6 +118,8 @@ def visualizeActions(model : Model, actionSeq: np.ndarray, nLoop=1):
     vs = []
     model.numSteps = 0
     
+    frames = []
+    
     def timerCallback(vis):
         global iActionPrev, vs
         iAction = model.numSteps // T
@@ -139,6 +141,12 @@ def visualizeActions(model : Model, actionSeq: np.ndarray, nLoop=1):
         model.step(25)
         ls.points = vector3d(model.v)
         viewer.update_geometry(ls)
+        
+        if exportFrames:
+            frames.append(model.v.copy())
+        
+        if exportFrames:
+            model.v.copy()
     
     viewer.register_animation_callback(timerCallback)
     
@@ -155,7 +163,11 @@ def visualizeActions(model : Model, actionSeq: np.ndarray, nLoop=1):
     
     drawGround(viewer)
     viewer.run()
-    return vs
+    
+    if exportFrames:
+        return frames
+    else:
+        return vs
 
 def visualizeSymmetry(model):
     try:
@@ -250,6 +262,9 @@ if __name__ == "__main__":
         modelDir = sys.argv[1]
         model = Model()
         model.load(modelDir)
+        if "nodir" in sys.argv:
+            Model.directionalFriction = False
+        
         if "sym" in sys.argv:
             visualizeSymmetry(model)
         else:
@@ -259,4 +274,12 @@ if __name__ == "__main__":
             nLoop = 1
             if "loop" in sys.argv:
                 nLoop = 10
-            vs = visualizeActions(model, actionSeq, nLoop=nLoop)
+            
+            if "export" in sys.argv:
+                frames = visualizeActions(model, actionSeq, nLoop=nLoop, exportFrames=True)
+                js = json.dumps(np.array(frames).tolist())
+                import datetime
+                with open('./output/record_'+str(datetime.datetime.today()), 'w') as oFile:
+                    oFile.write(js)
+            else:
+                vs = visualizeActions(model, actionSeq, nLoop=nLoop)
