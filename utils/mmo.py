@@ -10,6 +10,8 @@ class MMO:
         def __init__(self):
             self.nStepsPerCapture = 400  # number of steps to capture one frame of v
             self.modelConfigDir = './data/config.json'
+            self.nLoopPreSimulate = 1
+            self.nLoopSimulate = 1
     
     def __init__(self, setting):
         self.modelDir: str = ""
@@ -257,10 +259,10 @@ class MMO:
         model = self.model
     
         model.inflateChannel = actionSeq[:, -1]
-        v = model.step(T, ret=True)
+        v = model.step(T * self.setting.nLoopPreSimulate, ret=True)
         vs = [v]
     
-        for iLoop in range(nLoops):
+        for iLoop in range(self.setting.nLoopSimulate):
             for iAction in range(len(actionSeq[0])):
                 model.inflateChannel = actionSeq[:, iAction]
                 for iStep in range(T):
@@ -493,7 +495,53 @@ def testMMO(argv):
     from utils.visualizer import visualizeSymmetry
     if "plot" in argv:
         visualizeSymmetry(mmo.model)
-        
+
+def testSimulate(argv):
+    # 6
+    setting = dict({
+        "modelDir": "./test/data/lobsterIn.json",
+        "numChannels": 4,
+        "numActions": 4,
+        "nLoopPreSimulate": 2,
+        "nLoopSimulate": 2,
+        "numObjectives": 2,
+        "channelMirrorMap": {
+            0: -1,
+            1: -1,
+            2: 3,
+            3: 2,
+        },
+        "modelConfigDir": "./data/config_0.json",
+    })
+
+    mmo = MMO(setting)
+    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = mmo._getGeneSpaces()
+    #
+    # assert ((np.array(edgeChannelHalfSpace) == np.array([[0., 0., 0.], [4, 4, 4]])).all())
+    # assert ((np.array(edgeChannelMiddleSpace) == np.array([[0., 0., 0.], [2., 2., 2.]])).all())
+    # assert ((np.array(contractionLevelSpace) == np.array([[0., 0., 0., 0., 0.], [5, 5, 5, 5, 5]])).all())
+    # assert ((np.array(actionSeqsSpace) ==
+    #          np.array([[0] * 32,
+    #                    [2] * 32])).all())
+
+    gene = np.hstack([edgeChannelHalfSpace[1] - 1, edgeChannelMiddleSpace[1] - 1,
+                      contractionLevelSpace[1] - 1, actionSeqsSpace[1] - 1]).astype(int)
+    mmo.loadGene(gene)
+    
+    vs, e = mmo.simulate(mmo.actionSeqs[0])
+    
+    assert((vs[40][40:] - np.array([[-5.01474011, -2.53568316,  0.84041267],
+       [-6.04074005, -1.25597253,  0.34191512],
+       [-5.17598253,  0.3160106 ,  0.84041532],
+       [-6.05118767, -1.07119833,  0.34191533],
+       [-3.35309915, -2.44564473,  0.        ],
+       [-3.51477444,  0.41385203,  0.        ],
+       [ 0.34776737, -0.80208073,  0.24659735],
+       [ 0.78374118,  1.46975112,  0.        ],
+       [ 0.74655325, -1.19672941,  0.        ]])).mean() ** 2 < 1e-21)
+    
+
+
 def testGetGene(argv):
     # 0
     setting = dict({
@@ -617,4 +665,5 @@ def testGetGene(argv):
 tests = {
     'mmo': testMMO,
     'getGene': testGetGene,
+    'simulate': testSimulate,
 }
