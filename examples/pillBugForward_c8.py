@@ -33,7 +33,7 @@ settingGA['nPop'] = 48
 settingGA['nGenMax'] = 2000
 settingGA['lenEra'] = 40
 settingGA['nEraRevive'] = 2
-settingGA['nWorkers'] = 12
+settingGA['nWorkers'] = 16
 ga.loadSetting(settingGA)
 heroes, ratingsHero = ga.run()
 
