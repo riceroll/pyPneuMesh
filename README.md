@@ -16,13 +16,20 @@ run examples/pillBugForward.py
 2. To visualize a result,
 ```bash
 ipython
-run utils/visualizer.py ./output/pillBugIn_626-0:22:29.json
+run utils/visualizer.py ./output/_GA_72-4-14-36_pillbugnodir/g2495_0.76,1.00/3.63,0.98
 ```
-
-3. To visualize the training graph,
+or 
 ```bash
 ipython
+run examples/showActions.py  ./output/_GA_72-4-14-36_pillbugnodir/g2495_0.76,1.00/3.63,0.98
 ```
+
+3. To visualize the training graph from a history,
+```bash
+ipython
+run examples/showHistory.py  ./output/_GA_630-2-27-41_pillbug/g315_1.54,1.00,0.99,0.99.hs
+```
+
 
 ### Testing
 
