@@ -361,6 +361,8 @@ class MMO:
         assert (isinstance(self.modelDir, str) and len(self.modelDir) != 0)
         self.model = Model(self.setting.modelConfigDir)
         self.model.load(self.modelDir)
+        self.model.numChannels = self.numChannels   # TODO: quick fix
+        self.model._reset()
         
         # compute incidenceMatrix
         G = nx.Graph()
@@ -729,7 +731,7 @@ class MMO:
     def check(self):
         if len(self.channelMirrorMap) != 0:
             assert(self.numChannels == len(self.channelMirrorMap))
-            assert(self.numChannels == self.model.edgeChannel.max() + 1)
+            assert(self.numChannels >= self.model.edgeChannel.max() + 1)
         if len(self.objectives) != 0:
             assert(len(self.objectives) == self.numObjectives)
         # if self.actionSeqs.shape != ():

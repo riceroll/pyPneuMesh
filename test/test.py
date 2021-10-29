@@ -2,6 +2,7 @@ from utils.mmoCriterion import getCriterion
 from utils.mmo import MMO
 from utils.objectives import objMoveForward, objFaceForward
 from utils.GA import GeneticAlgorithm
+from utils.visualizer import visualizeChannel, visualizeActions
 
 def testMMO(argv):
     setting = {
@@ -36,6 +37,53 @@ def testMMO(argv):
     heroes, ratingsHero = ga.run()
     
     mmo.loadGene(heroes[0])
+
+
+def testTrainingMultipleChannels(argv):
+    setting = {
+        'modelDir': './test/data/pillBugIn.json',
+        'numChannels': 10,
+        'numActions': 4,
+        'numObjectives': 1,
+        "channelMirrorMap": {
+            0: 1,
+            1: 0,
+            2: 3,
+            3: 2,
+            4: 5,
+            5: 4,
+            6: -1,
+            7: -1,
+            8: -1,
+            9: -1
+        },
+        'objectives': [(objMoveForward, objFaceForward)]
+    }
+    
+    mmo = MMO(setting)
+    
+    lb, ub = mmo.getGeneSpace()
+    
+    criterion = getCriterion(mmo)
+    mmo.check()
+    ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
+    
+    settingGA = ga.getDefaultSetting()
+    settingGA['nPop'] = 8
+    settingGA['nGenMax'] = 1
+    settingGA['saveHistory'] = False
+    settingGA['nWorkers'] = -1
+    settingGA['mute'] = "unmute" not in argv
+    settingGA['plot'] = "plot" in argv
+    ga.loadSetting(settingGA)
+    
+    heroes, ratingsHero = ga.run()
+    
+    mmo.loadGene(heroes[0])
+    visualizeChannel(mmo.model)
+    visualizeActions(mmo.model, mmo.actionSeqs[0], 2)
+    breakpoint()
+    
     
 def testGetCriterion(argv):
     from utils.mmoCriterion import getCriterion
@@ -102,8 +150,9 @@ def testGetCriterion(argv):
     assertCriterion(mmo, criterion, (1.010703784566089, 0.9974059986505434))
 
 tests = {
-    'getCriterion': testGetCriterion,
-    'mmo': testMMO,
+    # 'getCriterion': testGetCriterion,
+    # 'mmo': testMMO,
+    'multiChannel': testTrainingMultipleChannels,
 }
 
 if __name__ == "__main__":

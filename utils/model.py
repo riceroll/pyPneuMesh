@@ -134,7 +134,12 @@ class Model(object):
         self.v = self.v0.copy()
         self.vel = np.zeros_like(self.v)
 
-        self.numChannels = self.edgeChannel.max() + 1
+        # TODO: quick fix
+        try:
+            self.numChannels = max(self.edgeChannel.max() + 1, self.numChannels)
+        except:     # if self.numChannels not defined
+            self.numChannels = self.edgeChannel.max() + 1
+        
         self.inflateChannel = np.zeros(self.numChannels)
         self.contractionPercent = np.ones(self.numChannels)
 
