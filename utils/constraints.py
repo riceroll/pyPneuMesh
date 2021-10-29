@@ -1,5 +1,5 @@
 import numpy as np
-from utils.geometry import getFrontDirection, getClosestVector
+from utils.geometry import getClosestVector
 
 def cstrIntersection(vs: np.ndarray, es: np.ndarray):
     # TODO: not tested
@@ -64,9 +64,7 @@ def cstrIntersection(vs: np.ndarray, es: np.ndarray):
 
 def testCstrIntersection(argv):
     from utils.mmo import MMO
-    from model import Model
     from utils.objectives import objMoveForward, objFaceForward, objTurnLeft
-    from utils.mmoCriterion import getCriterion
 
     setting = {
         'modelDir': './test/data/pillBugIn_intersection.json',

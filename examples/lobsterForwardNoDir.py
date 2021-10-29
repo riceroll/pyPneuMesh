@@ -1,7 +1,7 @@
 from utils.mmoCriterion import getCriterion
 from utils.mmo import MMO
-from utils.objectives import objMoveForward, objFaceForward, objTurnLeft, objTurnRight, objLowerBodyMean, objLowerBodyMax
-from GA import GeneticAlgorithm
+from utils.objectives import objMoveForward, objFaceForward
+from utils.GA import GeneticAlgorithm
 
 setting = {
     'modelDir': './data/lobsterIn_all_active.json',

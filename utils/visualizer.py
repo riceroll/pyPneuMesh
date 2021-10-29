@@ -1,6 +1,6 @@
 import json
 import numpy as np
-from model import Model
+from utils.model import Model
 from matplotlib import cm
 
 def _importVisualizer():
@@ -169,7 +169,7 @@ def visualizeActions(model : Model, actionSeq: np.ndarray, nLoop=1, exportFrames
     else:
         return vs
 
-def visualizeSymmetry(model):
+def visualizeChannel(model):
     try:
         from matplotlib import cm
         o3, vector3d, vector3i, vector2i, LineSet, PointCloud, drawGround = _importVisualizer()
@@ -185,25 +185,24 @@ def visualizeSymmetry(model):
     for ie in sorted(model.edgeMirrorMap.keys()):
         if ie in ieVisited:
             continue
-            
-        t = np.random.randint(100, 256)
-        if model.edgeMirrorMap[ie] == -1:
-            t = 0
+        
+        t = model.edgeChannel[ie] / np.array(model.edgeChannel).max()
+        # if model.edgeMirrorMap[ie] == -1:
+        #     t = 0
         edgeColor = cmap(t)[:3]
         edgeColors[ie] = edgeColor
         
-        if model.edgeMirrorMap[ie] != -1:
-            edgeColors[model.edgeMirrorMap[ie]] = edgeColor
-            ieVisited.add(ie)
-    
+        # if model.edgeMirrorMap[ie] != -1:
+        #     edgeColors[model.edgeMirrorMap[ie]] = edgeColor
+        #     ieVisited.add(ie)
+        
     ls = LineSet(model.v, model.e)
     ls.colors = vector3d(edgeColors)
     viewer.add_geometry(ls)
     
     viewer.run()
 
-
- #tests
+#tests
 def testVisualizeActions(argv):
     if 'plot' not in argv:
         print('no "plot" parameter', end="")
@@ -228,16 +227,16 @@ def testVisualizeSymmetry(argv):
     model = Model()
     model.load("./test/data/pillBugIn.json")
     model.computeSymmetry()
-    visualizeSymmetry(model)
+    visualizeChannel(model)
 
     model = Model()
     model.load("./test/data/lobsterIn.json")
     model.computeSymmetry()
-    visualizeSymmetry(model)
+    visualizeChannel(model)
 
 tests = {
     'visualizeActions': testVisualizeActions,
-    'testVisualizeSymmetry': testVisualizeSymmetry,
+    'visualizeSymmetry': testVisualizeSymmetry,
 }
 
 def testAll(argv):
@@ -266,7 +265,7 @@ if __name__ == "__main__":
             Model.directionalFriction = False
         
         if "sym" in sys.argv:
-            visualizeSymmetry(model)
+            visualizeChannel(model)
         else:
             with open(modelDir) as iFile:
                 data = json.load(iFile)

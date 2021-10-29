@@ -1,10 +1,9 @@
+from utils.mmoCriterion import getCriterion
+from utils.mmo import MMO
+from utils.objectives import objMoveForward, objFaceForward
+from utils.GA import GeneticAlgorithm
 
 def testMMO(argv):
-    from utils.mmoCriterion import getCriterion
-    from utils.mmo import MMO
-    from utils.objectives import objMoveForward, objFaceForward
-    from GA import GeneticAlgorithm
-
     setting = {
         'modelDir': './test/data/pillBugIn.json',
         'numChannels': 4,
@@ -42,7 +41,6 @@ def testGetCriterion(argv):
     from utils.mmoCriterion import getCriterion
     from utils.mmo import MMO
     from utils.objectives import objMoveForward, objFaceForward
-    from GA import GeneticAlgorithm
     import numpy as np
     
     def assertCriterion(mmo: MMO, criterion, ratingTruth):
@@ -102,7 +100,7 @@ def testGetCriterion(argv):
 
     criterion = getCriterion(mmo)
     assertCriterion(mmo, criterion, (1.010703784566089, 0.9974059986505434))
-    
+
 tests = {
     'getCriterion': testGetCriterion,
     'mmo': testMMO,
@@ -110,11 +108,11 @@ tests = {
 
 if __name__ == "__main__":
     import sys
-
+    
     from utils.visualizer import tests as testsUtilsVisualizer
     from utils.geometry import tests as testsUtilsGeometry
-    from model import tests as testsModel
-    from GA import tests as testsGA
+    from utils.model import tests as testsModel
+    from utils.GA import tests as testsGA
     from utils.objectives import tests as testUtilsObjectives
     from utils.mmo import tests as testUtilsMMO
     

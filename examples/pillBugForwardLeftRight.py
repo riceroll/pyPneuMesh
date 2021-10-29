@@ -1,7 +1,7 @@
 from utils.mmoCriterion import getCriterion
 from utils.mmo import MMO
 from utils.objectives import objMoveForward, objFaceForward, objTurnLeft, objTurnRight
-from GA import GeneticAlgorithm
+from utils.GA import GeneticAlgorithm
 
 setting = {
     'modelDir': './test/data/pillBugIn.json',

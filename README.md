@@ -12,10 +12,16 @@ pip install -r requirements.txt
 ipython
 run examples/pillBugForward.py
 ```
+
 2. To visualize a result,
 ```bash
 ipython
 run utils/visualizer.py ./output/pillBugIn_626-0:22:29.json
+```
+
+3. To visualize the training graph,
+```bash
+ipython
 ```
 
 ### Testing

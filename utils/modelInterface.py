@@ -1,6 +1,5 @@
-import json
 import numpy as np
-from model import Model
+from utils.model import Model
 from utils.mmo import MMO
 
 def getModel(inFileDir):
