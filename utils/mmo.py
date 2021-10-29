@@ -1496,9 +1496,9 @@ def testInitGene(argv):
 
     
 tests = {
-    # 'mmo': testMMO,
-    # 'getGene': testGetGene,
-    # 'simulate': testSimulate,
-    'initChannel': testInitChannel,
+    'mmo': testMMO,
+    'getGene': testGetGene,
+    'simulate': testSimulate,
+    # 'initChannel': testInitChannel,
     # 'initGene': testInitGene,
 }
