@@ -5,26 +5,12 @@ from utils.GA import GeneticAlgorithm
 
 setting = {
     'modelDir': './data/lobsterIn_all_active.json',
-    'numChannels': 16,
+    'numChannels': 2,
     'numActions': 4,
     'numObjectives': 1,
     "channelMirrorMap": {
         0: 1,
-        1: 0,
-        2: 3,
-        3: 2,
-        4: 5,
-        5: 4,
-        6: 7,
-        7: 6,
-        8: -1,
-        9: -1,
-        10:-1,
-        11: -1,
-        12: -1,
-        13: -1,
-        14: -1,
-        15: -1
+        1: 0
     },
     'objectives': [[objMoveForward, objFaceForward, objGrabLobster]]
 }
@@ -38,10 +24,10 @@ ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
 
 settingGA = ga.getDefaultSetting()
 settingGA['nPop'] = 48
-settingGA['nGenMax'] = 2000
+settingGA['nGenMax'] = 10000
 settingGA['lenEra'] = 10
 settingGA['nEraRevive'] = 2
-settingGA['nWorkers'] = 8
+settingGA['nWorkers'] = 12
 ga.loadSetting(settingGA)
 heroes, ratingsHero = ga.run()
 

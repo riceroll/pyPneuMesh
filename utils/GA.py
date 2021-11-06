@@ -522,7 +522,7 @@ class GeneticAlgorithm(object):
                     nExtinctions += 1
                     if nExtinctions % self.setting.nEraRevive == 0:
                         reviving = True
-        
+                        
         if extinct:
             if not (self.pop[0] == np.array(self.heroes)).all(1).any():
                 self.heroes.append(self.pop[0])
@@ -532,7 +532,7 @@ class GeneticAlgorithm(object):
             self.pop = initPop(nPop=self.setting.nPop, lb=self.lb, ub=self.ub)
             self.ratings, self.Rs, self.CDs = evaluate(pop=self.pop, criterion=self.criterion,
                                                        nWorkers=self.setting.nWorkers)
-                       
+            
             if reviving:
                 self.pop[:len(self.heroes)] = self.heroes
                 self.ratings[:len(self.heroes)] = self.ratingsHero
