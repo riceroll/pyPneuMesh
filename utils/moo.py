@@ -6,7 +6,7 @@ import ray
 
 from utils.model import Model
 
-class MMO:
+class MOO:
     class Setting:
         def __init__(self):
             # hyper parameter settings, unrelated to the specific model
@@ -16,27 +16,27 @@ class MMO:
             self.nLoopSimulate = 1
     
     class GeneHandler:
-        def __init__(self, mmo):
-            self.mmo = mmo
-            self.model = mmo.model
+        def __init__(self, moo):
+            self.moo = moo
+            self.model = moo.model
             self.gene: np.ndarray = np.array([])
             
-            self.numChannels: int = mmo.numChannels
-            self.numActions: int = mmo.numActions
-            self.numObjectives: int = mmo.numObjectives
+            self.numChannels: int = moo.numChannels
+            self.numActions: int = moo.numActions
+            self.numObjectives: int = moo.numObjectives
             
-            self.channelMirrorMap: Dict[int:int] = mmo.channelMirrorMap
+            self.channelMirrorMap: Dict[int:int] = moo.channelMirrorMap
             self.invChannelMirrorMap: Dict[int:int] = {v: k for k, v in self.channelMirrorMap.items()}
             self.idsHalfMirrorChannel: List[int] = []
             self.idsMiddleChannel: List[int] = []
             
-            self.edgeMirrorMap: Dict[int:int] = mmo.model.edgeMirrorMap
+            self.edgeMirrorMap: Dict[int:int] = moo.model.edgeMirrorMap
             self.invEdgeMirrorMap: Dict[int:int] = {v: k for k, v in self.edgeMirrorMap.items()}
             self.idsHalfMirroredEdge: List[int] = []
             self.idsMiddleEdge: List[int] = []
             
-            self.edgeActive: List[bool] = mmo.model.edgeActive
-            self.idsActiveEdge: List[int] = mmo.model.e[self.edgeActive]
+            self.edgeActive: List[bool] = moo.model.edgeActive
+            self.idsActiveEdge: List[int] = moo.model.e[self.edgeActive]
             self.idsHalfActiveMirroredEdge: List[int] = []
             self.idsActiveMiddleEdge: List[int] = []
             
@@ -115,7 +115,7 @@ class MMO:
             channelMiddleEdge = []
             contractActiveHalfMirrorEdge = []
             contractActiveMiddleEdge = []
-            actionSeqs = self.mmo.actionSeqs.reshape(-1).tolist()
+            actionSeqs = self.moo.actionSeqs.reshape(-1).tolist()
             
             ieVisited = set()
             for ie in range(len(self.model.e)):
@@ -151,7 +151,7 @@ class MMO:
             
         def loadGene(self, gene: np.ndarray) -> (Model, np.ndarray):     # load gene into model and actionSeqs
             if gene.shape == ():
-                return self.model, self.mmo.actionSeqs
+                return self.model, self.moo.actionSeqs
             
             ret = self._getGeneBounds()
             lens = ret[0]
@@ -176,7 +176,7 @@ class MMO:
             self.model.maxContraction += -1
 
             # actionSeqs
-            self.mmo.actionSeqs = actionSeqs.reshape(self.numObjectives, self.numChannels, self.numActions)
+            self.moo.actionSeqs = actionSeqs.reshape(self.numObjectives, self.numChannels, self.numActions)
             
             # channelHalfMirrorEdge
             for ie0, ic0 in enumerate(channelHalfMirrorEdge):
@@ -218,13 +218,13 @@ class MMO:
             assert ((self.model.maxContraction == -1).sum() == (~self.model.edgeActive).sum())
             
             self.gene = gene.copy()
-            self.mmo.gene = gene.copy()
+            self.moo.gene = gene.copy()
             
-            return self.model, self.mmo.actionSeqs
+            return self.model, self.moo.actionSeqs
         
         def initChannel(self):
             # assign the channels for the model
-            incidenceMat = self.mmo.incidenceMatrix     # row: v, col: e
+            incidenceMat = self.moo.incidenceMatrix     # row: v, col: e
             
             edgeChannel = np.ones(len(self.model.e)) * -1
             
@@ -305,7 +305,7 @@ class MMO:
 
         self.incidenceMatrix = None
         self.model: Model = Model()
-        self.setting = MMO.Setting()
+        self.setting = MOO.Setting()
         self._loadSetting(setting)
         self.geneHandler = self.GeneHandler(self)
     
@@ -738,7 +738,7 @@ class MMO:
         #     assert(self.actionSeqs.shape == (self.numObjectives, self.numChannels, self.numActions))
         
     
-def testMMO(argv):
+def testMOO(argv):
     # 1
     setting = dict({
         "modelDir": "./test/data/testTetIn.json",
@@ -752,11 +752,11 @@ def testMMO(argv):
         "modelConfigDir": "./data/config_0.json",
     })
     
-    mmo = MMO(setting)
-    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = mmo._getGeneSpaces()
+    moo = MOO(setting)
+    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = moo._getGeneSpaces()
     
     lens, spaceChannelMirror, spaceChannelMiddle, spaceContractMirror, spaceContractMiddle, spaceActionSeqs \
-        = mmo.geneHandler._getGeneBounds()
+        = moo.geneHandler._getGeneBounds()
     
     assert ((np.array(spaceChannelMirror) == np.array([[0., 0.], [2., 2.]])).all())
     assert ((np.array(spaceChannelMiddle) == np.array([[0., 0.], [2., 2.]])).all())
@@ -776,15 +776,15 @@ def testMMO(argv):
     
     gene = np.hstack([edgeChannelHalfSpace[1]-1, edgeChannelMiddleSpace[1]-1,
                       contractionLevelSpace[1]-1, actionSeqsSpace[1]-1]).astype(int)
-    mmo.geneHandler.loadGene(gene)
-    assert( (mmo.model.edgeChannel == np.array([1, 1, 1, 1, 1, 1])).all())
-    assert ((mmo.model.maxContraction == np.array([0.3, 0.3, 0.3, 0.3, 0.3, 0.3])).all())
-    assert ((np.array(mmo.actionSeqs) == np.array([[[1, 1, 1, 1], [1, 1, 1, 1]], [[1, 1, 1, 1], [1, 1, 1, 1]]])).all())
+    moo.geneHandler.loadGene(gene)
+    assert( (moo.model.edgeChannel == np.array([1, 1, 1, 1, 1, 1])).all())
+    assert ((moo.model.maxContraction == np.array([0.3, 0.3, 0.3, 0.3, 0.3, 0.3])).all())
+    assert ((np.array(moo.actionSeqs) == np.array([[[1, 1, 1, 1], [1, 1, 1, 1]], [[1, 1, 1, 1], [1, 1, 1, 1]]])).all())
     
-    mmo.loadGene(gene)
-    assert( (mmo.model.edgeChannel == np.array([1, 1, 1, 1, 1, 1])).all())
-    assert ((mmo.model.maxContraction == np.array([0.3, 0.3, 0.3, 0.3, 0.3, 0.3])).all())
-    assert ((np.array(mmo.actionSeqs) == np.array([[[1, 1, 1, 1], [1, 1, 1, 1]], [[1, 1, 1, 1], [1, 1, 1, 1]]])).all())
+    moo.loadGene(gene)
+    assert( (moo.model.edgeChannel == np.array([1, 1, 1, 1, 1, 1])).all())
+    assert ((moo.model.maxContraction == np.array([0.3, 0.3, 0.3, 0.3, 0.3, 0.3])).all())
+    assert ((np.array(moo.actionSeqs) == np.array([[[1, 1, 1, 1], [1, 1, 1, 1]], [[1, 1, 1, 1], [1, 1, 1, 1]]])).all())
     
     
     # 2
@@ -802,10 +802,10 @@ def testMMO(argv):
         "modelConfigDir": "./data/config_0.json",
     })
     
-    mmo = MMO(setting)
-    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = mmo._getGeneSpaces()
+    moo = MOO(setting)
+    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = moo._getGeneSpaces()
     lens, spaceChannelMirror, spaceChannelMiddle, spaceContractMirror, spaceContractMiddle, spaceActionSeqs \
-        = mmo.geneHandler._getGeneBounds()
+        = moo.geneHandler._getGeneBounds()
 
     assert ((np.array(spaceChannelMirror) == np.array([[0., 0.], [4., 4.]])).all())
     assert ((np.array(spaceChannelMiddle) == np.array([[0., 0.], [2., 2.]])).all())
@@ -824,15 +824,15 @@ def testMMO(argv):
 
     gene = np.hstack([edgeChannelHalfSpace[1] - 1, edgeChannelMiddleSpace[1] - 1,
                       contractionLevelSpace[1] - 1, actionSeqsSpace[1] - 1]).astype(int)
-    mmo.geneHandler.loadGene(gene)
-    assert ((mmo.model.edgeChannel == np.array([3, 1, 2, 1, 3, 2])).all())
-    assert ((mmo.model.maxContraction == np.array([0.3, 0.3, 0.3, 0.3, 0.3, 0.3])).all())
-    assert ((np.array(mmo.actionSeqs) == np.ones([2, 4, 4])).all())
+    moo.geneHandler.loadGene(gene)
+    assert ((moo.model.edgeChannel == np.array([3, 1, 2, 1, 3, 2])).all())
+    assert ((moo.model.maxContraction == np.array([0.3, 0.3, 0.3, 0.3, 0.3, 0.3])).all())
+    assert ((np.array(moo.actionSeqs) == np.ones([2, 4, 4])).all())
     
-    mmo.loadGene(gene)
-    assert ((mmo.model.edgeChannel == np.array([3, 1, 2, 1, 3, 2])).all())
-    assert ((mmo.model.maxContraction == np.array([0.3, 0.3, 0.3, 0.3, 0.3, 0.3])).all())
-    assert ((np.array(mmo.actionSeqs) == np.ones([2, 4, 4])).all())
+    moo.loadGene(gene)
+    assert ((moo.model.edgeChannel == np.array([3, 1, 2, 1, 3, 2])).all())
+    assert ((moo.model.maxContraction == np.array([0.3, 0.3, 0.3, 0.3, 0.3, 0.3])).all())
+    assert ((np.array(moo.actionSeqs) == np.ones([2, 4, 4])).all())
 
     # 3
     setting = dict({
@@ -849,8 +849,8 @@ def testMMO(argv):
         "modelConfigDir": "./data/config_0.json",
     })
 
-    mmo = MMO(setting)
-    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = mmo._getGeneSpaces()
+    moo = MOO(setting)
+    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = moo._getGeneSpaces()
     
     assert ((np.array(edgeChannelHalfSpace) == np.array([[0., 0., 0.], [4, 4, 4]])).all())
     assert ((np.array(edgeChannelMiddleSpace) == np.array([[0., 0., 0.], [2., 2., 2.]])).all())
@@ -860,7 +860,7 @@ def testMMO(argv):
                        [2] * 32])).all())
 
     lens, spaceChannelMirror, spaceChannelMiddle, spaceContractMirror, spaceContractMiddle, spaceActionSeqs \
-        = mmo.geneHandler._getGeneBounds()
+        = moo.geneHandler._getGeneBounds()
     
     assert ((np.array(spaceChannelMirror) == np.array([[0., 0., 0.], [4, 4, 4]])).all())
     assert ((np.array(spaceChannelMiddle) == np.array([[0., 0., 0.], [2., 2., 2.]])).all())
@@ -872,20 +872,20 @@ def testMMO(argv):
 
     gene = np.hstack([edgeChannelHalfSpace[1] - 1, edgeChannelMiddleSpace[1] - 1,
                       contractionLevelSpace[1] - 1, actionSeqsSpace[1] - 1]).astype(int)
-    mmo.geneHandler.loadGene(gene)
+    moo.geneHandler.loadGene(gene)
     
-    assert ((mmo.model.edgeChannel == np.array([3, 2, 1, 3, 1, 2, 3, 2, 1])).all())
-    assert ((mmo.model.maxContraction == np.array([ 0.3,  0.3,  0.3,  0.3,  0.3,  0.3, -1. , -1. ,  0.3])).all())
-    assert ((np.array(mmo.actionSeqs) == np.ones([2, 4, 4])).all())
+    assert ((moo.model.edgeChannel == np.array([3, 2, 1, 3, 1, 2, 3, 2, 1])).all())
+    assert ((moo.model.maxContraction == np.array([ 0.3,  0.3,  0.3,  0.3,  0.3,  0.3, -1. , -1. ,  0.3])).all())
+    assert ((np.array(moo.actionSeqs) == np.ones([2, 4, 4])).all())
 
-    mmo.loadGene(gene)
-    assert ((mmo.model.edgeChannel == np.array([3, 2, 1, 3, 1, 2, 3, 2, 1])).all())
-    assert ((mmo.model.maxContraction == np.array([ 0.3,  0.3,  0.3,  0.3,  0.3,  0.3, -1. , -1. ,  0.3])).all())
-    assert ((np.array(mmo.actionSeqs) == np.ones([2, 4, 4])).all())
+    moo.loadGene(gene)
+    assert ((moo.model.edgeChannel == np.array([3, 2, 1, 3, 1, 2, 3, 2, 1])).all())
+    assert ((moo.model.maxContraction == np.array([ 0.3,  0.3,  0.3,  0.3,  0.3,  0.3, -1. , -1. ,  0.3])).all())
+    assert ((np.array(moo.actionSeqs) == np.ones([2, 4, 4])).all())
     
     from utils.visualizer import visualizeChannel
     if "plot" in argv:
-        visualizeChannel(mmo.model)
+        visualizeChannel(moo.model)
 
     # 4
     setting = dict({
@@ -902,8 +902,8 @@ def testMMO(argv):
         "modelConfigDir": "./data/config_0.json",
     })
 
-    mmo = MMO(setting)
-    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = mmo._getGeneSpaces()
+    moo = MOO(setting)
+    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = moo._getGeneSpaces()
 
     assert ((np.array(edgeChannelHalfSpace) == np.array([[0] * 64, [4]*64])).all())
     assert ((np.array(edgeChannelMiddleSpace) == np.array([[0]*12, [2.]*12])).all())
@@ -913,7 +913,7 @@ def testMMO(argv):
                        [2] * 32])).all())
 
     lens, spaceChannelMirror, spaceChannelMiddle, spaceContractMirror, spaceContractMiddle, spaceActionSeqs \
-        = mmo.geneHandler._getGeneBounds()
+        = moo.geneHandler._getGeneBounds()
 
     assert ((np.array(spaceChannelMirror) == np.array([[0] * 64, [4]*64])).all())
     assert ((np.array(spaceChannelMiddle) == np.array([[0]*12, [2.]*12])).all())
@@ -926,15 +926,15 @@ def testMMO(argv):
     gene = np.hstack([edgeChannelHalfSpace[1] - 1, edgeChannelMiddleSpace[1] - 1,
                       contractionLevelSpace[1] - 1, actionSeqsSpace[1] - 1]).astype(int)
     
-    mmo.geneHandler.loadGene(gene)
-    assert ((mmo.model.edgeChannel == np.array([3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+    moo.geneHandler.loadGene(gene)
+    assert ((moo.model.edgeChannel == np.array([3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
        3, 3, 3, 3, 3, 3, 3, 3])).all())
-    assert ((mmo.model.maxContraction == np.array([ 0.3, -1. , -1. , -1. , -1. ,  0.3, -1. , -1. ,  0.3, -1. , -1. ,
+    assert ((moo.model.maxContraction == np.array([ 0.3, -1. , -1. , -1. , -1. ,  0.3, -1. , -1. ,  0.3, -1. , -1. ,
         0.3, -1. , -1. , -1. , -1. , -1. , -1. , -1. , -1. , -1. , -1. ,
         0.3, -1. ,  0.3, -1. , -1. ,  0.3, -1. , -1. ,  0.3, -1. ,  0.3,
         0.3,  0.3, -1. , -1. ,  0.3,  0.3, -1. ,  0.3, -1. ,  0.3,  0.3,
@@ -947,17 +947,17 @@ def testMMO(argv):
        -1. , -1. , -1. , -1. , -1. ,  0.3, -1. , -1. , -1. ,  0.3,  0.3,
        -1. , -1. , -1. , -1. ,  0.3,  0.3,  0.3, -1. ,  0.3,  0.3, -1. ,
         0.3, -1. , -1. , -1. , -1. , -1. , -1. , -1. ])).all())
-    assert ((np.array(mmo.actionSeqs) == np.ones([2, 4, 4])).all())
+    assert ((np.array(moo.actionSeqs) == np.ones([2, 4, 4])).all())
     
-    mmo.loadGene(gene)
-    assert ((mmo.model.edgeChannel == np.array([3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+    moo.loadGene(gene)
+    assert ((moo.model.edgeChannel == np.array([3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
                                                 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
                                                 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
                                                 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
                                                 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
                                                 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
                                                 3, 3, 3, 3, 3, 3, 3, 3])).all())
-    assert ((mmo.model.maxContraction == np.array([0.3, -1., -1., -1., -1., 0.3, -1., -1., 0.3, -1., -1.,
+    assert ((moo.model.maxContraction == np.array([0.3, -1., -1., -1., -1., 0.3, -1., -1., 0.3, -1., -1.,
                                                    0.3, -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
                                                    0.3, -1., 0.3, -1., -1., 0.3, -1., -1., 0.3, -1., 0.3,
                                                    0.3, 0.3, -1., -1., 0.3, 0.3, -1., 0.3, -1., 0.3, 0.3,
@@ -970,11 +970,11 @@ def testMMO(argv):
                                                    -1., -1., -1., -1., -1., 0.3, -1., -1., -1., 0.3, 0.3,
                                                    -1., -1., -1., -1., 0.3, 0.3, 0.3, -1., 0.3, 0.3, -1.,
                                                    0.3, -1., -1., -1., -1., -1., -1., -1.])).all())
-    assert ((np.array(mmo.actionSeqs) == np.ones([2, 4, 4])).all())
+    assert ((np.array(moo.actionSeqs) == np.ones([2, 4, 4])).all())
 
     from utils.visualizer import visualizeChannel
     if "plot" in argv:
-        visualizeChannel(mmo.model)
+        visualizeChannel(moo.model)
 
     # 5
     setting = dict({
@@ -991,8 +991,8 @@ def testMMO(argv):
         "modelConfigDir": "./data/config_0.json",
     })
 
-    mmo = MMO(setting)
-    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = mmo._getGeneSpaces()
+    moo = MOO(setting)
+    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = moo._getGeneSpaces()
 
     assert ((np.array(edgeChannelHalfSpace) == np.array([[0.]*64, [4]*64])).all())
     assert ((np.array(edgeChannelMiddleSpace) == np.array([[0]*12, [2]*12])).all())
@@ -1002,7 +1002,7 @@ def testMMO(argv):
                        [2] * 32])).all())
     
     lens, spaceChannelMirror, spaceChannelMiddle, spaceContractMirror, spaceContractMiddle, spaceActionSeqs \
-        = mmo.geneHandler._getGeneBounds()
+        = moo.geneHandler._getGeneBounds()
 
     assert ((np.array(spaceChannelMirror) == np.array([[0] * 64, [4]*64])).all())
     assert ((np.array(spaceChannelMiddle) == np.array([[0]*12, [2.]*12])).all())
@@ -1014,15 +1014,15 @@ def testMMO(argv):
     
     gene = np.hstack([spaceChannelMirror[1] - 1, spaceChannelMiddle[1] - 1, spaceContractMirror[1] - 1,
                       spaceContractMiddle[1] - 1, spaceActionSeqs[1] - 1]).astype(int)
-    mmo.geneHandler.loadGene(gene)
-    assert ((mmo.model.edgeChannel == np.array([1, 3, 2, 3, 2, 1, 3, 3, 3, 2, 2, 2, 3, 3, 3, 2, 2, 2, 1, 3, 2, 3,
+    moo.geneHandler.loadGene(gene)
+    assert ((moo.model.edgeChannel == np.array([1, 3, 2, 3, 2, 1, 3, 3, 3, 2, 2, 2, 3, 3, 3, 2, 2, 2, 1, 3, 2, 3,
        3, 3, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
        3, 3, 3, 3, 1, 3, 3, 1, 2, 2, 1, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
        2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2,
        2, 2, 2, 2, 2, 3, 3, 3, 1, 1, 3, 2, 2, 2, 3, 3, 3, 2, 2, 1, 3, 1,
        2, 3, 2, 1, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 3, 3, 3, 2, 2, 2,
        2, 2, 2, 2, 2, 1, 3, 2])).all())
-    assert ((mmo.model.maxContraction == np.array([0.3, -1., -1., -1., -1., 0.3, -1., -1., 0.3, -1., -1.,
+    assert ((moo.model.maxContraction == np.array([0.3, -1., -1., -1., -1., 0.3, -1., -1., 0.3, -1., -1.,
                                                    0.3, -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
                                                    0.3, -1., 0.3, -1., -1., 0.3, -1., -1., 0.3, -1., 0.3,
                                                    0.3, 0.3, -1., -1., 0.3, 0.3, -1., 0.3, -1., 0.3, 0.3,
@@ -1035,19 +1035,19 @@ def testMMO(argv):
                                                    -1., -1., -1., -1., -1., 0.3, -1., -1., -1., 0.3, 0.3,
                                                    -1., -1., -1., -1., 0.3, 0.3, 0.3, -1., 0.3, 0.3, -1.,
                                                    0.3, -1., -1., -1., -1., -1., -1., -1.])).all())
-    assert ((np.array(mmo.actionSeqs) == np.ones([2, 4, 4])).all())
+    assert ((np.array(moo.actionSeqs) == np.ones([2, 4, 4])).all())
     
     gene = np.hstack([edgeChannelHalfSpace[1] - 1, edgeChannelMiddleSpace[1] - 1,
                       contractionLevelSpace[1] - 1, actionSeqsSpace[1] - 1]).astype(int)
-    mmo.loadGene(gene)
-    assert ((mmo.model.edgeChannel == np.array([1, 3, 2, 3, 2, 1, 3, 3, 3, 2, 2, 2, 3, 3, 3, 2, 2, 2, 1, 3, 2, 3,
+    moo.loadGene(gene)
+    assert ((moo.model.edgeChannel == np.array([1, 3, 2, 3, 2, 1, 3, 3, 3, 2, 2, 2, 3, 3, 3, 2, 2, 2, 1, 3, 2, 3,
        3, 3, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
        3, 3, 3, 3, 1, 3, 3, 1, 2, 2, 1, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
        2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2,
        2, 2, 2, 2, 2, 3, 3, 3, 1, 1, 3, 2, 2, 2, 3, 3, 3, 2, 2, 1, 3, 1,
        2, 3, 2, 1, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 3, 3, 3, 2, 2, 2,
        2, 2, 2, 2, 2, 1, 3, 2])).all())
-    assert ((mmo.model.maxContraction == np.array([0.3, -1., -1., -1., -1., 0.3, -1., -1., 0.3, -1., -1.,
+    assert ((moo.model.maxContraction == np.array([0.3, -1., -1., -1., -1., 0.3, -1., -1., 0.3, -1., -1.,
                                                    0.3, -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
                                                    0.3, -1., 0.3, -1., -1., 0.3, -1., -1., 0.3, -1., 0.3,
                                                    0.3, 0.3, -1., -1., 0.3, 0.3, -1., 0.3, -1., 0.3, 0.3,
@@ -1060,11 +1060,11 @@ def testMMO(argv):
                                                    -1., -1., -1., -1., -1., 0.3, -1., -1., -1., 0.3, 0.3,
                                                    -1., -1., -1., -1., 0.3, 0.3, 0.3, -1., 0.3, 0.3, -1.,
                                                    0.3, -1., -1., -1., -1., -1., -1., -1.])).all())
-    assert ((np.array(mmo.actionSeqs) == np.ones([2, 4, 4])).all())
+    assert ((np.array(moo.actionSeqs) == np.ones([2, 4, 4])).all())
     
     from utils.visualizer import visualizeChannel
     if "plot" in argv:
-        visualizeChannel(mmo.model)
+        visualizeChannel(moo.model)
 
 def testGetGene(argv):
     # 0
@@ -1082,21 +1082,21 @@ def testGetGene(argv):
         "modelConfigDir": "./data/config_0.json",
     })
     
-    mmo = MMO(setting)
-    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = mmo._getGeneSpaces()
+    moo = MOO(setting)
+    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = moo._getGeneSpaces()
     gene = np.hstack([edgeChannelHalfSpace[1] - 1, edgeChannelMiddleSpace[1] - 1,
                       contractionLevelSpace[1] - 1, actionSeqsSpace[1] - 1]).astype(int)
     
-    mmo.loadGene(gene)
-    geneOut = mmo.getGene()
+    moo.loadGene(gene)
+    geneOut = moo.getGene()
     assert (gene == geneOut).all()
     
     lens, spaceChannelMirror, spaceChannelMiddle, spaceContractMirror, spaceContractMiddle, spaceActionSeqs \
-        = mmo.geneHandler._getGeneBounds()
+        = moo.geneHandler._getGeneBounds()
     gene = np.hstack([spaceChannelMirror[1] - 1, spaceChannelMiddle[1] - 1, spaceContractMirror[1] - 1,
                      spaceContractMiddle[1] - 1, spaceActionSeqs[1] - 1]).astype(int)
-    mmo.geneHandler.loadGene(gene)
-    geneOut = mmo.geneHandler.getGene()
+    moo.geneHandler.loadGene(gene)
+    geneOut = moo.geneHandler.getGene()
     assert (gene == geneOut).all()
     
     # 1
@@ -1114,21 +1114,21 @@ def testGetGene(argv):
         "modelConfigDir": "./data/config_0.json",
     })
     
-    mmo = MMO(setting)
-    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = mmo._getGeneSpaces()
+    moo = MOO(setting)
+    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = moo._getGeneSpaces()
     
     gene = np.hstack([edgeChannelHalfSpace[1] - 1, edgeChannelMiddleSpace[1] - 1,
                       contractionLevelSpace[1] - 1, actionSeqsSpace[1] - 1]).astype(int)
-    mmo.loadGene(gene)
-    geneOut = mmo.getGene()
+    moo.loadGene(gene)
+    geneOut = moo.getGene()
     assert ((gene == geneOut).all())
 
     lens, spaceChannelMirror, spaceChannelMiddle, spaceContractMirror, spaceContractMiddle, spaceActionSeqs \
-        = mmo.geneHandler._getGeneBounds()
+        = moo.geneHandler._getGeneBounds()
     gene = np.hstack([spaceChannelMirror[1] - 1, spaceChannelMiddle[1] - 1, spaceContractMirror[1] - 1,
                       spaceContractMiddle[1] - 1, spaceActionSeqs[1] - 1]).astype(int)
-    mmo.geneHandler.loadGene(gene)
-    geneOut = mmo.geneHandler.getGene()
+    moo.geneHandler.loadGene(gene)
+    geneOut = moo.geneHandler.getGene()
     assert (gene == geneOut).all()
     
     # 2
@@ -1146,21 +1146,21 @@ def testGetGene(argv):
         "modelConfigDir": "./data/config_0.json",
     })
     
-    mmo = MMO(setting)
-    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = mmo._getGeneSpaces()
+    moo = MOO(setting)
+    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = moo._getGeneSpaces()
     
     gene = np.hstack([edgeChannelHalfSpace[1] - 1, edgeChannelMiddleSpace[1] - 1,
                       contractionLevelSpace[1] - 1, actionSeqsSpace[1] - 1]).astype(int)
-    mmo.loadGene(gene)
-    geneOut = mmo.getGene()
+    moo.loadGene(gene)
+    geneOut = moo.getGene()
     assert ((gene == geneOut).all())
 
     lens, spaceChannelMirror, spaceChannelMiddle, spaceContractMirror, spaceContractMiddle, spaceActionSeqs \
-        = mmo.geneHandler._getGeneBounds()
+        = moo.geneHandler._getGeneBounds()
     gene = np.hstack([spaceChannelMirror[1] - 1, spaceChannelMiddle[1] - 1, spaceContractMirror[1] - 1,
                       spaceContractMiddle[1] - 1, spaceActionSeqs[1] - 1]).astype(int)
-    mmo.geneHandler.loadGene(gene)
-    geneOut = mmo.geneHandler.getGene()
+    moo.geneHandler.loadGene(gene)
+    geneOut = moo.geneHandler.getGene()
     assert (gene == geneOut).all()
 
     # 3
@@ -1178,21 +1178,21 @@ def testGetGene(argv):
         "modelConfigDir": "./data/config_0.json",
     })
     
-    mmo = MMO(setting)
-    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = mmo._getGeneSpaces()
+    moo = MOO(setting)
+    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = moo._getGeneSpaces()
     
     gene = np.hstack([edgeChannelHalfSpace[1] - 1, edgeChannelMiddleSpace[1] - 1,
                       contractionLevelSpace[1] - 1, actionSeqsSpace[1] - 1]).astype(int)
-    mmo.loadGene(gene)
-    geneOut = mmo.getGene()
+    moo.loadGene(gene)
+    geneOut = moo.getGene()
     assert ((gene == geneOut).all())
 
     lens, spaceChannelMirror, spaceChannelMiddle, spaceContractMirror, spaceContractMiddle, spaceActionSeqs \
-        = mmo.geneHandler._getGeneBounds()
+        = moo.geneHandler._getGeneBounds()
     gene = np.hstack([spaceChannelMirror[1] - 1, spaceChannelMiddle[1] - 1, spaceContractMirror[1] - 1,
                       spaceContractMiddle[1] - 1, spaceActionSeqs[1] - 1]).astype(int)
-    mmo.geneHandler.loadGene(gene)
-    geneOut = mmo.geneHandler.getGene()
+    moo.geneHandler.loadGene(gene)
+    geneOut = moo.geneHandler.getGene()
     assert (gene == geneOut).all()
 
     # 4
@@ -1210,21 +1210,21 @@ def testGetGene(argv):
         "modelConfigDir": "./data/config_0.json",
     })
     
-    mmo = MMO(setting)
-    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = mmo._getGeneSpaces()
+    moo = MOO(setting)
+    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = moo._getGeneSpaces()
     
     gene = np.hstack([edgeChannelHalfSpace[1] - 1, edgeChannelMiddleSpace[1] - 1,
                       contractionLevelSpace[1] - 1, actionSeqsSpace[1] - 1]).astype(int)
-    mmo.loadGene(gene)
-    geneOut = mmo.getGene()
+    moo.loadGene(gene)
+    geneOut = moo.getGene()
     assert ((gene == geneOut).all())
 
     lens, spaceChannelMirror, spaceChannelMiddle, spaceContractMirror, spaceContractMiddle, spaceActionSeqs \
-        = mmo.geneHandler._getGeneBounds()
+        = moo.geneHandler._getGeneBounds()
     gene = np.hstack([spaceChannelMirror[1] - 1, spaceChannelMiddle[1] - 1, spaceContractMirror[1] - 1,
                       spaceContractMiddle[1] - 1, spaceActionSeqs[1] - 1]).astype(int)
-    mmo.geneHandler.loadGene(gene)
-    geneOut = mmo.geneHandler.getGene()
+    moo.geneHandler.loadGene(gene)
+    geneOut = moo.geneHandler.getGene()
     assert (gene == geneOut).all()
 
 def testSimulate(argv):
@@ -1245,10 +1245,10 @@ def testSimulate(argv):
         "modelConfigDir": "./data/config_0.json",
     })
     
-    mmo = MMO(setting)
+    moo = MOO(setting)
 
     lens, spaceChannelMirror, spaceChannelMiddle, spaceContractMirror, spaceContractMiddle, spaceActionSeqs \
-        = mmo.geneHandler._getGeneBounds()
+        = moo.geneHandler._getGeneBounds()
     assert ((np.array(spaceChannelMirror) == np.array([[0] * 64, [4] * 64])).all())
     assert ((np.array(spaceChannelMiddle) == np.array([[0] * 12, [2.] * 12])).all())
     assert ((np.array(spaceContractMirror) == np.array([[0.] * 21, [5] * 21])).all())
@@ -1259,15 +1259,15 @@ def testSimulate(argv):
     
     gene = np.hstack([spaceChannelMirror[1] - 1, spaceChannelMiddle[1] - 1, spaceContractMirror[1] - 1,
                       spaceContractMiddle[1] - 1, spaceActionSeqs[1] - 1]).astype(int)
-    mmo.geneHandler.loadGene(gene)
-    assert ((mmo.model.edgeChannel == np.array([1, 3, 2, 3, 2, 1, 3, 3, 3, 2, 2, 2, 3, 3, 3, 2, 2, 2, 1, 3, 2, 3,
+    moo.geneHandler.loadGene(gene)
+    assert ((moo.model.edgeChannel == np.array([1, 3, 2, 3, 2, 1, 3, 3, 3, 2, 2, 2, 3, 3, 3, 2, 2, 2, 1, 3, 2, 3,
                                                 3, 3, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
                                                 3, 3, 3, 3, 1, 3, 3, 1, 2, 2, 1, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
                                                 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2,
                                                 2, 2, 2, 2, 2, 3, 3, 3, 1, 1, 3, 2, 2, 2, 3, 3, 3, 2, 2, 1, 3, 1,
                                                 2, 3, 2, 1, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 3, 3, 3, 2, 2, 2,
                                                 2, 2, 2, 2, 2, 1, 3, 2])).all())
-    assert ((mmo.model.maxContraction == np.array([0.3, -1., -1., -1., -1., 0.3, -1., -1., 0.3, -1., -1.,
+    assert ((moo.model.maxContraction == np.array([0.3, -1., -1., -1., -1., 0.3, -1., -1., 0.3, -1., -1.,
                                                    0.3, -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
                                                    0.3, -1., 0.3, -1., -1., 0.3, -1., -1., 0.3, -1., 0.3,
                                                    0.3, 0.3, -1., -1., 0.3, 0.3, -1., 0.3, -1., 0.3, 0.3,
@@ -1280,9 +1280,9 @@ def testSimulate(argv):
                                                    -1., -1., -1., -1., -1., 0.3, -1., -1., -1., 0.3, 0.3,
                                                    -1., -1., -1., -1., 0.3, 0.3, 0.3, -1., 0.3, 0.3, -1.,
                                                    0.3, -1., -1., -1., -1., -1., -1., -1.])).all())
-    assert ((np.array(mmo.actionSeqs) == np.ones([2, 4, 4])).all())
+    assert ((np.array(moo.actionSeqs) == np.ones([2, 4, 4])).all())
     
-    vs, e = mmo.simulate(mmo.actionSeqs[0])
+    vs, e = moo.simulate(moo.actionSeqs[0])
     assert((vs[40][40:] - np.array([[-5.01474011, -2.53568316,  0.84041267],
        [-6.04074005, -1.25597253,  0.34191512],
        [-5.17598253,  0.3160106 ,  0.84041532],
@@ -1311,12 +1311,12 @@ def testInitChannel(argv):
         "modelConfigDir": "./data/config_0.json",
     })
 
-    mmo = MMO(setting)
-    edgeChannel = mmo.geneHandler.initChannel()
-    mmo.model.edgeChannel = edgeChannel
+    moo = MOO(setting)
+    edgeChannel = moo.geneHandler.initChannel()
+    moo.model.edgeChannel = edgeChannel
 
     if "plot" in argv:
-        visualizeChannel(mmo.model)
+        visualizeChannel(moo.model)
 
 #TODO test
 def testInitGene(argv):
@@ -1337,14 +1337,14 @@ def testInitGene(argv):
         "modelConfigDir": "./data/config_0.json",
     })
 
-    mmo = MMO(setting)
-    gene = mmo.initGene()
-    mmo.loadGene(gene)
-    geneOut = mmo.getGene()
+    moo = MOO(setting)
+    gene = moo.initGene()
+    moo.loadGene(gene)
+    geneOut = moo.getGene()
     assert((gene == geneOut).all())
 
     if "plot" in argv:
-        visualizeChannel(mmo.model)
+        visualizeChannel(moo.model)
 
     # 1
     setting = dict({
@@ -1361,14 +1361,14 @@ def testInitGene(argv):
         "modelConfigDir": "./data/config_0.json",
     })
     
-    mmo = MMO(setting)
-    gene = mmo.initGene(test=False)
-    mmo.loadGene(gene)
-    geneOut = mmo.getGene()
+    moo = MOO(setting)
+    gene = moo.initGene(test=False)
+    moo.loadGene(gene)
+    geneOut = moo.getGene()
     assert ((gene == geneOut).all())
 
     if "plot" in argv:
-        visualizeChannel(mmo.model)
+        visualizeChannel(moo.model)
 
     # # 2
     # setting = dict({
@@ -1385,14 +1385,14 @@ def testInitGene(argv):
     #     "modelConfigDir": "./data/config_0.json",
     # })
     #
-    # mmo = MMO(setting)
-    # gene = mmo.initGene(test=False)
-    # mmo.loadGene(gene)
-    # geneOut = mmo.getGene()
+    # moo = moo(setting)
+    # gene = moo.initGene(test=False)
+    # moo.loadGene(gene)
+    # geneOut = moo.getGene()
     # assert ((gene == geneOut).all())
     #
     # if "plot" in argv:
-    #     visualizeSymmetry(mmo.model)
+    #     visualizeSymmetry(moo.model)
     #
     
     # 3
@@ -1410,38 +1410,38 @@ def testInitGene(argv):
     #     "modelConfigDir": "./data/config_0.json",
     # })
     #
-    # mmo = MMO(setting)
-    # gene = mmo.initGene(test=False)
-    # mmo.loadGene(gene)
-    # geneOut = mmo.getGene()
+    # moo = moo(setting)
+    # gene = moo.initGene(test=False)
+    # moo.loadGene(gene)
+    # geneOut = moo.getGene()
     # assert ((gene == geneOut).all())
     #
     # if "plot" in argv:
-    #     visualizeSymmetry(mmo.model)
+    #     visualizeSymmetry(moo.model)
     #
-    # mmo = MMO(setting)
-    # gene = mmo.initGene(test=True)
+    # moo = moo(setting)
+    # gene = moo.initGene(test=True)
     # # breakpoint()
     # # gene = genes[-1]
-    # mmo.loadGene(gene)
-    # geneOut = mmo.getGene()
+    # moo.loadGene(gene)
+    # geneOut = moo.getGene()
     # assert ((gene == geneOut).all())
     #
     # if "plot" in argv:
-    #     visualizeSymmetry(mmo.model)
+    #     visualizeSymmetry(moo.model)
     #
     # # for gene in genes:
     # if True:
     #     for i in range(len(gene)):
     #         gene[i] = 0 if gene[i] == -1 else gene[i]
     #
-    #     mmo = MMO(setting)
-    #     mmo.loadGene(gene)
-    #     geneOut = mmo.getGene()
+    #     moo = moo(setting)
+    #     moo.loadGene(gene)
+    #     geneOut = moo.getGene()
     #     assert ((gene == geneOut).all())
     #
     #     if "plot" in argv:
-    #         visualizeSymmetry(mmo.model)
+    #         visualizeSymmetry(moo.model)
 
     # # 4
     # setting = dict({
@@ -1458,18 +1458,18 @@ def testInitGene(argv):
     #     "modelConfigDir": "./data/config_0.json",
     # })
     #
-    # mmo = MMO(setting)
-    # genes = mmo.initGene(test=True)
+    # moo = moo(setting)
+    # genes = moo.initGene(test=True)
     # for gene in genes:
     #     for i in range(len(gene)):
     #         gene[i] = 0 if gene[i] == -1 else gene[i]
     #
-    #     mmo.loadGene(gene)
-    #     geneOut = mmo.getGene()
+    #     moo.loadGene(gene)
+    #     geneOut = moo.getGene()
     #     assert ((gene == geneOut).all())
     #
     #     if "plot" in argv:
-    #         visualizeSymmetry(mmo.model)
+    #         visualizeSymmetry(moo.model)
     
     ## 5
     # setting = dict({
@@ -1486,19 +1486,19 @@ def testInitGene(argv):
     #     "modelConfigDir": "./data/config_0.json",
     # })
     #
-    # mmo = MMO(setting)
-    # gene = mmo.initGene()
-    # mmo.loadGene(gene)
-    # geneOut = mmo.getGene()
+    # moo = moo(setting)
+    # gene = moo.initGene()
+    # moo.loadGene(gene)
+    # geneOut = moo.getGene()
     # assert ((gene == geneOut).all())
     #
     # if "plot" in argv:
-    #     visualizeSymmetry(mmo.model)
+    #     visualizeSymmetry(moo.model)
 
 
     
 tests = {
-    'mmo': testMMO,
+    'moo': testMOO,
     'getGene': testGetGene,
     'simulate': testSimulate,
     # 'initChannel': testInitChannel,

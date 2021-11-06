@@ -1,9 +1,9 @@
 # multi-objective optimization
 from typing import Callable
 import numpy as np
-from utils.mmo import MMO
+from utils.moo import MOO
 
-def getCriterion(mmo: MMO) -> Callable[[np.ndarray], np.ndarray]:
+def getCriterion(mmo: MOO) -> Callable[[np.ndarray], np.ndarray]:
     def criterion(gene: np.ndarray) -> np.ndarray:
         
         mmo.loadGene(gene)

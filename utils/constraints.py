@@ -63,7 +63,7 @@ def cstrIntersection(vs: np.ndarray, es: np.ndarray):
     return True
 
 def testCstrIntersection(argv):
-    from utils.mmo import MMO
+    from utils.moo import MOO
     from utils.objectives import objMoveForward, objFaceForward, objTurnLeft
 
     setting = {
@@ -79,14 +79,12 @@ def testCstrIntersection(argv):
         },
         'objectives': [[objMoveForward, objFaceForward], [objTurnLeft]]
     }
-    mmo = MMO(setting=setting)
+    mmo = MOO(setting=setting)
     assert(mmo.actionSeqs.shape == (1, mmo.numChannels, mmo.numActions))
     vs, es = mmo.simulate(actionSeq=mmo.actionSeqs[0])
     print('start')
     ret = cstrIntersection(vs, es)
     print(ret)
-
-    
 
 tests = {
     # 'testTurn': testTurn,

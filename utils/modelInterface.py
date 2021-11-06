@@ -1,6 +1,6 @@
 import numpy as np
 from utils.model import Model
-from utils.mmo import MMO
+from utils.moo import MOO
 
 def getModel(inFileDir):
     """
@@ -21,7 +21,7 @@ def getActionSeq(inFileDir):
         return np.array(data['script'])
 
 
-def _encodeLensSpaces(mmoSetting: MMO):
+def _encodeLensSpaces(mmoSetting: MOO):
     ms = mmoSetting
     model = getModel(ms.modelDir)
     
@@ -38,7 +38,7 @@ def _encodeLensSpaces(mmoSetting: MMO):
     spaces.append((0, 2))
     return lens, spaces
 
-def encodeGeneSpace(mmoSetting: MMO) -> (np.ndarray, np.ndarray):
+def encodeGeneSpace(mmoSetting: MOO) -> (np.ndarray, np.ndarray):
     lens, spaces = _encodeLensSpaces(mmoSetting)
     
     lb = np.hstack([np.ones(lens[i], dtype=int) * spaces[i][0] for i in range(len(lens))])
@@ -60,7 +60,7 @@ def encodeGene(model: Model, actionSeqs: np.ndarray) -> np.ndarray:
     return geneInt
 
 
-def decodeGene(mmoSetting: MMO, gene: np.ndarray) -> (Model, list):
+def decodeGene(mmoSetting: MOO, gene: np.ndarray) -> (Model, list):
     lb, ub = encodeGeneSpace(mmoSetting)
     assert((lb <= gene).all() and (gene < ub).all())
     
@@ -111,7 +111,7 @@ def simulate(model: Model, actionSeq, nLoops=1, visualize=False, testing=False) 
 # testing
 
 def testEncodeGeneSpace(argv):
-    from utils.mmo import MMO
+    from utils.moo import MOO
     from utils.objectives import objMoveForward, objFaceForward
     
     mmoSetting = {
@@ -120,14 +120,14 @@ def testEncodeGeneSpace(argv):
         'numActions': 5,
         'objectives': [objMoveForward, objFaceForward]
     }
-    setting = MMO(mmoSetting)
+    setting = MOO(mmoSetting)
     lb, ub = encodeGeneSpace(setting)
     
     assert((ub == np.array(np.hstack([np.ones(140) * 4, np.ones(44)*5, np.ones(20 * 2 )*2]), dtype=int)).all())
     assert(lb.shape == ub.shape and (lb == 0).all())
 
 def testDecodeGene(argv):
-    from utils.mmo import MMO
+    from utils.moo import MOO
     from utils.objectives import objMoveForward, objFaceForward
     
     ub = np.array(np.hstack([np.ones(140) * 4, np.ones(44)*5, np.ones(20 * 2)*2]), dtype=int)
@@ -138,7 +138,7 @@ def testDecodeGene(argv):
         'numActions': 5,
         'objectives': [objMoveForward, objFaceForward]
     }
-    setting = MMO(mmoSetting)
+    setting = MOO(mmoSetting)
     model, actionSeqs = decodeGene(setting, gene)
     assert(model.edgeChannel.shape == model.maxContraction.shape == (140, ))
     assert((model.edgeChannel == 3).all())
@@ -157,7 +157,7 @@ def testDecodeGene(argv):
     assert((actionSeqs == 1).all())
 
 def testEncodeGene(argv):
-    from utils.mmo import MMO
+    from utils.moo import MOO
     from utils.objectives import objMoveForward, objFaceForward
     
     ub = np.array(np.hstack([np.ones(140) * 4, np.ones(44)*5, np.ones(20 * 2)*2]), dtype=int)
@@ -168,7 +168,7 @@ def testEncodeGene(argv):
         'numActions': 5,
         'objectives': [objMoveForward, objFaceForward]
     }
-    setting = MMO(mmoSetting)
+    setting = MOO(mmoSetting)
     model, actionSeqs = decodeGene(setting, gene)
     
     geneOut = encodeGene(model, actionSeqs)

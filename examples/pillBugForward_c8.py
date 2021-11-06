@@ -1,5 +1,5 @@
-from utils.mmoCriterion import getCriterion
-from utils.mmo import MMO
+from utils.mooCriterion import getCriterion
+from utils.moo import MOO
 from utils.objectives import objMoveForward, objFaceForward
 from utils.GA import GeneticAlgorithm
 
@@ -21,7 +21,7 @@ setting = {
     'objectives': [(objMoveForward, objFaceForward)]
 }
 
-mmo = MMO(setting)
+mmo = MOO(setting)
 lb, ub = mmo.getGeneSpace()
 
 criterion = getCriterion(mmo)
@@ -40,7 +40,6 @@ heroes, ratingsHero = ga.run()
 print("ratingsHero: ")
 print(ga.ratingsHero)
 
-
 genes, fileDirs = ga.getHeroes()
 for i in range(len(genes)):
     gene = genes[i]
@@ -49,3 +48,4 @@ for i in range(len(genes)):
     mmo.refreshModel()
     for iActionSeq in range(mmo.numObjectives):
         mmo.model.exportJSON(actionSeq=actionSeqs[iActionSeq], saveDir=fileDirs[i], appendix=iActionSeq)
+

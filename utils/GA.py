@@ -204,8 +204,9 @@ def loadHistory(historyDir):
         history.loadJSON(js)
         return history
 
-def plot(history):
+def plot(history, plot3d=False):
     import matplotlib.pyplot as plt
+    # plt.style.use('seaborn-whitegrid')
     
     if np.array(history.ratingsBest).ndim == 1:
         ids = np.arange(len(history.ratingsBest))
@@ -222,16 +223,29 @@ def plot(history):
         plt.show()
     
     if np.array(history.ratingsBest).ndim == 2:
-        ax = plt.axes(projection='3d')
-        ids = np.arange(len(history.ratingsBest))
-        ax.scatter3D(np.array(history.ratingsBest)[:, 0], np.array(history.ratingsBest)[:, 1], ids, color='green', marker='.')
-        ax.scatter3D(np.array(history.ratingsMean)[:, 0], np.array(history.ratingsMean)[:, 1], ids, color='blue', marker='.')
-        ax.scatter3D(np.zeros(len(history.iExtinctions)), np.zeros(len(history.iExtinctions)), history.iExtinctions, color='pink', marker='o')
-        
-        ax.scatter3D(history.ratingsHero[:, 0], history.ratingsHero[:, 1], len(history.heroes) - 1, color='black', marker='o')
-        
-        plt.show()
-
+        if plot3d:
+            ax = plt.axes(projection='3d')
+            ids = np.arange(len(history.ratingsBest))
+            ax.scatter3D(np.array(history.ratingsBest)[:, 0], np.array(history.ratingsBest)[:, 1], ids, color='green', marker='.')
+            ax.scatter3D(np.array(history.ratingsMean)[:, 0], np.array(history.ratingsMean)[:, 1], ids, color='blue', marker='.')
+            ax.scatter3D(np.zeros(len(history.iExtinctions)), np.zeros(len(history.iExtinctions)), history.iExtinctions, color='pink', marker='o')
+            
+            ax.scatter3D(history.ratingsHero[:, 0], history.ratingsHero[:, 1], len(history.heroes) - 1, color='black', marker='o')
+            
+            plt.show()
+            
+        else:
+            fig, axes = plt.subplots(1, np.array(history.ratingsBest).shape[1],figsize=(15, 4), sharey=True)
+            
+            for i in range(np.array(history.ratingsBest).shape[1]):
+                ids = np.arange(np.array(history.ratingsBest).shape[0])
+                axes[i].plot(np.array(history.ratingsBest)[:, i], ids, '.', color='green')
+                if i == 0:
+                    axes[i].set(xlabel='Target {}'.format(i), ylabel='# of Generations')
+                else:
+                    axes[i].set(xlabel='Target {}'.format(i))
+            plt.show()
+            
 def plotDir(historyDir):
     with open(historyDir) as iFile:
         js = iFile.read()
@@ -578,10 +592,10 @@ class GeneticAlgorithm(object):
                 self.saveHistory(iGen=iGen, appendix=self.history.ratingsBestHero[-1])
         
         if self.setting.plot:
-            try:
-                plot(self.history)
-            except Exception as e:
-                print(e)
+            # try:
+            plot(self.history)
+            # except Exception as e:
+            #     print('plot', e)
                 
         return self.getBest()
 

@@ -1,5 +1,5 @@
-from utils.mmoCriterion import getCriterion
-from utils.mmo import MMO
+from utils.mooCriterion import getCriterion
+from utils.moo import MOO
 from utils.objectives import objMoveForward, objFaceForward
 from utils.GA import GeneticAlgorithm
 from utils.visualizer import visualizeChannel, visualizeActions
@@ -19,7 +19,7 @@ def testMMO(argv):
         'objectives': [(objMoveForward, objFaceForward)]
     }
     
-    mmo = MMO(setting)
+    mmo = MOO(setting)
     lb, ub = mmo.getGeneSpace()
     
     criterion = getCriterion(mmo)
@@ -60,7 +60,7 @@ def testTrainingMultipleChannels(argv):
         'objectives': [(objMoveForward, objFaceForward)]
     }
     
-    mmo = MMO(setting)
+    mmo = MOO(setting)
     
     lb, ub = mmo.getGeneSpace()
     
@@ -82,16 +82,15 @@ def testTrainingMultipleChannels(argv):
     mmo.loadGene(heroes[0])
     visualizeChannel(mmo.model)
     visualizeActions(mmo.model, mmo.actionSeqs[0], 2)
-    breakpoint()
     
     
 def testGetCriterion(argv):
-    from utils.mmoCriterion import getCriterion
-    from utils.mmo import MMO
+    from utils.mooCriterion import getCriterion
+    from utils.moo import MOO
     from utils.objectives import objMoveForward, objFaceForward
     import numpy as np
     
-    def assertCriterion(mmo: MMO, criterion, ratingTruth):
+    def assertCriterion(mmo: MOO, criterion, ratingTruth):
         rating = criterion(mmo.getGene())
         assert ((rating == ratingTruth).all())
     
@@ -115,7 +114,7 @@ def testGetCriterion(argv):
         'objectives': objectives1,
         "modelConfigDir": "./data/config_0.json",
     }
-    mmo = MMO(setting)
+    mmo = MOO(setting)
     
     actionSeq3 = mmo.actionSeqs[0].copy()
     actionSeq3[0, 1] = (actionSeq3[0, 1] + 1) % 2
@@ -139,7 +138,7 @@ def testGetCriterion(argv):
         'objectives': objectives2,
         "modelConfigDir": "./data/config_0.json",
     }
-    mmo = MMO(setting)
+    mmo = MOO(setting)
     
     actionSeq33 = mmo.actionSeqs[0].copy()
     actionSeq33[0, 1] = (actionSeq33[0, 1] + 1) % 2
@@ -163,7 +162,7 @@ if __name__ == "__main__":
     from utils.model import tests as testsModel
     from utils.GA import tests as testsGA
     from utils.objectives import tests as testUtilsObjectives
-    from utils.mmo import tests as testUtilsMMO
+    from utils.moo import tests as testUtilsMMO
     
     testsDict = {
         'model.py': testsModel,

@@ -1,5 +1,5 @@
-from utils.mmoCriterion import getCriterion
-from utils.mmo import MMO
+from utils.mooCriterion import getCriterion
+from utils.moo import MOO
 from utils.objectives import objMoveForward, objFaceForward, objLowerBodyMean, objLowerBodyMax
 from utils.GA import GeneticAlgorithm
 
@@ -17,7 +17,7 @@ setting = {
     'objectives': [[objMoveForward, objFaceForward, objLowerBodyMax, objLowerBodyMean]]
 }
 
-mmo = MMO(setting)
+mmo = MOO(setting)
 lb, ub = mmo.getGeneSpace()
 
 criterion = getCriterion(mmo)

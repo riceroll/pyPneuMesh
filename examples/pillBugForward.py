@@ -1,5 +1,5 @@
-from utils.mmoCriterion import getCriterion
-from utils.mmo import MMO
+from utils.mooCriterion import getCriterion
+from utils.moo import MOO
 from utils.objectives import objMoveForward, objFaceForward
 from utils.GA import GeneticAlgorithm
 
@@ -17,7 +17,7 @@ setting = {
     'objectives': [(objMoveForward, objFaceForward)]
 }
 
-mmo = MMO(setting)
+mmo = MOO(setting)
 lb, ub = mmo.getGeneSpace()
 
 criterion = getCriterion(mmo)
@@ -25,8 +25,8 @@ mmo.check()
 ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
 
 settingGA = ga.getDefaultSetting()
-settingGA['nPop'] = 48
-settingGA['nGenMax'] = 2000
+settingGA['nPop'] = 8
+settingGA['nGenMax'] = 2
 settingGA['lenEra'] = 40
 settingGA['nEraRevive'] = 2
 ga.loadSetting(settingGA)
