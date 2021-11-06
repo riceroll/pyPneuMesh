@@ -10,9 +10,7 @@ setting = {
     'numObjectives': 1,
     "channelMirrorMap": {
         0: 1,
-        1: 0,
-        2: -1,
-        3: -1
+        1: 0
     },
     'objectives': [(objMoveForward, objFaceForward)]
 }
