@@ -6,6 +6,8 @@ import numpy as np
 from pathos.multiprocessing import ProcessPool as Pool
 import multiprocessing
 from typing import List
+import logging
+
 
 def initPop(nPop, lb, ub):
     """
@@ -411,13 +413,22 @@ class GeneticAlgorithm(object):
                 appendix = ', '.join(["{:.2f}".format(i) for i in appendix.tolist()])
             ratingBest = appendix
             
-            print('gen: {}\tfbh: {}\tfb: {}'.format(iGen, ratingBestHero, ratingBest))
+            logging.info('gen: {}\tfbh: {}\tfb: {}'.format(iGen, ratingBestHero, ratingBest))
+            
     
     def saveHistory(self, iGen, appendix:np.ndarray):
         folderPath = self.folderDir
         Path(folderPath).mkdir(parents=True, exist_ok=True)
         if type(appendix) is np.ndarray:
             appendix = ','.join(["{:.2f}".format(i) for i in appendix.tolist()])
+        
+        # remove all existing history files
+        p = Path(folderPath)
+        breakpoint()
+        for f in p.iterdir():
+            if '.hs' == f.name[-3:]:
+                Path(f).unlink()
+        
         with open(folderPath + '/g{}_{}.hs'.format(iGen, appendix), 'w') as oFile:
             js = self.history.toJSON()
             oFile.write(js)
@@ -546,7 +557,7 @@ class GeneticAlgorithm(object):
             if reviving:
                 string += "Revival"
             if extinct or reviving:
-                print(string)
+                logging.info(string)
         
         return extinct, reviving, nExtinctions
         
@@ -562,12 +573,20 @@ class GeneticAlgorithm(object):
         t = self.startTime
         folderName = 'GA_{}{}-{}:{}:{}'.format(t.month, t.day, t.hour, t.minute, t.second)
         self.folderDir = './output/' + folderName
+        if self.setting.saveHistory:
+            Path(self.folderDir).mkdir(parents=True, exist_ok=True)
+        logging.basicConfig(filename=os.path.join(self.folderDir, 'history.log'),
+                            filemode='w', format='%(message)s',
+                            level=logging.WARNING if not self.setting.saveHistory else logging.INFO)
+    
+        console = logging.StreamHandler()
+        logging.getLogger().addHandler(console)
         
         if not self.setting.mute:
-            print("\nBegin at {}.".format(self.startTime))
+            logging.info("\nBegin at {}.".format(self.startTime))
             data = self.setting.data()
             for key in data:
-                print("{}: {}".format(key, data[key]))
+                logging.info("{}: {}".format(key, data[key]))
         
         self.pop = initPop(nPop=self.setting.nPop, lb=self.lb, ub=self.ub)
         self.ratings, self.Rs, self.CDs = evaluate(pop=self.pop, criterion=self.criterion,

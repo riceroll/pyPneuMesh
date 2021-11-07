@@ -70,10 +70,10 @@ def testTrainingMultipleChannels(argv):
     
     settingGA = ga.getDefaultSetting()
     settingGA['nPop'] = 8
-    settingGA['nGenMax'] = 1
-    settingGA['saveHistory'] = False
+    settingGA['nGenMax'] = 6
+    settingGA['saveHistory'] = True
     settingGA['nWorkers'] = -1
-    settingGA['mute'] = "unmute" not in argv
+    settingGA['mute'] = False
     settingGA['plot'] = "plot" in argv
     ga.loadSetting(settingGA)
     

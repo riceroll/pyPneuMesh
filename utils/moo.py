@@ -605,7 +605,7 @@ class MOO:
                 try:
                     ie = np.random.choice(idsEdge[boolEdgesAvailable])
                 except:
-                    print('no')
+                    print('noooo')
                     continue
                     # breakpoint()
                 ieMirrored = self.model.edgeMirrorMap[ie]
@@ -620,7 +620,7 @@ class MOO:
                 try:
                     ie = np.random.choice(idsEdge[boolEdgesAvailable])
                 except:
-                    print('no')
+                    print('nooo')
                     continue
                     # breakpoint()
                 ieMirrored = self.model.edgeMirrorMap[ie]
