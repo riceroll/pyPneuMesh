@@ -70,8 +70,8 @@ def testTrainingMultipleChannels(argv):
     
     settingGA = ga.getDefaultSetting()
     settingGA['nPop'] = 8
-    settingGA['nGenMax'] = 6
-    settingGA['saveHistory'] = True
+    settingGA['nGenMax'] = 2
+    settingGA['saveHistory'] = False
     settingGA['nWorkers'] = -1
     settingGA['mute'] = False
     settingGA['plot'] = "plot" in argv
@@ -149,8 +149,8 @@ def testGetCriterion(argv):
     assertCriterion(mmo, criterion, (1.010703784566089, 0.9974059986505434))
 
 tests = {
-    # 'getCriterion': testGetCriterion,
-    # 'mmo': testMMO,
+    'getCriterion': testGetCriterion,
+    'mmo': testMMO,
     'multiChannel': testTrainingMultipleChannels,
 }
 

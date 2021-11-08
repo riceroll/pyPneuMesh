@@ -1501,6 +1501,6 @@ tests = {
     'moo': testMOO,
     'getGene': testGetGene,
     'simulate': testSimulate,
-    # 'initChannel': testInitChannel,
-    # 'initGene': testInitGene,
+    'initChannel': testInitChannel,
+    'initGene': testInitGene,
 }

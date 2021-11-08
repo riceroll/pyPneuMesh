@@ -8,23 +8,17 @@ import multiprocessing
 from typing import List
 import logging
 
-
-def initPop(nPop, lb, ub):
+# region history
+def loadHistory(historyDir):
     """
-    initialize population
-    :param nPop: int, size of population
-    :param lb: np.ndarray, int, [n, ], lower bound (inclusive)
-    :param ub: np.ndarray, int, [n, ], upper bound (non-inclusive)
-    :return: pop: np.ndarray, int, [nPop, n]
+    used with `plot(history)`
     """
-    assert(type(lb) == type(ub) == np.ndarray)
-    assert(lb.dtype == ub.dtype == int)
-    assert(lb.ndim == ub.ndim == 1)
-    
-    pop = np.random.randint(lb, ub, [nPop, len(lb)])
-    return pop
+    history = GeneticAlgorithm.History()
+    history.load(historyDir)
+    return history
+# endregion
 
-
+# region functions: multi-objective
 def getR(ratings: np.ndarray) -> (np.ndarray):
     ratings = ratings.reshape(len(ratings), -1)
     ratingsCol = ratings.reshape([ratings.shape[0], 1, ratings.shape[1]])
@@ -39,8 +33,7 @@ def getR(ratings: np.ndarray) -> (np.ndarray):
         R += 1
         
     return Rs
-    
-    
+
 def getCD(ratings: np.ndarray, Rs: np.ndarray) -> (np.ndarray):
     ratings = ratings.reshape(len(ratings), -1)
     CDMatrix = np.zeros_like(ratings, dtype=np.float)
@@ -59,12 +52,30 @@ def getCD(ratings: np.ndarray, Rs: np.ndarray) -> (np.ndarray):
     
     return CDs
 
-
 def getRCD(ratings: np.ndarray) -> (np.ndarray, np.ndarray):
     ratings = ratings.reshape(len(ratings), -1)
     Rs = getR(ratings)
     CDs = getCD(ratings, Rs)
     return Rs, CDs
+
+#endregion
+
+# region functions: evolution
+def initPop(nPop, lb, ub):
+    """
+    initialize population
+    :param nPop: int, size of population
+    :param lb: np.ndarray, int, [n, ], lower bound (inclusive)
+    :param ub: np.ndarray, int, [n, ], upper bound (non-inclusive)
+    :return: pop: np.ndarray, int, [nPop, n]
+    """
+    assert (type(lb) == type(ub) == np.ndarray)
+    assert (lb.dtype == ub.dtype == int)
+    assert (lb.ndim == ub.ndim == 1)
+    
+    pop = np.random.randint(lb, ub, [nPop, len(lb)])
+    return pop
+
 
 def evaluate(pop, criterion, nWorkers):
     """
@@ -196,66 +207,7 @@ def regenerate(pop, nPop, lb, ub):
         newPop = np.vstack([pop, generatedPop])
         return newPop
 
-def loadHistory(historyDir):
-    """
-    used with `plot(history)`
-    """
-    with open(historyDir) as iFile:
-        js = iFile.read()
-        history = GeneticAlgorithm.History()
-        history.loadJSON(js)
-        return history
-
-def plot(history, plot3d=False):
-    import matplotlib.pyplot as plt
-    # plt.style.use('seaborn-whitegrid')
-    
-    if np.array(history.ratingsBest).ndim == 1:
-        ids = np.arange(len(history.ratingsBest))
-        plt.plot(ids, history.ratingsBestHero)
-        plt.plot(ids, history.ratingsBest)
-        plt.plot(ids, history.ratingsMean)
-        
-        fitsBest = np.array(history.ratingsBest)
-        fitsBestExtinctions = fitsBest[history.iExtinctions]
-        fitsBestRevivals = fitsBest[history.iRevivals]
-        
-        plt.plot(history.iExtinctions, fitsBestExtinctions, 'o', color='red')
-        plt.plot(history.iRevivals, fitsBestRevivals, 'o', color='green')
-        plt.show()
-    
-    if np.array(history.ratingsBest).ndim == 2:
-        if plot3d:
-            ax = plt.axes(projection='3d')
-            ids = np.arange(len(history.ratingsBest))
-            ax.scatter3D(np.array(history.ratingsBest)[:, 0], np.array(history.ratingsBest)[:, 1], ids, color='green', marker='.')
-            ax.scatter3D(np.array(history.ratingsMean)[:, 0], np.array(history.ratingsMean)[:, 1], ids, color='blue', marker='.')
-            ax.scatter3D(np.zeros(len(history.iExtinctions)), np.zeros(len(history.iExtinctions)), history.iExtinctions, color='pink', marker='o')
-            
-            ax.scatter3D(history.ratingsHero[:, 0], history.ratingsHero[:, 1], len(history.heroes) - 1, color='black', marker='o')
-            
-            plt.show()
-            
-        else:
-            fig, axes = plt.subplots(1, np.array(history.ratingsBest).shape[1],figsize=(15, 4), sharey=True)
-            
-            for i in range(np.array(history.ratingsBest).shape[1]):
-                ids = np.arange(np.array(history.ratingsBest).shape[0])
-                axes[i].plot(np.array(history.ratingsBest)[:, i], ids, '.', color='green')
-                if i == 0:
-                    axes[i].set(xlabel='Target {}'.format(i), ylabel='# of Generations')
-                else:
-                    axes[i].set(xlabel='Target {}'.format(i))
-            plt.show()
-            
-def plotDir(historyDir):
-    with open(historyDir) as iFile:
-        js = iFile.read()
-
-    h = GeneticAlgorithm.History()
-    h.loadJSON(js)
-
-    plot(h)
+# endregion
 
 class GeneticAlgorithm(object):
     class Setting:
@@ -332,13 +284,70 @@ class GeneticAlgorithm(object):
             js = json.dumps(history)
             return js
         
+        def load(self, historyDir):
+            with open(historyDir) as iFile:
+                js = iFile.read()
+            self.loadJSON(js)
+        
         def loadJSON(self, js):
             history = json.loads(js)
             for key in history:
                 assert(hasattr(self, key))
-                value =     np.array([np.array(v) for v in history[key]])
+                value = np.array([np.array(v) for v in history[key]])
                 setattr(self, key, value)
+                
+        def plot(self, plot3d=False):
+            import matplotlib.pyplot as plt
     
+            if np.array(self.ratingsBest).ndim == 1:
+                ids = np.arange(len(self.ratingsBest))
+                plt.plot(ids, self.ratingsBestHero)
+                plt.plot(ids, self.ratingsBest)
+                plt.plot(ids, self.ratingsMean)
+        
+                fitsBest = np.array(self.ratingsBest)
+                fitsBestExtinctions = fitsBest[self.iExtinctions]
+                fitsBestRevivals = fitsBest[self.iRevivals]
+        
+                plt.plot(self.iExtinctions, fitsBestExtinctions, 'o', color='red')
+                plt.plot(self.iRevivals, fitsBestRevivals, 'o', color='green')
+                plt.show()
+    
+            if np.array(self.ratingsBest).ndim == 2:
+                if plot3d:
+                    ax = plt.axes(projection='3d')
+                    ids = np.arange(len(self.ratingsBest))
+                    ax.scatter3D(np.array(self.ratingsBest)[:, 0], np.array(self.ratingsBest)[:, 1], ids,
+                                 color='green',
+                                 marker='.')
+                    ax.scatter3D(np.array(self.ratingsMean)[:, 0], np.array(self.ratingsMean)[:, 1], ids,
+                                 color='blue',
+                                 marker='.')
+                    ax.scatter3D(np.zeros(len(self.iExtinctions)), np.zeros(len(self.iExtinctions)),
+                                 self.iExtinctions,
+                                 color='pink', marker='o')
+            
+                    ax.scatter3D(self.ratingsHero[:, 0], self.ratingsHero[:, 1], len(self.heroes) - 1,
+                                 color='black',
+                                 marker='o')
+                    plt.show()
+        
+                else:
+                    fig, axes = plt.subplots(1, np.array(self.ratingsBest).shape[1], figsize=(15, 4), sharey='all')
+            
+                    for i in range(np.array(self.ratingsBest).shape[1]):  # for every dimension
+                        ids = np.arange(np.array(self.ratingsBest).shape[0])  # number of iterations
+                        axes[i].plot(np.array(self.ratingsBest)[:, i], ids, '.', color='green')
+                        axes[i].plot(np.array(self.ratingsMean)[:, i], ids, '.', color='blue')
+                        # axes[i].plot(np.zeros(len(history.iExtinctions)), history.iExtinctions, color='pink', marker='o')
+                        # axes[i].plot(history.ratingsHero[:, i], np.zeros_like(history.ratingsHero[:, i]), color='black', marker='o')
+                
+                        if i == 0:
+                            axes[i].set(xlabel='Target {}'.format(i), ylabel='# of Generations')
+                        else:
+                            axes[i].set(xlabel='Target {}'.format(i))
+                    plt.show()
+
     def __init__(self, criterion=None, lb=None, ub=None, setting=None):
         # load default setting
         self.setting = self.Setting()
@@ -415,7 +424,6 @@ class GeneticAlgorithm(object):
             
             logging.info('gen: {}\tfbh: {}\tfb: {}'.format(iGen, ratingBestHero, ratingBest))
             
-    
     def saveHistory(self, iGen, appendix:np.ndarray):
         folderPath = self.folderDir
         Path(folderPath).mkdir(parents=True, exist_ok=True)
@@ -424,7 +432,6 @@ class GeneticAlgorithm(object):
         
         # remove all existing history files
         p = Path(folderPath)
-        breakpoint()
         for f in p.iterdir():
             if '.hs' == f.name[-3:]:
                 Path(f).unlink()
@@ -434,16 +441,8 @@ class GeneticAlgorithm(object):
             oFile.write(js)
     
     def loadHistory(self, historyDir: str = ""):
-        if historyDir == "":
-            fileNames = os.listdir(self.folderDir)
-            iGens = [int(fileName.split('_')[0][1:]) for fileName in fileNames]
-            idsSorted = np.argsort(iGens)
-            idLast = idsSorted[-1]
-            historyDir = os.path.join(self.folderDir, fileNames[idLast])
-            
-        with open(historyDir) as iFile:
-            js = iFile.read()
-            self.history.loadJSON(js)
+        self.history.load(historyDir)
+        
         return historyDir
     
     def getHeroes(self, historyDir: str = ""):
@@ -560,7 +559,7 @@ class GeneticAlgorithm(object):
                 logging.info(string)
         
         return extinct, reviving, nExtinctions
-        
+    
     def getBest(self):
         return self.heroes, self.ratingsHero
     
@@ -575,10 +574,12 @@ class GeneticAlgorithm(object):
         self.folderDir = './output/' + folderName
         if self.setting.saveHistory:
             Path(self.folderDir).mkdir(parents=True, exist_ok=True)
-        logging.basicConfig(filename=os.path.join(self.folderDir, 'history.log'),
-                            filemode='w', format='%(message)s',
-                            level=logging.WARNING if not self.setting.saveHistory else logging.INFO)
-    
+            logging.basicConfig(filename=os.path.join(self.folderDir, 'history.log'),
+                                filemode='w', format='%(message)s',
+                                level=logging.WARNING if not self.setting.saveHistory else logging.INFO)
+        else:
+            logging.basicConfig(level=logging.WARNING if not self.setting.saveHistory else logging.INFO)
+
         console = logging.StreamHandler()
         logging.getLogger().addHandler(console)
         
@@ -612,13 +613,13 @@ class GeneticAlgorithm(object):
         
         if self.setting.plot:
             # try:
-            plot(self.history)
+            self.history.plot()
             # except Exception as e:
             #     print('plot', e)
                 
         return self.getBest()
 
-# testings ========================
+# region testings ========================
 def testCross(argv):
     pop = np.array([
         [0, 1, 2],
@@ -801,14 +802,15 @@ def testGA2D(argv):
     if 'unmute' in argv:
         print(pop[0].reshape(-1, 2), criterion(pop[0]))
     assert((pop[0] == 1).all())
-    
-def testPlot(argv):
+
+def testPlotHistory(argv):
     # plot the evolution process with a graph
     historyDir = "/Volumes/Macintosh HD/Users/Roll/Desktop/pyPneuMesh/output/_GA_71-10-50-52_lobster_forward_grab/g1995_2.17,1.00,-4.99.hs"
-    plotDir(historyDir)
-    
-    
-    
+
+    h = GeneticAlgorithm.History()
+    h.load(historyDir)
+    h.plot()
+
 tests = {
     'cross': testCross,
     'mutate': testMutate,
@@ -818,7 +820,7 @@ tests = {
     'sortNSelect': testSortNSelect,
     'ga1d': testGA1D,
     'ga2d': testGA2D,
-    'testPlot': testPlot,
+    'testPlot': testPlotHistory,
     }
 
 def testAll(argv):
@@ -839,7 +841,8 @@ def test():
                     tests[key](sys.argv)
                     print('Pass.\n')
 
+# endregion
+
 if __name__ == "__main__":
     # eg. run GA test all plot unmute
-    
     test()
