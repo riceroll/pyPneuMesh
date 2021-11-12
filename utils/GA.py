@@ -334,19 +334,42 @@ class GeneticAlgorithm(object):
                     plt.show()
         
                 else:
-                    fig, axes = plt.subplots(1, np.array(self.ratingsBest).shape[1], figsize=(15, 4), sharey='all')
-            
+                    fig, axes = plt.subplots(1, np.array(self.ratingsBest).shape[1], figsize=(15, 8), sharey='all')
+                    
+                    customize = bool(int(input('Customize the graph?(1/0):')))
+                    # if customize:
+                        # fig.suptitle(input('title:'))
+                    
+                    ratingsBests = []  # nDim x nBests x 2
+
+                    for iDim in range(np.array(self.ratingsBest).shape[1]):
+                        ratingsBestsDim = []
+                        ratingBest = -1e5
+                        for iGen in range(np.array(self.ratingsBest).shape[0]):
+                            if max(ratingBest, self.ratingsBest[iGen][iDim]) != ratingBest:
+                                ratingBest = max(ratingBest, self.ratingsBest[iGen][iDim])
+                                ratingsBestsDim.append([iGen, ratingBest])
+                        ratingsBests.append(np.array(ratingsBestsDim))
+                    
+                    
                     for i in range(np.array(self.ratingsBest).shape[1]):  # for every dimension
                         ids = np.arange(np.array(self.ratingsBest).shape[0])  # number of iterations
-                        axes[i].plot(np.array(self.ratingsBest)[:, i], ids, '.', color='green')
-                        axes[i].plot(np.array(self.ratingsMean)[:, i], ids, '.', color='blue')
+                        axes[i].plot(np.array(self.ratingsBest)[:, i], ids, '.', color='green', label='best rating of current generation')
+                        axes[i].plot(np.array(self.ratingsMean)[:, i], ids, '.', color='grey', label = 'average rating of current generation')
+                        axes[i].plot(ratingsBests[i][:, 1], ratingsBests[i][:, 0], color='green', label='best rating so far')
+                        axes[i].set_box_aspect(1)
+                        
+                        
                         # axes[i].plot(np.zeros(len(history.iExtinctions)), history.iExtinctions, color='pink', marker='o')
                         # axes[i].plot(history.ratingsHero[:, i], np.zeros_like(history.ratingsHero[:, i]), color='black', marker='o')
-                
+
+                        title = 'Target {}'.format(i) if not customize else input('label {}:'.format(i))
                         if i == 0:
-                            axes[i].set(xlabel='Target {}'.format(i), ylabel='# of Generations')
+                            axes[i].set(xlabel=title, ylabel='# of Generations')
+                            axes[i].legend(bbox_to_anchor=(1, -0.2))
                         else:
-                            axes[i].set(xlabel='Target {}'.format(i))
+                            axes[i].set(xlabel=title)
+        
                     plt.show()
 
     def __init__(self, criterion=None, lb=None, ub=None, setting=None):

@@ -26,7 +26,7 @@ ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
 settingGA = ga.getDefaultSetting()
 settingGA['nPop'] = 48
 settingGA['nGenMax'] = 10000
-settingGA['lenEra'] = 100
+settingGA['lenEra'] = 50
 settingGA['nEraRevive'] = 2
 settingGA['nWorkers'] = 12
 ga.loadSetting(settingGA)
