@@ -27,9 +27,9 @@ ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
 settingGA = ga.getDefaultSetting()
 settingGA['nPop'] = 48
 settingGA['nGenMax'] = 10000
-settingGA['lenEra'] = 1e9
-settingGA['nEraRevive'] = 2
-settingGA['nWorkers'] = 48
+settingGA['lenEra'] = 50
+settingGA['nEraRevive'] = 4
+settingGA['nWorkers'] = 32
 ga.loadSetting(settingGA)
 heroes, ratingsHero = ga.run()
 

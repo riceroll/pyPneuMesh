@@ -73,6 +73,7 @@ def initPop(nPop, lb, ub):
     assert (lb.dtype == ub.dtype == int)
     assert (lb.ndim == ub.ndim == 1)
     
+    # breakpoint()
     pop = np.random.randint(lb, ub, [nPop, len(lb)])
     return pop
 

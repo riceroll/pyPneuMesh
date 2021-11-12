@@ -150,6 +150,12 @@ class Model(object):
         
         self.updateCornerAngles()
         self.computeSymmetry()
+        
+    def setToSingleChannel(self):
+        # set all channels to the same channel
+        self.edgeChannel *= 0
+        self.edgeChannel += 1
+        
     # end initialization
     
     # stepping =======================

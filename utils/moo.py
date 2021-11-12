@@ -361,7 +361,11 @@ class MOO:
         assert (isinstance(self.modelDir, str) and len(self.modelDir) != 0)
         self.model = Model(self.setting.modelConfigDir)
         self.model.load(self.modelDir)
-        self.model.numChannels = self.numChannels   # TODO: quick fix
+        # TODO: quick fix
+        self.model.numChannels = self.numChannels
+        if self.numChannels < 4:
+            self.model.setToSingleChannel()
+            
         self.model._reset()
         
         # compute incidenceMatrix
@@ -418,7 +422,7 @@ class MOO:
         nActionSeqs = self.numObjectives * self.numChannels * self.numActions
         ubActionSeqs = 2
         actionSeqsSpace = (np.zeros(nActionSeqs), np.ones(nActionSeqs) * ubActionSeqs)
-        
+    
         return edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace
     
     def getGeneSpace(self) -> (np.ndarray, np.ndarray):
