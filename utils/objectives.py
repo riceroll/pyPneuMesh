@@ -112,7 +112,7 @@ def objCurvedBridge(vs: np.ndarray, es: np.ndarray):
     
     vsTop = vs[-1, ivs]    # len(ivs) x 3
     
-    return np.sqrt( ((vsTop - xC) ** 2).sum(1) + ((vsTop - zC) ** 2).sum(1) ).mean()
+    return -np.sqrt( ((vsTop - xC) ** 2).sum(1) + ((vsTop - zC) ** 2).sum(1) ).mean()
     
     
 def objFlatBridge(vs: np.ndarray, es: np.ndarray):
@@ -125,7 +125,7 @@ def objFlatBridge(vs: np.ndarray, es: np.ndarray):
     ivs = np.arange(len(vs[0]))[vs[0, :, 2] > zMax0 - 0.01]
     vsTop = vs[-1, ivs]
     
-    return np.sqrt((vsTop[:, 2] - zMax0) ** 2).mean()
+    return -np.sqrt((vsTop[:, 2] - zMax0) ** 2).mean()
 
 
 # def virtualObjShape(ivs: np.ndarray, vsTargets: np.ndarray):

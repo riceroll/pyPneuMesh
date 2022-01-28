@@ -232,6 +232,7 @@ class Model(object):
                 self.vel[ids] -= dot[ids] * self.frontVec.reshape(1, -1)
                 
             self.v += Model.h * self.vel
+            self.v[np.where(np.array(self.fixedVs) == 1)] -= Model.h * self.vel[np.where(np.array(self.fixedVs) == 1)]
 
             boolUnderground = self.v[:, 2] <= 0
             self.vel[boolUnderground, 2] *= -1
