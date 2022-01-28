@@ -257,6 +257,7 @@ class MOO:
                 # pick a channel
                 ic = np.random.choice(len(self.channelMirrorMap))
                 icMirror = self.channelMirrorMap[ic]
+                print(ic, icMirror)
                 
                 # iesAvailable
                 iesOfChannel = np.where(edgeChannel == ic)[0]     # ids of edge in channel ic
@@ -264,17 +265,18 @@ class MOO:
                 subIncidenceMat = incidenceMat[ivsOfChannel]    # row: v of channel ic, col: edge
                 iesConnected = set(np.where(subIncidenceMat == 1)[1])    # id of es connected to vs in channel
                 iesAvailable = []
+                print(iesConnected)
+                
                 for ie in iesConnected:
                     ieMirror = self.edgeMirrorMap[ie]
                     if ie in edgeUnvisited:
-                        if icMirror != -1:  # mirror channel
-                            if ieMirror == -1:  # middle edge
-                                continue
+                        if not ((icMirror == -1 and ieMirror == -1) or (icMirror != -1 and ieMirror != -1)):  # mirror channel and mirror edge
+                            continue
                         iesAvailable.append(ie)
                 if len(iesAvailable) == 0:
                     print('channel {} not available'.format(ic))
                     continue
-                print(ic, iesConnected, iesAvailable)
+                print(iesAvailable)
                 
                 # pick an edge and assign
                 ie = np.random.choice(iesAvailable)
@@ -285,7 +287,7 @@ class MOO:
                 ieMirror = self.edgeMirrorMap[ie]
                 if ieMirror != -1:  # mirror edge
                     edgeChannel[ieMirror] = icMirror
-                    print('mirror', ieMirror)
+                    print('mirror', ieMirror, icMirror)
                     assert(icMirror != -1)
                     edgeUnvisited.remove(ieMirror)
             
@@ -389,38 +391,48 @@ class MOO:
         self.loadGene(self.gene)
     
     # gene
-    
     def _getGeneSpaces(self) -> (Tuple[np.ndarray, np.ndarray],
                                  Tuple[np.ndarray, np.ndarray],
                                  Tuple[np.ndarray, np.ndarray],
                                  Tuple[np.ndarray, np.ndarray]):
-        nEdgeChannelMiddle = (np.array(list(self.model.edgeMirrorMap.values())) == -1).sum()
-        nEdgeChannelHalf = (len(self.model.e) - nEdgeChannelMiddle) / 2
-        assert(nEdgeChannelHalf == int(nEdgeChannelHalf))
-        nEdgeChannelHalf = int(nEdgeChannelHalf)
-        
-        nChannelMiddle = 0      # number of channels self-mirrored
-        for ic in self.channelMirrorMap:
-            if self.channelMirrorMap[ic] == -1:
-                nChannelMiddle += 1
-        
-        ubEdgeChannelHalf = self.numChannels
-        ubEdgeChannelMiddle = nChannelMiddle
-        edgeChannelHalfSpace = (np.zeros(nEdgeChannelHalf), np.ones(nEdgeChannelHalf, dtype=int) * ubEdgeChannelHalf)
-        edgeChannelMiddleSpace = (np.zeros(nEdgeChannelMiddle), np.ones(nEdgeChannelMiddle, dtype=int) * ubEdgeChannelMiddle)
-        
-        edgeMirrorArray = np.array(list(self.model.edgeMirrorMap.items()))      # convert edgeMirrorMap to n x 2 array
-        edgeMirrorArray = edgeMirrorArray[np.argsort(edgeMirrorArray[:, 0])]
-        edgeMirrorActive = edgeMirrorArray[self.model.edgeActive]               # get the active edges from edgeMirrorArray
-        nEdgeMirrorActiveMiddle = (edgeMirrorActive[:, 1] == -1).sum()          # number of active edges in the middle
-        nEdgeMirrorActiveHalf = (len(edgeMirrorActive) - nEdgeMirrorActiveMiddle) / 2
-        assert(nEdgeMirrorActiveHalf == int(nEdgeMirrorActiveHalf))
-        nContractionLevel = int(nEdgeMirrorActiveHalf) + nEdgeMirrorActiveMiddle
+    
         ubContractionLevel = Model.contractionLevels
-        contractionLevelSpace = (np.zeros(nContractionLevel), np.ones(nContractionLevel, dtype=int) * ubContractionLevel)
-        
         nActionSeqs = self.numObjectives * self.numChannels * self.numActions
         ubActionSeqs = 2
+        
+        if self.model.symmetric:
+            nEdgeChannelMiddle = (np.array(list(self.model.edgeMirrorMap.values())) == -1).sum()
+            nEdgeChannelHalf = (len(self.model.e) - nEdgeChannelMiddle) / 2
+            assert(nEdgeChannelHalf == int(nEdgeChannelHalf))
+            nEdgeChannelHalf = int(nEdgeChannelHalf)
+            
+            nChannelMiddle = 0      # number of channels self-mirrored
+            for ic in self.channelMirrorMap:
+                if self.channelMirrorMap[ic] == -1:
+                    nChannelMiddle += 1
+
+            ubEdgeChannelHalf = self.numChannels
+            ubEdgeChannelMiddle = nChannelMiddle
+            
+            edgeMirrorArray = np.array(list(self.model.edgeMirrorMap.items()))      # convert edgeMirrorMap to n x 2 array
+            edgeMirrorArray = edgeMirrorArray[np.argsort(edgeMirrorArray[:, 0])]
+            edgeMirrorActive = edgeMirrorArray[self.model.edgeActive]               # get the active edges from edgeMirrorArray
+            nEdgeMirrorActiveMiddle = (edgeMirrorActive[:, 1] == -1).sum()          # number of active edges in the middle
+            nEdgeMirrorActiveHalf = (len(edgeMirrorActive) - nEdgeMirrorActiveMiddle) / 2
+            assert(nEdgeMirrorActiveHalf == int(nEdgeMirrorActiveHalf))
+            nContractionLevel = int(nEdgeMirrorActiveHalf) + nEdgeMirrorActiveMiddle
+
+        else:
+            nEdgeChannelMiddle = len(self.model.e)
+            nEdgeChannelHalf = 0
+            ubEdgeChannelHalf = 0
+            ubEdgeChannelMiddle = self.numChannels
+            nContractionLevel = self.model.edgeActive.sum()
+            
+        
+        edgeChannelHalfSpace = (np.zeros(nEdgeChannelHalf), np.ones(nEdgeChannelHalf, dtype=int) * ubEdgeChannelHalf)
+        edgeChannelMiddleSpace = (np.zeros(nEdgeChannelMiddle), np.ones(nEdgeChannelMiddle, dtype=int) * ubEdgeChannelMiddle)
+        contractionLevelSpace = (np.zeros(nContractionLevel), np.ones(nContractionLevel, dtype=int) * ubContractionLevel)
         actionSeqsSpace = (np.zeros(nActionSeqs), np.ones(nActionSeqs) * ubActionSeqs)
     
         return edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace
@@ -438,42 +450,51 @@ class MOO:
         maxContraction = []
         actionSeqs = self.actionSeqs.reshape(-1).tolist()
 
-        iChannelsMiddle = []  # id of channels in the middle
-        for ic in self.channelMirrorMap:
-            if self.channelMirrorMap[ic] == -1:
-                iChannelsMiddle.append(ic)
-                
-        ieVisited = set()
-        for ie in range(len(self.model.e)):
-            if ie in ieVisited:
-                continue
-            ieMirrored = self.model.edgeMirrorMap[ie]
-            if ieMirrored == -1:  # self-mirrored edge
-                ic = iChannelsMiddle.index(self.model.edgeChannel[ie])
-                edgeChannelMiddle.append(ic)
-                if self.model.edgeActive[ie]:
-                    maxContraction.append(self.model.maxContraction[ie])
-                ieVisited.add(ie)
-            else:
-                edgeChannelHalf.append(self.model.edgeChannel[ie])
-                if self.model.edgeActive[ie]:
-                    maxContraction.append(self.model.maxContraction[ie])
-                ieVisited.add(ie)
-                ieVisited.add(ieMirrored)
+        if self.model.symmetric:
+            iChannelsMiddle = []  # id of channels in the middle
+            for ic in self.channelMirrorMap:
+                if self.channelMirrorMap[ic] == -1:
+                    iChannelsMiddle.append(ic)
+                    
+            ieVisited = set()
+            for ie in range(len(self.model.e)):
+                if ie in ieVisited:
+                    continue
+                ieMirrored = self.model.edgeMirrorMap[ie]
+                if ieMirrored == -1:  # self-mirrored edge
+                    ic = iChannelsMiddle.index(self.model.edgeChannel[ie])
+                    edgeChannelMiddle.append(ic)
+                    if self.model.edgeActive[ie]:
+                        maxContraction.append(self.model.maxContraction[ie])
+                    ieVisited.add(ie)
+                else:
+                    edgeChannelHalf.append(self.model.edgeChannel[ie])
+                    if self.model.edgeActive[ie]:
+                        maxContraction.append(self.model.maxContraction[ie])
+                    ieVisited.add(ie)
+                    ieVisited.add(ieMirrored)
+        else:
+            edgeChannelHalf = []
+            edgeChannelMiddle = self.model.edgeChannel.tolist()
+            maxContraction = self.model.maxContraction[self.model.edgeActive]
         
         maxContractionLevel = (np.array(maxContraction) / Model.contractionInterval).astype(int).tolist()
         gene = np.array(edgeChannelHalf + edgeChannelMiddle + maxContractionLevel + actionSeqs, dtype=int)
+    
         return gene
-
+    
     def loadGene(self, gene: np.ndarray) -> (Model, np.ndarray):  # load gene into model and actionSeqs
+    
         if gene.shape == ():
             return self.model, self.actionSeqs
+
         edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = self._getGeneSpaces()
+
         nEdgeChannelHalf = len(edgeChannelHalfSpace[0])
         nEdgeChannelMiddle = len(edgeChannelMiddleSpace[0])
         nContractionLevel = len(contractionLevelSpace[0])
         nActionSeqs = len(actionSeqsSpace[0])
-        
+
         n = 0
         m = nEdgeChannelHalf
         edgeChannelHalf = gene[n:m]
@@ -486,69 +507,78 @@ class MOO:
         n = m
         m += nActionSeqs
         actionSeqs = gene[n: m]
-        assert(m == len(gene))
-
-        # load edgeChannel
-        iChannelsMiddle = []        # id of channels in the middle
-        for ic in self.channelMirrorMap:
-            if self.channelMirrorMap[ic] == -1:
-                iChannelsMiddle.append(ic)
+        assert (m == len(gene))
         
-        self.model.edgeChannel = np.ones_like(self.model.edgeChannel, dtype=int)    # reset
-        self.model.edgeChannel *= -1
-        iEdgeChannelHalf = iEdgeChannelMiddle = 0
-        for ie in range(len(self.model.e)):
-            if self.model.edgeChannel[ie] != -1:     # already assigned
-                continue
-                
-            ieMirror = self.model.edgeMirrorMap[ie]
-            if ieMirror == -1:  # self mirror
-                ic = iChannelsMiddle[edgeChannelMiddle[iEdgeChannelMiddle]]
-                iEdgeChannelMiddle += 1
-                self.model.edgeChannel[ie] = ic
-            else:   # on the half
-                ic = edgeChannelHalf[iEdgeChannelHalf]
-                
-                iEdgeChannelHalf += 1
-                icMirror = self.channelMirrorMap[ic]
-                
-                if icMirror != -1:  # channel not mirrored
-                    self.model.edgeChannel[ie] = ic
-                    self.model.edgeChannel[ieMirror] = icMirror
-                else:       # channel mirrored
-                    self.model.edgeChannel[ie] = ic
-                    self.model.edgeChannel[ieMirror] = ic
-                    
-        assert (iEdgeChannelHalf == len(edgeChannelHalf))
-        assert ((self.model.edgeChannel == -1).sum() == 0)
-        assert (iEdgeChannelMiddle == len(edgeChannelMiddle))
-        
-        # load contractionLevel
-        maxContractionGene = contractionLevel * Model.contractionInterval
-        self.model.maxContraction = np.ones_like(self.model.maxContraction)
-        self.model.maxContraction *= -1
-        iMaxContractionGene = 0
-        for ie in range(len(self.model.e)):
-            if self.model.maxContraction[ie] != -1:    # already assigned
-                continue
-            if not self.model.edgeActive[ie]:       # passive Beam
-                continue
-
-            maxContractionRatio = maxContractionGene[iMaxContractionGene]
-            iMaxContractionGene += 1
-            self.model.maxContraction[ie] = maxContractionRatio
-            
-            ieMirror = self.model.edgeMirrorMap[ie]
-            if ieMirror != -1:  # self mirror
-                self.model.maxContraction[ieMirror] = maxContractionRatio
-        
-        assert (iMaxContractionGene == len(maxContractionGene))
-        assert ((self.model.maxContraction == -1).sum() == (~self.model.edgeActive).sum())
+        # assign gene
+        self.gene = gene.copy()
         
         # load actionSeqs
         self.actionSeqs = actionSeqs.reshape(self.numObjectives, self.numChannels, self.numActions)
         
-        self.gene = gene.copy()
+        # load channel and contraction
+        if self.model.symmetric:
+            # region load edgeChannel
+            iChannelsMiddle = []        # id of channels in the middle
+            for ic in self.channelMirrorMap:
+                if self.channelMirrorMap[ic] == -1:
+                    iChannelsMiddle.append(ic)
+            
+            self.model.edgeChannel = np.ones_like(self.model.edgeChannel, dtype=int)    # reset
+            self.model.edgeChannel *= -1
+            iEdgeChannelHalf = iEdgeChannelMiddle = 0
+            for ie in range(len(self.model.e)):
+                if self.model.edgeChannel[ie] != -1:     # already assigned
+                    continue
+                    
+                ieMirror = self.model.edgeMirrorMap[ie]
+                if ieMirror == -1:  # self mirror
+                    ic = iChannelsMiddle[edgeChannelMiddle[iEdgeChannelMiddle]]
+                    iEdgeChannelMiddle += 1
+                    self.model.edgeChannel[ie] = ic
+                else:   # on the half
+                    ic = edgeChannelHalf[iEdgeChannelHalf]
+                    
+                    iEdgeChannelHalf += 1
+                    icMirror = self.channelMirrorMap[ic]
+                    
+                    if icMirror != -1:  # channel not mirrored
+                        self.model.edgeChannel[ie] = ic
+                        self.model.edgeChannel[ieMirror] = icMirror
+                    else:       # channel mirrored
+                        self.model.edgeChannel[ie] = ic
+                        self.model.edgeChannel[ieMirror] = ic
+                        
+            assert (iEdgeChannelHalf == len(edgeChannelHalf))
+            assert ((self.model.edgeChannel == -1).sum() == 0)
+            assert (iEdgeChannelMiddle == len(edgeChannelMiddle))
+            # endregion
+            
+            # region load contractionLevel
+            maxContractionGene = contractionLevel * Model.contractionInterval
+            self.model.maxContraction = np.ones_like(self.model.maxContraction)
+            self.model.maxContraction *= -1
+            iMaxContractionGene = 0
+            for ie in range(len(self.model.e)):
+                if self.model.maxContraction[ie] != -1:    # already assigned
+                    continue
+                if not self.model.edgeActive[ie]:       # passive Beam
+                    continue
+    
+                maxContractionRatio = maxContractionGene[iMaxContractionGene]
+                iMaxContractionGene += 1
+                self.model.maxContraction[ie] = maxContractionRatio
+                
+                ieMirror = self.model.edgeMirrorMap[ie]
+                if ieMirror != -1:  # self mirror
+                    self.model.maxContraction[ieMirror] = maxContractionRatio
+            
+            assert (iMaxContractionGene == len(maxContractionGene))
+            assert ((self.model.maxContraction == -1).sum() == (~self.model.edgeActive).sum())
+            # endregion
+            
+        else:
+            self.model.edgeChannel = edgeChannelMiddle
+            self.model.maxContraction[self.model.edgeActive] = contractionLevel * Model.contractionInterval
         
         return self.model, self.actionSeqs
     
@@ -561,7 +591,7 @@ class MOO:
         boolEdgesIncidence = incidenceMatrix.sum(0) > 0
         # breakpoint()
         return boolEdgesIncidence
-        
+    
     def _initEdgeChannel(self, test=False):
         boolEdgeMiddle = np.array([self.model.edgeMirrorMap[i] for i in range(len(self.model.edgeMirrorMap))]) == -1
         boolEdgeHalf = ~boolEdgeMiddle
@@ -731,7 +761,7 @@ class MOO:
         assert (vs.shape == (vs.shape[0], len(model.v), 3))
     
         return vs, self.model.e.copy()
-
+    
     def check(self):
         if len(self.channelMirrorMap) != 0:
             assert(self.numChannels == len(self.channelMirrorMap))
@@ -740,7 +770,7 @@ class MOO:
             assert(len(self.objectives) == self.numObjectives)
         # if self.actionSeqs.shape != ():
         #     assert(self.actionSeqs.shape == (self.numObjectives, self.numChannels, self.numActions))
-        
+    
     
 def testMOO(argv):
     # 1
@@ -1071,7 +1101,7 @@ def testMOO(argv):
         visualizeChannel(moo.model)
 
 def testGetGene(argv):
-    # 0
+    # region 0: tet
     setting = dict({
         "modelDir": "./test/data/testTetIn.json",
         "numChannels": 4,
@@ -1102,8 +1132,9 @@ def testGetGene(argv):
     moo.geneHandler.loadGene(gene)
     geneOut = moo.geneHandler.getGene()
     assert (gene == geneOut).all()
+    # endregion
     
-    # 1
+    # region 1: doubleTet
     setting = dict({
         "modelDir": "./test/data/testDoubleTetIn.json",
         "numChannels": 4,
@@ -1134,8 +1165,9 @@ def testGetGene(argv):
     moo.geneHandler.loadGene(gene)
     geneOut = moo.geneHandler.getGene()
     assert (gene == geneOut).all()
+    # endregion
     
-    # 2
+    # region 2: lobster channel type 1
     setting = dict({
         "modelDir": "./test/data/lobsterIn.json",
         "numChannels": 4,
@@ -1166,8 +1198,9 @@ def testGetGene(argv):
     moo.geneHandler.loadGene(gene)
     geneOut = moo.geneHandler.getGene()
     assert (gene == geneOut).all()
-
-    # 3
+    # endregion
+    
+    # region 3: lobster channel type 2
     setting = dict({
         "modelDir": "./test/data/lobsterIn.json",
         "numChannels": 4,
@@ -1198,8 +1231,9 @@ def testGetGene(argv):
     moo.geneHandler.loadGene(gene)
     geneOut = moo.geneHandler.getGene()
     assert (gene == geneOut).all()
+    # endregion
 
-    # 4
+    # region 4: pillbug
     setting = dict({
         "modelDir": "./test/data/pillBugIn.json",
         "numChannels": 4,
@@ -1230,6 +1264,46 @@ def testGetGene(argv):
     moo.geneHandler.loadGene(gene)
     geneOut = moo.geneHandler.getGene()
     assert (gene == geneOut).all()
+    # endregion
+    
+    # region 5: bridge
+    from utils.objectives import objCurvedBridge, objFlatBridge
+    
+    setting = {
+        'modelDir': './data/bridge.json',
+        'numChannels': 4,
+        'numActions': 1,
+        'numObjectives': 2,
+        "channelMirrorMap": {
+            0: -1,
+            1: -1,
+            2: -1,
+            3: -1,
+        },
+        'objectives': [[objFlatBridge], [objCurvedBridge]]
+    }
+
+    moo = MOO(setting)
+    edgeChannelHalfSpace, edgeChannelMiddleSpace, contractionLevelSpace, actionSeqsSpace = moo._getGeneSpaces()
+    
+    gene = np.hstack([edgeChannelHalfSpace[1] - 1, edgeChannelMiddleSpace[1] - 1,
+                      contractionLevelSpace[1] - 1, actionSeqsSpace[1] - 1]).astype(int)
+    
+    moo.loadGene(gene)
+    geneOut = moo.getGene()
+    assert ((gene == geneOut).all())
+    #
+    # lens, spaceChannelMirror, spaceChannelMiddle, spaceContractMirror, spaceContractMiddle, spaceActionSeqs \
+    #     = moo.geneHandler._getGeneBounds()
+    # gene = np.hstack([spaceChannelMirror[1] - 1, spaceChannelMiddle[1] - 1, spaceContractMirror[1] - 1,
+    #                   spaceContractMiddle[1] - 1, spaceActionSeqs[1] - 1]).astype(int)
+    # moo.geneHandler.loadGene(gene)
+    # geneOut = moo.geneHandler.getGene()
+    # assert (gene == geneOut).all()
+    
+    # endregion
+    
+    
 
 def testSimulate(argv):
     # 6
@@ -1498,13 +1572,11 @@ def testInitGene(argv):
     #
     # if "plot" in argv:
     #     visualizeSymmetry(moo.model)
-
-
     
 tests = {
-    'moo': testMOO,
+    # 'moo': testMOO,
     'getGene': testGetGene,
-    'simulate': testSimulate,
-    'initChannel': testInitChannel,
-    'initGene': testInitGene,
+    # 'simulate': testSimulate,
+    # 'initChannel': testInitChannel,
+    # 'initGene': testInitGene,
 }

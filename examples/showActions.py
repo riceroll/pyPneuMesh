@@ -14,7 +14,9 @@ model.load(modelDir)
 with open(modelDir) as iFile:
     data = json.load(iFile)
     actionSeq = np.array(data['script'])
-
+    
 actionSeq = np.hstack([actionSeq, actionSeq])
 
-vs = visualizeActions(model, actionSeq, nLoop=1)
+vs = visualizeActions(model, actionSeq, nLoop=1, exportFrames=True)
+
+

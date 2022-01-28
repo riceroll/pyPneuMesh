@@ -1,0 +1,54 @@
+from utils.mooCriterion import getCriterion
+from utils.moo import MOO
+from utils.objectives import objCurvedBridge, objFlatBridge
+from utils.GA import GeneticAlgorithm
+
+setting = {
+    'modelDir': './data/bridge.json',
+    'numChannels': 4,
+    'numActions': 1,
+    'numObjectives': 2,
+    "channelMirrorMap": {
+        0: -1,
+        1: -1,
+        2: -1,
+        3: -1,
+    },
+    'objectives': [[objFlatBridge], [objCurvedBridge]]
+}
+
+mmo = MOO(setting)
+lb, ub = mmo.getGeneSpace()
+
+criterion = getCriterion(mmo)
+mmo.check()
+ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
+
+settingGA = ga.getDefaultSetting()
+settingGA['nPop'] = 40
+settingGA['nGenMax'] = 5
+settingGA['lenEra'] = 25
+settingGA['nEraRevive'] = 3
+settingGA['nWorkers'] = 8
+ga.loadSetting(settingGA)
+heroes, ratingsHero = ga.run()
+
+print("ratingsHero: ")
+print(ga.ratingsHero)
+
+
+if False:
+    from utils.GA import GeneticAlgorithm, loadHistory
+    
+    hs_dir = '/Users/Roll/Desktop/pyPneuMesh/output/GA_128-7:20:58/g0_0.20,73.09.hs'
+    
+    history = loadHistory(hs_dir)
+    # history.plot(False)
+    
+    i_hero = 0
+    gene = history.heroes[i_hero]
+    
+    _, actionSeqs = mmo.loadGene(gene)
+    mmo.refreshModel()
+    for iActionSeq in range(mmo.numObjectives):
+        mmo.model.exportJSON(actionSeq=actionSeqs[iActionSeq], saveDir=None, appendix="c4_h"+str(i_hero)+"_a"+str(iActionSeq))

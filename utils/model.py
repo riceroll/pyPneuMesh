@@ -9,6 +9,7 @@ import numpy as np
 import utils
 from utils.geometry import getFrontDirection
 rootPath = os.path.split(os.path.realpath(__file__))[0]
+rootPath = os.path.split(rootPath)[0]
 tPrev = time.time()
 
 class Model(object):
@@ -149,13 +150,17 @@ class Model(object):
         self.simulate = True
         
         self.updateCornerAngles()
-        self.computeSymmetry()
+        # TODO: quick fix
+        try:
+            self.computeSymmetry()
+            self.symmetric = True
+        except:
+            self.symmetric = False
         
     def setToSingleChannel(self):
         # set all channels to the same channel
         self.edgeChannel *= 0
         self.edgeChannel += 1
-        
     # end initialization
     
     # stepping =======================
@@ -409,8 +414,9 @@ class Model(object):
         now = datetime.datetime.now()
         timeStr = "{}{}-{}:{}:{}".format(now.month, now.day, now.hour, now.minute, now.second)
         if saveDir is None:
-            saveDir = '{}/output/{}_{}.json'.format(rootPath, name, timeStr)
+            saveDir = '{}/output/{}_{}.json'.format(rootPath, name, str(appendix))
         
+        print(rootPath, name, saveDir)
         if save:
             with open(saveDir, 'w') as oFile:
                 oFile.write(js)
