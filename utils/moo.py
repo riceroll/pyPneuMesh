@@ -522,7 +522,7 @@ class MOO:
             for ic in self.channelMirrorMap:
                 if self.channelMirrorMap[ic] == -1:
                     iChannelsMiddle.append(ic)
-            
+                    
             self.model.edgeChannel = np.ones_like(self.model.edgeChannel, dtype=int)    # reset
             self.model.edgeChannel *= -1
             iEdgeChannelHalf = iEdgeChannelMiddle = 0

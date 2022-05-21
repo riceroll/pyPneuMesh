@@ -32,7 +32,8 @@ settingGA['nEraRevive'] = 3
 settingGA['nWorkers'] = 32
 ga.loadSetting(settingGA)
 # heroes, ratingsHero = ga.run()
-#
+
+
 # print("ratingsHero: ")
 # print(ga.ratingsHero)
 
@@ -52,7 +53,9 @@ history = loadHistory(hs_dir)
 i_hero = 7
 gene = history.heroes[i_hero]
 
-_, actionSeqs = mmo.loadGene(gene)
-mmo.refreshModel()
-for iActionSeq in range(mmo.numObjectives):
-    mmo.model.exportJSON(actionSeq=actionSeqs[iActionSeq], saveDir=None, appendix="c4_h"+str(i_hero)+"_a"+str(iActionSeq))
+model, actionSeqs = mmo.loadGene(gene)
+
+
+from utils.visualizer import visualizeActions
+
+vs = visualizeActions(model, actionSeqs[1], nLoop=2, exportFrames=False)

@@ -214,7 +214,7 @@ def testVisualizeActions(argv):
     with open(modelDir) as iFile:
         data = json.load(iFile)
         actionSeq = np.array(data['script'])
-    
+        
     vs = visualizeActions(model, actionSeq, nLoop=1)
     vsTruth = np.load('./test/data/pillBugOutV.npy')
     assert(((vs - vsTruth) < 1e-5).all())

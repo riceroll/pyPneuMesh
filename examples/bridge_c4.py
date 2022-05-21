@@ -40,7 +40,7 @@ print(ga.ratingsHero)
 if False:
     from utils.GA import GeneticAlgorithm, loadHistory
     
-    hs_dir = '/Users/Roll/Desktop/pyPneuMesh/output/GA_128-7:20:58/g0_0.20,73.09.hs'
+    hs_dir = '/Users/Roll/Desktop/pyPneuMesh/output/GA_128-13:23:23/g935_-0.00,-61.60.hs'
     
     history = loadHistory(hs_dir)
     # history.plot(False)

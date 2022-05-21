@@ -1,5 +1,5 @@
 import numpy as np
-from utils.geometry import getFrontDirection,getTopDirection3D
+from utils.geometry import getFrontDirection, getTopDirection3D
 
 def objMoveForward(vs: np.ndarray, es: np.ndarray):
     dx = (vs[-1].mean(0) - vs[0].mean(0))[0]
@@ -118,11 +118,15 @@ def objCurvedBridge(vs: np.ndarray, es: np.ndarray):
 def objFlatBridge(vs: np.ndarray, es: np.ndarray):
     # how much the top layer vertices are aligned with a flat line
     
-    xMin = vs[0, :, 0].min()
-    xMax = vs[0, :, 0].max()
-    zMax0 = vs[0, :, 2].max()  # the initial minimum z
+    # TODO: automate this
+    zMax0 = 2.052018814086914  # the initial minimum z
+    ivs = np.array([  0,   1,   3,   4,   5,   6,   7,   8,  23,  24,  25,  26,  27,
+        29,  30,  31,  36,  38,  40,  43,  44,  45,  46,  47,  49,  52,
+        53,  57,  61,  71,  74,  75,  77,  79,  82,  83,  84,  86,  87,
+        88,  90,  91,  92,  93,  94,  95,  98, 100, 101, 102, 103, 104,
+       109, 111, 112, 114, 116, 122, 123, 125, 129, 131, 133, 138, 140,
+       141, 145, 146, 147, 148, 149, 150])
     
-    ivs = np.arange(len(vs[0]))[vs[0, :, 2] > zMax0 - 0.01]
     vsTop = vs[-1, ivs]
     
     return -np.sqrt((vsTop[:, 2] - zMax0) ** 2).mean()
