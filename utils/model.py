@@ -5,6 +5,8 @@ import datetime
 import json
 import argparse
 import numpy as np
+import networkx as nx
+import copy
 
 import utils
 from utils.geometry import getFrontDirection
@@ -12,12 +14,116 @@ rootPath = os.path.split(os.path.realpath(__file__))[0]
 rootPath = os.path.split(rootPath)[0]
 tPrev = time.time()
 
+class HalfGraph(object):
+    def __init__(self):
+        self.ins_o = []             # nn, original indices of nodes in a halfgraph
+        self.edges = []             # indices of two incident nodes, ne x 2, ne is the number of edges in a halfgraph
+        self.ies_o = []               # ne, original indices of edges in a halfgraph
+        self.channels = []          # ne, indices of channels
+        self.contractions = []      # ne, int value of contractions
+        self.esOnMirror = []          # ne, bool, if the edge in on the mirror plane
+        
+    def add_edges_from(self, esInfo):
+        # input:
+        # esInfo: [(iv0, iv1, {'ie': , 'channel': , 'contraction': })]
+        
+        ne = len(esInfo)
+        self.ies_o = np.zeros(ne, dtype=int)
+        self.edges = np.zeros([ne, 2], dtype=int)
+        self.channels = np.zeros(ne, dtype=int)
+        self.contractions = np.zeros(ne, dtype=int)
+        self.esOnMirror = np.zeros(ne, dtype=bool)
+        
+        for i, eInfo in enumerate(esInfo):
+            ie = eInfo[2]['ie']    # original index of the edge
+            self.ies_o[i] = ie
+            
+            self.ins_o.append(eInfo[0])
+            self.ins_o.append(eInfo[1])
+            self.channels[i] = int(eInfo[2]['channel'])
+            self.contractions[i] = int(eInfo[2]['contraction'])
+            self.esOnMirror[i] = bool(eInfo[2]['onMirror'])
+            
+        self.ins_o = sorted(list(set(self.ins_o)))
+
+        for i, eInfo in enumerate(esInfo):
+            in0 = np.where(self.ins_o == eInfo[0])[0][0]
+            in1 = np.where(self.ins_o == eInfo[1])[0][0]
+            self.edges[i, 0] = in0
+            self.edges[i, 1] = in1
+            
+    def iesIncidentMirror(self):
+        # indices of edges on / connecting to the mirror plane
+        ies = np.arange(len(self.edges))[self.esOnMirror.copy()]
+        ins_onMirror = self.incidentNodes(ies)
+        ies_IncidentMirror = self.incidentEdges(ins_onMirror)
+        return ies_IncidentMirror
+    
+    def iesNotMirror(self):
+        ies = np.arange(len(self.edges))[~self.esOnMirror]
+        return ies
+    
+    def incidentNodes(self, ies):
+        # get the incident nodes of a set of edges
+        ins = np.array(list(set(self.edges[ies].reshape(-1))))
+        return ins
+        
+    def incidentEdges(self, ins):
+        # get the incident edges of a set of noes
+        isin = np.isin(self.edges, ins)
+        ifEdgesIncident = isin[:, 0] + isin[:, 1]
+        ies = np.arange(len(self.edges))[ifEdgesIncident]
+        return ies
+    
+    def iesAroundChannel(self, ic, unassigned=True):
+        # breakpoint()
+        # get ies incident but not belonged to the channel ic and not assigned
+        boolEsChannel = self.channels == ic     # bool, es in the channel
+        ins = self.incidentNodes(np.arange(len(self.edges))[boolEsChannel])
+        
+        isin = np.isin(self.edges, ins)
+        boolEsIncidentChannel = isin[:, 0] + isin[:, 1]
+        boolEsAroundChannel = boolEsIncidentChannel * (~boolEsChannel)
+        boolEsUnassigned = self.channels == -1
+        if unassigned:
+            bools = boolEsAroundChannel * boolEsUnassigned
+        else:
+            bools = boolEsAroundChannel
+        if True in bools:
+            return np.arange(len(self.edges))[bools]
+        else:
+            return None
+    
+    def channelConnected(self, ic):
+        iesUnvisited = np.arange(len(self.edges))[self.channels == ic].tolist()     # ies of the channel
+        
+        ie = iesUnvisited.pop()
+        
+        queue = [ie]
+        
+        while len(queue) != 0:
+            ie = queue.pop(0)
+        
+            ins = self.incidentNodes([ie])
+            iesAdjacent = self.incidentEdges(ins)
+            
+            for ieAdjacent in iesAdjacent:
+                if ieAdjacent in iesUnvisited:
+                    iesUnvisited.remove(ieAdjacent)
+                    queue.append(ieAdjacent)
+            
+        if len(iesUnvisited) != 0:
+            return False
+        else:
+            return True
+        
+        
 class Model(object):
     # k = 200000
     # h = 0.001
     # dampingRatio = 0.999
-    # contractionInterval = 0.075
-    # contractionLevels = 5
+    # contractionInterval = 0.1
+    # contractionLevels = 4
     # maxMaxContraction = round(contractionInterval * (contractionLevels - 1) * 100) / 100
     # contractionPercentRate = 1e-3
     # gravityFactor = 9.8 * 10
@@ -89,6 +195,9 @@ class Model(object):
         self.testing = False    # testing mode
         self.vertexMirrorMap = dict()
         self.edgeMirrorMap = dict()
+        self.channelMirrorMap = dict()
+        
+        self.showHistory = []   # edges at every update of channel growing
         
         Model.configure(configDir)
     
@@ -134,6 +243,7 @@ class Model(object):
         
         self.v = self.v0.copy()
         self.vel = np.zeros_like(self.v)
+        self.frontVec = None
 
         # TODO: quick fix
         try:
@@ -141,15 +251,17 @@ class Model(object):
         except:     # if self.numChannels not defined
             self.numChannels = self.edgeChannel.max() + 1
         
-        self.inflateChannel = np.zeros(self.numChannels)
-        self.contractionPercent = np.ones(self.numChannels)
+        self.inflateChannel = np.ones(self.numChannels)
+        self.contractionPercent = np.zeros(self.numChannels)
+        
 
         self.iAction = 0
         self.numSteps = 0
         self.gravity = True
         self.simulate = True
         
-        self.updateCornerAngles()
+        # self.updateCornerAngles()
+        
         # TODO: quick fix
         try:
             self.computeSymmetry()
@@ -161,6 +273,7 @@ class Model(object):
         # set all channels to the same channel
         self.edgeChannel *= 0
         self.edgeChannel += 1
+    
     # end initialization
     
     # stepping =======================
@@ -182,10 +295,12 @@ class Model(object):
                     self.contractionPercent[iChannel] -= Model.contractionPercentRate
                     if self.contractionPercent[iChannel] < 0:
                         self.contractionPercent[iChannel] = 0
+                    
                 else:
                     self.contractionPercent[iChannel] += Model.contractionPercentRate
                     if self.contractionPercent[iChannel] > 1:
                         self.contractionPercent[iChannel] = 1
+                    
         
             f = np.zeros_like(self.v)
         
@@ -196,7 +311,7 @@ class Model(object):
             self.l = l = np.sqrt((vec ** 2).sum(1))
             l0 = np.copy(self.lMax)
             lMax = np.copy(self.lMax)
-            lMin = lMax * (1 - self.maxContraction)
+            lMin = lMax * (1 - (Model.contractionLevels - 1) * self.contractionInterval )
             
             # edge strain
             l0[self.edgeActive] = (lMax - self.contractionPercent[self.edgeChannel] * (lMax - lMin))[self.edgeActive]
@@ -353,6 +468,239 @@ class Model(object):
         self.edgeMirrorMap = edgeMirrorMap
         return vertexMirrorMap, edgeMirrorMap
     
+    def toHalfGraph(self, reset=False):
+        G = HalfGraph()
+        
+        # region assigning eLeft, eRight, eMiddle
+        eLeft = []
+        eRight = []
+        eMiddle = []
+        edgeMirrorMap = copy.copy(self.edgeMirrorMap)
+        
+        while len(edgeMirrorMap):
+            ie, ieMirror = edgeMirrorMap.popitem()
+            if ieMirror == -1:
+                eMiddle.append(ie)
+            else:
+                if self.v[self.e[ie][0], 1] < 0 or self.v[self.e[ie][1], 1] < 0:
+                    eLeft.append(ie)
+                    eRight.append(ieMirror)
+                else:
+                    eLeft.append(ieMirror)
+                    eRight.append(ie)
+                    
+                edgeMirrorMap.pop(ieMirror)
+        self.eLeft = eLeft
+        self.eRight = eRight
+        self.eMiddle = eMiddle
+        # endregion
+        
+        # for iv in range(len(self.v)):
+        #     G.add_node(iv)
+            
+        # region G.add_edges_from(...)
+        esInfo = []
+        for ie in eLeft + eMiddle:
+            contraction = (int(round(self.maxContraction[ie] / Model.contractionInterval))) if not reset else 0
+            if not contraction in [0, 1, 2, 3]:
+                contraction = 0
+            
+            esInfo.append((self.e[ie][0], self.e[ie][1],
+                       {
+                           'ie': ie,
+                           'onMirror': ie in eMiddle,
+                           'channel': self.edgeChannel[ie],
+                           'contraction': contraction
+                        }
+                            )
+                       )
+        G.add_edges_from(esInfo)
+        #end region
+        self.G = G
+        return G
+    
+    def fromHalfGraph(self):
+        # set values for self.maxContraction, self.edgeChannel
+        G = self.G
+        
+        for i, edge in enumerate(G.edges):
+            
+            ie = G.ies_o[i]
+            
+            contractionLevel = G.contractions[i]
+            ic = G.channels[i]
+            
+            # region set edgeChannel
+            self.edgeChannel[ie] = ic
+            ieMirror = self.edgeMirrorMap[ie]
+            
+            if ieMirror == -1:
+                pass
+            else:
+                if ic == -1:
+                    self.edgeChannel[ieMirror] = -1
+                else:
+                    icMirror = self.channelMirrorMap[ic]
+                    if icMirror == -1:
+                        icMirror = ic
+                    self.edgeChannel[ieMirror] = icMirror
+            # endregion
+
+            # set maxContraction
+            self.maxContraction[ie] = contractionLevel * Model.contractionInterval
+            if ieMirror != -1:
+                self.maxContraction[ieMirror] = contractionLevel * Model.contractionInterval
+    
+    def initHalfGraph(self):
+        stuck = True
+        while stuck:
+            stuck = False
+            
+            G = self.G
+            G.channels *= 0
+            G.channels += -1
+            G.contractions *= 0
+            
+            # init channels
+            iesUnassigned = set(np.arange(len(G.edges)))     # halfgraph indices of edges
+            iesIncidentMirrorUnassigned = set(G.iesIncidentMirror())
+            iesNotMirrorUnassigned = set(G.iesNotMirror())
+            
+            for iChannel in self.channelMirrorMap.keys():
+                # breakpoint()
+                icMirror = self.channelMirrorMap[iChannel]
+                if icMirror == -1:
+                    ie = np.random.choice(list(iesIncidentMirrorUnassigned))
+                    iesIncidentMirrorUnassigned.remove(ie)
+                    iesUnassigned.remove(ie)
+                    if ie in iesNotMirrorUnassigned:
+                        iesNotMirrorUnassigned.remove(ie)
+                else:
+                    ie = np.random.choice(list(iesNotMirrorUnassigned))
+                    iesUnassigned.remove(ie)
+                    if ie in iesIncidentMirrorUnassigned:
+                        iesIncidentMirrorUnassigned.remove(ie)
+                    iesNotMirrorUnassigned.remove(ie)
+                G.channels[ie] = iChannel
+            
+            numNotUpdate = 0
+            while iesUnassigned:
+                numNotUpdate += 1
+                
+                if numNotUpdate > 40:
+                    stuck = True
+                    break
+                #
+                # self.fromHalfGraph()
+                # self.show(show=False)
+                
+                ic = np.random.choice(list(self.channelMirrorMap.keys()))
+                iesUnassignedAroundChannel = G.iesAroundChannel(ic)
+                if G.iesNotMirror() is not None and iesUnassignedAroundChannel is not None:
+                    iesUnassignedAroundChannelNotMirror = np.intersect1d(iesUnassignedAroundChannel, G.iesNotMirror())
+                else:
+                    iesUnassignedAroundChannelNotMirror = None
+                
+                icMirror = self.channelMirrorMap[ic]
+                if icMirror != -1:
+                    if iesUnassignedAroundChannelNotMirror is None or len(iesUnassignedAroundChannelNotMirror) == 0:
+                        continue
+                    ieToAssign = np.random.choice(iesUnassignedAroundChannelNotMirror)
+                else:
+                    if iesUnassignedAroundChannel is None or len(iesUnassignedAroundChannel) == 0:
+                        continue
+                    ieToAssign = np.random.choice(iesUnassignedAroundChannel)
+                
+                numNotUpdate = 0
+                iesUnassigned.remove(ieToAssign)
+                G.channels[ieToAssign] = ic
+                
+        self.G.contractions = np.random.randint(0, Model.contractionLevels, self.G.contractions.shape)
+        
+        self.fromHalfGraph()
+        
+    def mutateHalfGraph(self):
+        # choose a random edge and change its channel
+        
+        # find all edges that can be changed
+        # randomly pick one edge
+        # change its channel to one of the available channels incident to the edge
+        
+        G = self.G
+        
+    
+        iess = []
+        for ic in self.channelMirrorMap.keys():
+            iess.append(G.iesAroundChannel(ic, unassigned=False))
+        ies = np.array(list(set(np.concatenate(iess))))
+        
+        succeeded = False
+        while not succeeded:
+            ie = np.random.choice(ies)
+            ic_original = G.channels[ie]
+        
+            ies_incident = G.incidentEdges(G.edges[ie])
+            ics_available = []
+            for ie_incident in ies_incident:
+                ic = G.channels[ie_incident]
+                icMirror = self.channelMirrorMap[ic]
+                if not(icMirror != -1 and G.esOnMirror[ie_incident]) and ic != ic_original:
+                    ics_available.append(ic)
+            
+            while len(ics_available) > 0:
+                ic = np.random.choice(ics_available)
+                G.channels[ie] = ic
+                
+                channelsConnected = True
+                
+                for iChannel in self.channelMirrorMap.keys():
+                    channelsConnected *= G.channelConnected(iChannel)
+                    
+                if channelsConnected:
+                    succeeded = True
+                    break
+                else:
+                    G.channels[ie] = ic_original
+                    ics_available.remove(ic)
+
+        if np.random.rand() > 0.5:  # mutate contraction
+            i = np.random.randint(len(G.contractions))
+            G.contractions[i] = np.random.randint(Model.contractionLevels)
+            
+        self.fromHalfGraph()
+        
+    
+    def show(self, show=True, essPrev=None):
+        import polyscope as ps
+        try:
+            ps.init()
+        except:
+            pass
+        
+        G = self.G
+        for ic in list(np.arange(self.numChannels)):
+            ies = np.arange(len(self.e))[self.edgeChannel == ic]
+            
+            # if ic == -1:
+            #     assert(len(ies) == 0)
+            # else:
+            #     assert(len(ies) != 0)
+            
+            es = self.e[ies]
+            
+            if show:
+                if essPrev is not None:
+                    es = essPrev[ic]
+                
+                ps.register_curve_network(str(ic), self.v, es)
+            else:
+                self.showHistory.append(es.copy())
+            
+            
+        if show:
+            ps.show()
+        
+            
     def loadEdgeChannel(self, edgeChannel):
         """
         load edgeChannel

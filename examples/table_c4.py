@@ -5,43 +5,33 @@ from utils.GA import GeneticAlgorithm
 
 setting = {
     'modelDir': './data/table.json',
-    'numChannels': 4,
+    'numChannels': 6,
     'numActions': 4,
     'numObjectives': 3,
     "channelMirrorMap": {
         0: 1,
-        1: 0,
         2: -1,
         3: -1,
+        4: 5,
     },
-    'objectives': [[objMoveForward, objFaceForward], [objTurnLeft], [objLowerBodyMax]]
+    'objectives': [[objMoveForward, objFaceForward], [objTurnLeft], [objLowerBodyMax]],
+    
+    'nLoopSimulate': 4
 }
 
-mmo = MOO(setting)
-lb, ub = mmo.getGeneSpace()
+# mmo = MOO(setting)
 
-criterion = getCriterion(mmo)
-mmo.check()
-ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
+ga = GeneticAlgorithm(MOOSetting=setting)
+
+import multiprocessing
+nWorkers = multiprocessing.cpu_count()
 
 settingGA = ga.getDefaultSetting()
-settingGA['nPop'] = 32
-settingGA['nGenMax'] = 4000
-settingGA['lenEra'] = 25
-settingGA['nEraRevive'] = 3
-settingGA['nWorkers'] = 32
+settingGA['nGenesPerPool'] = int(nWorkers * 1.1)
+settingGA['nGensPerPool'] = int(nWorkers / 8 * 5)
+settingGA['nSurvivedMax'] = int(settingGA['nGenesPerPool'] * 0.25)
+settingGA['nWorkers'] = nWorkers
 ga.loadSetting(settingGA)
-heroes, ratingsHero = ga.run()
-
-print("ratingsHero: ")
-print(ga.ratingsHero)
+ga.run()
 
 
-genes, fileDirs = ga.getHeroes()
-for i in range(len(genes)):
-    gene = genes[i]
-
-    _, actionSeqs = mmo.loadGene(gene)
-    mmo.refreshModel()
-    for iActionSeq in range(mmo.numObjectives):
-        mmo.model.exportJSON(actionSeq=actionSeqs[iActionSeq], saveDir=fileDirs[i], appendix=iActionSeq)

@@ -4,13 +4,12 @@ import numpy as np
 from utils.moo import MOO
 
 def getCriterion(mmo: MOO) -> Callable[[np.ndarray], np.ndarray]:
-    def criterion(gene: np.ndarray) -> np.ndarray:
+    def criterion(gene) -> np.ndarray:
         
-        mmo.loadGene(gene)
+        mmo = gene
         rating = []
         for i in range(len(mmo.actionSeqs)):
             actionSeq = mmo.actionSeqs[i]
-            mmo.refreshModel()
             
             vs, es = mmo.simulate(actionSeq)
             

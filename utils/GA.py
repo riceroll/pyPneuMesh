@@ -7,6 +7,9 @@ from pathos.multiprocessing import ProcessPool as Pool
 import multiprocessing
 from typing import List
 import logging
+from utils.moo import MOO
+from utils.mooCriterion import getCriterion
+import pickle
 
 # region history
 def loadHistory(historyDir):
@@ -213,16 +216,11 @@ def regenerate(pop, nPop, lb, ub):
 class GeneticAlgorithm(object):
     class Setting:
         def __init__(self):
-            self.nPop = None
-            self.lenEra = None
-            self.nEraRevive = None
-            self.surviveRatio = None
-            self.crossRatio = None
-            self.crossGenePercent = None
-            self.mutateRatio = None
-            self.mutateGenePercent = None
+            self.nGenesPerPool = None
+            self.nGensPerPool = None
+            self.nSurvivedMax = None
             
-            self.nGenMax = None
+            
             self.nWorkers = None
             self.mute = None
             self.plot = None
@@ -243,23 +241,17 @@ class GeneticAlgorithm(object):
         @staticmethod
         def getDefaultSetting():
             setting = {
-                'nPop': 48,
-                'surviveRatio': 0.6,
-                'crossRatio': 0.4,
-                'crossGenePercent': 0.05,
-                'mutateRatio': 0.05,
-                'mutateGenePercent': 0.05,
-                'lenEra': 20,
-                'nEraRevive': 4,
+                'nGenesPerPool': 8,
+                'nGensPerPool': 5,
+                'nSurvivedMax': 2,
         
-                'nGenMax': 200,
                 'nWorkers': -1,
                 'plot': True,
                 'mute': False,
                 'saveHistory': True,
             }
             return setting
-            
+    
     class History:
         def __init__(self):
             self.ratingsBestHero = []
@@ -374,10 +366,12 @@ class GeneticAlgorithm(object):
         
                     plt.show()
 
-    def __init__(self, criterion=None, lb=None, ub=None, setting=None):
+    def __init__(self, MOOSetting, GASetting=None):
         # load default setting
         self.setting = self.Setting()
+        self.MOOSetting = MOOSetting
         self.loadSetting(self.getDefaultSetting())
+        setting = GASetting
         if setting is not None:
             self.loadSetting(setting)
             
@@ -386,21 +380,18 @@ class GeneticAlgorithm(object):
         self.Rs = []
         self.CDs = []
         
+        self.genePool = []
+        self.elitePool = []
+        
+        
         self.heroes = []
         self.ratingsHero = []
         self.criterion = None
-
-        self.lb = lb
-        self.ub = ub
-        self.criterion = criterion
         
-        self.history = self.History()
         self.startTime = None
         self.folderDir = None
         
-        assert (self.lb.shape == self.ub.shape)
-        assert (self.lb.ndim == self.ub.ndim == 1)
-        assert (self.lb.dtype == self.ub.dtype == int)
+        
         
     @staticmethod
     def getDefaultSetting():
@@ -593,6 +584,83 @@ class GeneticAlgorithm(object):
         ids = self.Rs == 0
         return self.pop[ids][0], self.ratings[ids][0]
         
+    def initPoolFromScratch(self, sizePool):
+        genePool = [{'moo': MOO(self.MOOSetting, randInit=True), 'score': None} for _ in range(sizePool)]
+        return genePool
+    
+    def evaluate2(self, genePool, nWorkers=-1):
+        # for i, gene in enumerate(genePool):
+        #     moo = gene['moo']
+        #     criterion = getCriterion(moo)
+        #     score = criterion(moo)
+        #     genePool[i]['score'] = score
+        
+        def criterion(gene):
+            if gene['score'] is not None:
+                return gene['score']
+            else:
+                return getCriterion(gene['moo'])(gene['moo'])
+            
+        with Pool(nWorkers if nWorkers != -1 else multiprocessing.cpu_count()) as p:
+            scores = np.array(p.map(criterion, genePool))
+        
+        for i in range(len(genePool)):
+            genePool[i]['score'] = scores[i]
+        
+        return genePool
+    
+    def select2(self, genePool, nSurvivedMax):
+        scores = [gene['score'] for gene in genePool]
+        Rs, CDs = getRCD(np.array(scores))
+
+        Cs = 1 / (CDs + 1e-3)  # crowding
+        idsSorted = np.lexsort([Cs, Rs])
+        genePool = [genePool[i] for i in idsSorted]
+        Rs = Rs[idsSorted]
+        CDs = CDs[idsSorted]
+        
+        idsSurvived = idsSorted[Rs == 0]
+        idsSurvived = idsSurvived[:nSurvivedMax]
+        
+        genePoolSurvived = [genePool[i] for i in idsSurvived]
+        
+        return genePoolSurvived
+        
+    def mutateAndRegenerate(self, genePool, sizePool):
+        nGeneration = sizePool - len(genePool)
+        while len(genePool) < sizePool:
+            genePoolNew = [{'moo': gene['moo'].mutate(), 'score': gene['score']} for gene in genePool]
+            genePool += genePoolNew
+        
+        genePool = genePool[:sizePool]
+        return genePool
+        
+    def addElites(self, genePoolSurvived, elitePool):
+        elitePool += genePoolSurvived
+        return elitePool
+        
+    def elitePoolFull(self, sizePool, elitePool):
+        if len(elitePool) >= sizePool:
+            return True
+        return False
+    
+    def initPoolFromElites(self, elitePool, sizePool):
+        genePool = elitePool[:sizePool]
+        elitePool = []
+        return genePool, elitePool
+        
+    def log2(self, iPool, elitePool, GASetting, MOOSetting):
+        fileDir = os.path.join(self.folderDir, 'iPool_{}'.format(iPool))
+        data = {
+            'elitePool': elitePool,
+            'GASetting': GASetting,
+            'MOOSetting': MOOSetting
+        }
+        
+        with open(fileDir, 'wb') as oFile:
+            pickle.dump(data, oFile, pickle.HIGHEST_PROTOCOL)
+    
+        
     def run(self):
         self.startTime = t = datetime.datetime.now()
         t = self.startTime
@@ -614,36 +682,74 @@ class GeneticAlgorithm(object):
             data = self.setting.data()
             for key in data:
                 logging.info("{}: {}".format(key, data[key]))
+
+        sizePool = self.setting.nGenesPerPool
+        nPools = 99999
+        nGenPerPool = self.setting.nGensPerPool
+        nSurvivedMax = self.setting.nSurvivedMax
+
+        self.genePool = self.initPoolFromScratch(sizePool)
+        self.genePool = self.evaluate2(self.genePool, self.setting.nWorkers)
+        self.genePool = self.select2(self.genePool, nSurvivedMax)
         
-        self.pop = initPop(nPop=self.setting.nPop, lb=self.lb, ub=self.ub)
-        self.ratings, self.Rs, self.CDs = evaluate(pop=self.pop, criterion=self.criterion,
-                                                   nWorkers=self.setting.nWorkers)
-        self.sort()
-        self.heroes.append(self.pop[0])
-        self.ratingsHero.append(self.ratings[0])
-        
-        nExtinctions = 0
-        for iGen in range(self.setting.nGenMax):
-            extinct, reviving, nExtinctions = self.disaster(nExtinctions=nExtinctions)
-            
-            self.select()
-            self.cross()
-            self.mutate()
-            self.regenerate()
-            self.evaluate()
-            self.sort()
-            
-            self.log(  extinct=extinct, reviving=reviving)
-            if iGen % 5 == 0 and self.setting.saveHistory:
-                self.saveHistory(iGen=iGen, appendix=self.history.ratingsBestHero[-1])
-        
-        if self.setting.plot:
-            # try:
-            self.history.plot()
-            # except Exception as e:
-            #     print('plot', e)
+        for iPool in range(nPools):
+            print('iPool: ', iPool)
+            for iGen in range(nGenPerPool):
+                print('iGen: ', iGen)
+                self.genePool = self.mutateAndRegenerate(self.genePool, sizePool)
+                self.genePool = self.evaluate2(self.genePool, self.setting.nWorkers)
+                self.genePool = self.select2(self.genePool, nSurvivedMax)
                 
-        return self.getBest()
+            self.elitePool = self.addElites(self.genePool, self.elitePool)
+            
+            self.log2(iPool, self.elitePool, self.setting, self.MOOSetting)
+            
+            if self.elitePoolFull(sizePool, self.elitePool):
+                print('elitePoolFull')
+                self.genePool, self.elitePool = self.initPoolFromElites(self.elitePool, sizePool)
+            else:
+                self.genePool = self.initPoolFromScratch(sizePool)
+            
+            
+            
+                
+            
+            
+            
+        
+        #
+        # self.pop = initPop(nPop=self.setting.nPop, lb=self.lb, ub=self.ub)
+        #
+        # self.ratings, self.Rs, self.CDs = evaluate(pop=self.pop, criterion=self.criterion,
+        #                                            nWorkers=self.setting.nWorkers)
+        #
+        # self.sort()
+        # self.heroes.append(self.pop[0])
+        # self.ratingsHero.append(self.ratings[0])
+        #
+        # nExtinctions = 0
+        # for iGen in range(self.setting.nGenMax):
+        #     extinct, reviving, nExtinctions = self.disaster(nExtinctions=nExtinctions)
+        #
+        #     self.select()
+        #     self.cross()
+        #     self.mutate()
+        #     self.regenerate()
+        #     self.evaluate()
+        #     self.sort()
+        #
+        #     self.log(  extinct=extinct, reviving=reviving)
+        #     if iGen % 5 == 0 and self.setting.saveHistory:
+        #         self.saveHistory(iGen=iGen, appendix=self.history.ratingsBestHero[-1])
+        #
+        # if self.setting.plot:
+        #     # try:
+        #     self.history.plot()
+        #     # except Exception as e:
+        #     #     print('plot', e)
+        #
+        #
+        # return self.getBest()
 
 # region testings ========================
 def testCross(argv):

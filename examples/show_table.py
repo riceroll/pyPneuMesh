@@ -5,57 +5,39 @@ from utils.GA import GeneticAlgorithm
 
 setting = {
     'modelDir': './data/table.json',
-    'numChannels': 4,
+    'numChannels': 6,
     'numActions': 4,
     'numObjectives': 3,
     "channelMirrorMap": {
         0: 1,
-        1: 0,
         2: -1,
-        3: -1
+        3: -1,
+        4: 5,
     },
     'objectives': [[objMoveForward, objFaceForward], [objTurnLeft], [objLowerBodyMax]]
 }
 
-mmo = MOO(setting)
-lb, ub = mmo.getGeneSpace()
-
-criterion = getCriterion(mmo)
-mmo.check()
-ga = GeneticAlgorithm(criterion=criterion, lb=lb, ub=ub)
-
-settingGA = ga.getDefaultSetting()
-settingGA['nPop'] = 8
-settingGA['nGenMax'] = 1
-settingGA['lenEra'] = 25
-settingGA['nEraRevive'] = 3
-settingGA['nWorkers'] = 32
-ga.loadSetting(settingGA)
-# heroes, ratingsHero = ga.run()
+moo = MOO(setting)
+model = moo.model
 
 
-# print("ratingsHero: ")
-# print(ga.ratingsHero)
 
 
-# genes, fileDirs = ga.getHeroes()
-# for i in range(len(genes)):
-# gene = genes[i]
+# test
+import copy
+mc = copy.copy(model.maxContraction)
+ec = copy.copy(model.edgeChannel)
+model.toHalfGraph(reset=True)
+model.maxContraction *= 20
+model.edgeChannel *= 20
+model.fromHalfGraph()
+# assert((ec == model.edgeChannel).all())
 
-import sys
-from utils.GA import GeneticAlgorithm, loadHistory
+model.initHalfGraph()
 
-hs_dir = './output/GA_1116-20:55:18/g2615_9.99,0.94,0.79,-2.59.hs'
+model.show()
 
-history = loadHistory(hs_dir)
-# history.plot(False)
-
-i_hero = 7
-gene = history.heroes[i_hero]
-
-model, actionSeqs = mmo.loadGene(gene)
-
-
-from utils.visualizer import visualizeActions
-
-vs = visualizeActions(model, actionSeqs[1], nLoop=2, exportFrames=False)
+for i in range(200):
+    model.mutateHalfGraph()
+    model.show()
+    

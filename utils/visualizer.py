@@ -80,7 +80,41 @@ def _create_window(o3):
     render_opt.light_on = True
     
     return viewer
+
+def showFrames(frames, es):
+    try:
+        o3, vector3d, vector3i, vector2i, LineSet, PointCloud, drawGround = _importVisualizer()
+        viewer = _create_window(o3)
+    except Exception as e:
+        print(e)
+        return
     
+    ls = LineSet(frames[0], es)
+    viewer.add_geometry(ls)
+    
+    global iFrame
+    iFrame = 0
+    
+    def callback(vis):
+        global iFrame
+        
+        if iFrame >= len(frames):
+            vis.close()
+            vis.destroy_window()
+            return
+        
+        ls.points = vector3d(frames[iFrame])
+        viewer.update_geometry(ls)
+        
+        iFrame += 10
+
+    viewer.register_animation_callback(callback)
+    
+
+    drawGround(viewer)
+    viewer.run()
+
+
 def visualizeActions(model : Model, actionSeq: np.ndarray, nLoop=1, exportFrames=False):
     """
 
