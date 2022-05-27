@@ -629,7 +629,7 @@ class GeneticAlgorithm(object):
     def mutateAndRegenerate(self, genePool, sizePool):
         nGeneration = sizePool - len(genePool)
         while len(genePool) < sizePool:
-            genePoolNew = [{'moo': gene['moo'].mutate(), 'score': gene['score']} for gene in genePool]
+            genePoolNew = [{'moo': gene['moo'].mutate(), 'score': None} for gene in genePool]
             genePool += genePoolNew
         
         genePool = genePool[:sizePool]
