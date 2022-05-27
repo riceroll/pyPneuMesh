@@ -27,7 +27,7 @@ import multiprocessing
 nWorkers = multiprocessing.cpu_count()
 
 settingGA = ga.getDefaultSetting()
-settingGA['nGenesPerPool'] = int(nWorkers * 1.1)
+settingGA['nGenesPerPool'] = nWorkers
 settingGA['nGensPerPool'] = int(nWorkers / 8 * 5)
 settingGA['nSurvivedMax'] = int(settingGA['nGenesPerPool'] * 0.25)
 settingGA['nWorkers'] = nWorkers

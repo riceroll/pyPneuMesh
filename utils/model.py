@@ -97,6 +97,9 @@ class HalfGraph(object):
     def channelConnected(self, ic):
         iesUnvisited = np.arange(len(self.edges))[self.channels == ic].tolist()     # ies of the channel
         
+        if len(iesUnvisited) == 0:  # no graph exist at all
+            return False
+        
         ie = iesUnvisited.pop()
         
         queue = [ie]
