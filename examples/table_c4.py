@@ -16,7 +16,7 @@ setting = {
     },
     'objectives': [[objMoveForward, objFaceForward], [objTurnLeft], [objLowerBodyMax]],
     
-    'nLoopSimulate': 4
+    'nLoopSimulate': 1
 }
 
 # mmo = MOO(setting)

@@ -10,6 +10,7 @@ import logging
 from utils.moo import MOO
 from utils.mooCriterion import getCriterion
 import pickle
+import copy
 
 # region history
 def loadHistory(historyDir):
@@ -34,7 +35,7 @@ def getR(ratings: np.ndarray) -> (np.ndarray):
         nonDominated = (~dominatedMatrix[:, np.arange(len(Rs))[Rs == -1]]).all(1) * (Rs == -1)
         Rs[nonDominated] = R
         R += 1
-        
+    print(Rs)
     return Rs
 
 def getCD(ratings: np.ndarray, Rs: np.ndarray) -> (np.ndarray):
@@ -629,7 +630,7 @@ class GeneticAlgorithm(object):
     def mutateAndRegenerate(self, genePool, sizePool):
         nGeneration = sizePool - len(genePool)
         while len(genePool) < sizePool:
-            genePoolNew = [{'moo': gene['moo'].mutate(), 'score': None} for gene in genePool]
+            genePoolNew = [{'moo': copy.deepcopy(gene['moo']).mutate(), 'score': None} for gene in genePool]
             genePool += genePoolNew
         
         genePool = genePool[:sizePool]
