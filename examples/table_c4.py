@@ -16,7 +16,7 @@ setting = {
     },
     'objectives': [[objMoveForward, objFaceForward], [objTurnLeft], [objLowerBodyMax]],
     
-    'nLoopSimulate': 1
+    'nLoopSimulate': 4
 }
 
 # mmo = MOO(setting)
@@ -29,7 +29,7 @@ nWorkers = multiprocessing.cpu_count()
 settingGA = ga.getDefaultSetting()
 settingGA['nGenesPerPool'] = nWorkers
 settingGA['nGensPerPool'] = int(nWorkers / 8 * 5)
-settingGA['nSurvivedMax'] = int(settingGA['nGenesPerPool'] * 0.25)
+settingGA['nSurvivedMax'] = int(settingGA['nGenesPerPool'] * 0.5)
 settingGA['nWorkers'] = nWorkers
 ga.loadSetting(settingGA)
 ga.run()

@@ -35,7 +35,6 @@ def getR(ratings: np.ndarray) -> (np.ndarray):
         nonDominated = (~dominatedMatrix[:, np.arange(len(Rs))[Rs == -1]]).all(1) * (Rs == -1)
         Rs[nonDominated] = R
         R += 1
-    print(Rs)
     return Rs
 
 def getCD(ratings: np.ndarray, Rs: np.ndarray) -> (np.ndarray):
@@ -612,20 +611,27 @@ class GeneticAlgorithm(object):
     
     def select2(self, genePool, nSurvivedMax):
         scores = [gene['score'] for gene in genePool]
-        Rs, CDs = getRCD(np.array(scores))
-
-        Cs = 1 / (CDs + 1e-3)  # crowding
-        idsSorted = np.lexsort([Cs, Rs])
+        Rs = getR(np.array(scores))
+        
+        breakpoint()
+        # only keep the front genes
+        idsSurvived = np.arange(len(Rs))[Rs == 0]
+        genePool = [genePool[i] for i in idsSurvived]
+        scores = [gene['score'] for gene in genePool]
+        
+        CDs = getCD(np.array(scores), Rs)
+        
+        idsSorted = np.argsort(CDs)[::-1]
         genePool = [genePool[i] for i in idsSorted]
-        Rs = Rs[idsSorted]
-        CDs = CDs[idsSorted]
-        
-        idsSurvived = idsSorted[Rs == 0]
-        idsSurvived = idsSurvived[:nSurvivedMax]
-        
-        genePoolSurvived = [genePool[i] for i in idsSurvived]
-        
-        return genePoolSurvived
+
+        logging.info("{:<10} {:<15} {:<40} {:<10} {:<10}".format('i', 'address', 'score', 'R', 'CD'))
+
+        for i in range(len(genePool)):
+            logging.info(
+                "{:<10} {:<15} {:<40} {:<10} {:<10}".format(i, str(genePool[i]['moo'])[-15:], str(genePool[i]['score']),
+                                                            Rs[i], CDs[i]))
+
+        return genePool
         
     def mutateAndRegenerate(self, genePool, sizePool):
         nGeneration = sizePool - len(genePool)
