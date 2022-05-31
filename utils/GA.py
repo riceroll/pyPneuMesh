@@ -76,7 +76,6 @@ def initPop(nPop, lb, ub):
     assert (lb.dtype == ub.dtype == int)
     assert (lb.ndim == ub.ndim == 1)
     
-    # breakpoint()
     pop = np.random.randint(lb, ub, [nPop, len(lb)])
     return pop
 
@@ -613,7 +612,6 @@ class GeneticAlgorithm(object):
         scores = [gene['score'] for gene in genePool]
         Rs = getR(np.array(scores))
         
-        breakpoint()
         # only keep the front genes
         idsSurvived = np.arange(len(Rs))[Rs == 0]
         genePool = [genePool[i] for i in idsSurvived]
