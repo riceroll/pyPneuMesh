@@ -2,6 +2,14 @@ from utils.mooCriterion import getCriterion
 from utils.moo import MOO
 from utils.objectives import objMoveForward, objFaceForward, objTurnLeft, objTurnRight, objLowerBodyMax
 from utils.GA import GeneticAlgorithm
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--checkpoint', help='The directory of the checkpoint file.')
+args = parser.parse_args()
+
+print(args.checkpoint)
+
 
 setting = {
     'modelDir': './data/table.json',
@@ -32,6 +40,13 @@ settingGA['nGensPerPool'] = int(nWorkers / 8 * 5)
 settingGA['nSurvivedMax'] = int(settingGA['nGenesPerPool'] * 0.5)
 settingGA['nWorkers'] = nWorkers
 ga.loadSetting(settingGA)
+
+
+if args.checkpoint:
+    checkpointDir = args.checkpoint
+    ga.loadCheckpoint(checkpointDir)
+
+
 ga.run()
 
 

@@ -389,6 +389,7 @@ class GeneticAlgorithm(object):
         
         self.startTime = None
         self.folderDir = None
+        self.iPool = None
         
         
         
@@ -600,6 +601,7 @@ class GeneticAlgorithm(object):
             else:
                 return getCriterion(gene['moo'])(gene['moo'])
             
+        
         with Pool(nWorkers if nWorkers != -1 else multiprocessing.cpu_count()) as p:
             scores = np.array(p.map(criterion, genePool))
         
@@ -621,6 +623,7 @@ class GeneticAlgorithm(object):
         
         idsSorted = np.argsort(CDs)[::-1]
         genePool = [genePool[i] for i in idsSorted]
+        genePool = genePool[:nSurvivedMax]
 
         logging.info("{:<10} {:<15} {:<40} {:<10} {:<10}".format('i', 'address', 'score', 'R', 'CD'))
 
@@ -665,12 +668,23 @@ class GeneticAlgorithm(object):
         with open(fileDir, 'wb') as oFile:
             pickle.dump(data, oFile, pickle.HIGHEST_PROTOCOL)
     
+    def loadCheckpoint(self, checkpointDir):
+        cpDir = Path(checkpointDir)
+        self.folderDir = str(cpDir.parent)
+        iPool = int(cpDir.name.split('_')[-1])
+        self.iPool = iPool
+        import pickle5
+        data = pickle5.load(open(str(cpDir), 'rb'))
+        elitePool = data['elitePool']
+        [gene['moo'].model.configure(gene['moo'].setting.modelConfigDir) for gene in elitePool]
+        self.elitePool = elitePool
         
     def run(self):
         self.startTime = t = datetime.datetime.now()
         t = self.startTime
         folderName = 'GA_{}{}-{}:{}:{}'.format(t.month, t.day, t.hour, t.minute, t.second)
-        self.folderDir = './output/' + folderName
+        
+        self.folderDir = './output/' + folderName if self.folderDir is None else self.folderDir
         if self.setting.saveHistory:
             Path(self.folderDir).mkdir(parents=True, exist_ok=True)
             logging.basicConfig(filename=os.path.join(self.folderDir, 'history.log'),
@@ -678,7 +692,7 @@ class GeneticAlgorithm(object):
                                 level=logging.WARNING if not self.setting.saveHistory else logging.INFO)
         else:
             logging.basicConfig(level=logging.WARNING if not self.setting.saveHistory else logging.INFO)
-
+            
         console = logging.StreamHandler()
         logging.getLogger().addHandler(console)
         
@@ -689,15 +703,20 @@ class GeneticAlgorithm(object):
                 logging.info("{}: {}".format(key, data[key]))
 
         sizePool = self.setting.nGenesPerPool
-        nPools = 99999
         nGenPerPool = self.setting.nGensPerPool
         nSurvivedMax = self.setting.nSurvivedMax
 
-        self.genePool = self.initPoolFromScratch(sizePool)
-        self.genePool = self.evaluate2(self.genePool, self.setting.nWorkers)
-        self.genePool = self.select2(self.genePool, nSurvivedMax)
+        if len(self.elitePool) != 0:
+            self.genePool, self.elitePool = self.initPoolFromElites(self.elitePool, sizePool)
+        else:
+            self.genePool = self.initPoolFromScratch(sizePool)
+            self.genePool = self.evaluate2(self.genePool, self.setting.nWorkers)
+            self.genePool = self.select2(self.genePool, nSurvivedMax)
         
-        for iPool in range(nPools):
+        iPool = 0 if self.iPool is None else self.iPool
+        
+        while True:
+            iPool += 1
             print('iPool: ', iPool)
             for iGen in range(nGenPerPool):
                 print('iGen: ', iGen)
