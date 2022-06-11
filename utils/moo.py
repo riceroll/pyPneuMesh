@@ -3,9 +3,75 @@ import numpy as np
 import networkx as nx
 from typing import List, Dict, Tuple
 import ray
+import copy
+from gym import Env
+from gym.spaces import Discrete, Box
 
 from utils.model import Model
 from utils.visualizer import showFrames
+
+
+class TrussEnv(Env):
+    def __init__(self, model, moo, objective):
+        self.model = model
+        self.moo = moo
+        self.model.configure(moo.setting.modelConfigDir)
+        
+        self.action_space = Discrete(2 ** model.numChannels)
+        self.observation_space = Box(low=np.ones([model.v.shape[0] * 2 * 3]) * -np.inf,
+                                     high=np.ones([model.v.shape[0] * 2 * 3]) * np.inf)
+        self.state = np.vstack([self.model.v.copy(), self.model.vel.copy()]).reshape(-1)
+        
+        self.numStepsPerAction = Model.numStepsPerActuation
+        self.numStepsPerSample = moo.setting.nStepsPerCapture
+        self.numStepsTotal = self.numStepsPerAction * 16
+        
+        self.objective = objective
+        self.vs = []
+    
+    def step(self, action):
+        assert (action in self.action_space)
+        self.model.inflateChannel = np.array([int(dig) for dig in bin(action)[2:]])
+        self.model.step(self.numStepsPerAction)
+        v = self.model.v.copy()
+        vel = self.model.vel.copy()
+        
+        self.state = np.vstack([v, vel]).reshape(-1)
+        
+        if self.model.numSteps % self.numStepsPerSample == 0:
+            self.vs.append(v)
+        
+        done = False
+        reward = 0
+        info = {}
+        if self.model.numSteps > self.numStepsTotal:
+            done = True
+            for subObjective in self.objective:
+                reward += subObjective(self.vs, self.model.e)
+        
+        
+        return self.state, reward, done, info
+    
+    def render(self, mode="human"):
+        
+
+        import polyscope as ps
+        try:
+            ps.init()
+        except:
+            pass
+
+        ps.register_curve_network('curves', self.model.v, self.model.e)
+
+        ps.show()
+
+    
+    def reset(self):
+            self.model._reset()
+            self.model.configure(self.moo.setting.modelConfigDir)
+            self.state = np.vstack([self.model.v.copy(), self.model.vel.copy()]).reshape(-1)
+            self.vs = []
+            return self.state
 
 class MOO:
     class Setting:
@@ -402,12 +468,13 @@ class MOO:
         
     def refreshModel(self):
         self.model._reset()
+        self.model.configure(self.setting.modelConfigDir)
         # self.loadGene(self.gene)
     
     def loadGene(self, gene: np.ndarray) -> (Model, np.ndarray):  # load gene into model and actionSeqs
         return self.model, self.actionSeqs
         
-    def simulate(self, actionSeq, nLoops=1, visualize=False, testing=False) -> (np.ndarray, np.ndarray):
+    def simulate(self, actionSeq, nLoops=1, visualize=False, export=True) -> (np.ndarray, np.ndarray):
         assert (actionSeq.ndim == 2)
         assert (actionSeq.shape[0] >= 1)
         assert (actionSeq.shape[1] >= 1)
@@ -418,7 +485,6 @@ class MOO:
         self.refreshModel()
         
         model = self.model
-        
         
         model.inflateChannel = actionSeq[:, -1]
         
@@ -450,8 +516,27 @@ class MOO:
         if visualize:
             print(len(frames))
             showFrames(frames, model.e)
-        
+            
+        if export:
+            path = './output/frames_.json'
+            data = {
+                'vs': vs.tolist(),
+                'e': self.model.e.tolist(),
+                'channels': self.model.edgeChannel.tolist()
+            }
+            
+            import json
+            js = json.dumps(data)
+            with open(path, 'w') as oFile:
+                oFile.write(js)
+                
+            
         return vs, self.model.e.copy()
+    
+    def train(self):
+        # PPO
+        pass
+    
     
     def mutate(self):
         self.model.mutateHalfGraph()
@@ -473,7 +558,14 @@ class MOO:
             assert(len(self.objectives) == self.numObjectives)
         # if self.actionSeqs.shape != ():
         #     assert(self.actionSeqs.shape == (self.numObjectives, self.numChannels, self.numActions))
+    
+    
+    def make_env(self, iObjective):
+        newModel = copy.deepcopy(self.model)
+        env = TrussEnv(newModel, self, self.objectives[iObjective])
+        return env
         
+    
     # region220522
     def initModel(self):
         # initialize the model's parameters (channel, contraction, actions)
@@ -491,5 +583,5 @@ class MOO:
         
         pass
     #endregion
-    
-    
+
+

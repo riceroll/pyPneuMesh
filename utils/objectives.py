@@ -70,7 +70,12 @@ def objTableLow(vs: np.ndarray, es: np.ndarray):
     vs = vs[0::interval] + [vs[-1]]
     zMean = vs[:, :, 2].mean()
     
-    return min(0, zTarget - zMean)
+    zMax = vs[0].max(0)[-1]
+    
+    zDif = zTarget - zMean
+    zDif /= zMax
+    
+    return min(0, zDif)
 
 
 def objTurnLeft(vs: np.ndarray, es: np.ndarray):

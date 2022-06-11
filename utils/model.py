@@ -7,6 +7,8 @@ import argparse
 import numpy as np
 import networkx as nx
 import copy
+from gym import Env
+from gym.spaces import Discrete, Box
 
 import utils
 from utils.geometry import getFrontDirection
@@ -119,7 +121,6 @@ class HalfGraph(object):
             return False
         else:
             return True
-        
         
 class Model(object):
     # k = 200000
