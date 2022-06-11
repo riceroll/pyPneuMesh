@@ -18,8 +18,10 @@ from a2c_ppo_acktr.envs import make_vec_envs, make_vec_envs_2
 from a2c_ppo_acktr.model import Policy
 from a2c_ppo_acktr.storage import RolloutStorage
 from evaluation import evaluate
-
-import pickle5
+try:
+    import pickle5 as pickle
+except:
+    import pickle
 
 def main():
     args = get_args()
@@ -42,7 +44,7 @@ def main():
     # envs = make_vec_envs(args.env_name, args.seed, args.num_processes,
     #                        args.gamma, args.log_dir, device, False)
 
-    data = pickle5.load(open('/Users/Roll/Desktop/1_Main/0_Projects/1_PneuMesh+/2_codes/pyPneuMesh/output/GA_531-8-36-53/iPool_580', 'rb'))
+    data = pickle.load(open('/Users/Roll/Desktop/1_Main/0_Projects/1_PneuMesh+/2_codes/pyPneuMesh/output/GA_531-8-36-53/iPool_580', 'rb'))
     moo = data['elitePool'][5]['moo']
     
     # here
