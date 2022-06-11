@@ -38,16 +38,19 @@ class TrussEnv(Env):
         
         self.state = np.vstack([v, vel]).reshape(-1)
         
-        if self.model.numSteps % self.numStepsPerSample == 0:
-            self.vs.append(v)
+        # if self.model.numSteps % self.numStepsPerSample == 0:
+        self.vs.append(v)
         
         done = False
         reward = 0
         info = {}
+        
+
         if self.model.numSteps > self.numStepsTotal:
             done = True
             for subObjective in self.objective:
                 reward += subObjective(self.vs, self.model.e)
+        
         
         
         return self.state, reward, done, info
