@@ -673,6 +673,37 @@ class Model(object):
             
         self.fromHalfGraph()
         
+    def frontDirection(self):
+        return getFrontDirection(self.v0, self.v).reshape(-1, 1)
+        
+    def relativePositions(self, requiresVelocity=False):
+
+        v = self.v.copy()
+        v -= self.v.mean(0)
+        
+        front = self.frontDirection()
+        angle = -np.arctan(front[1], front[0])
+        
+        M = np.array([
+            [np.cos(angle)[0], -np.sin(angle)[0]],
+            [np.sin(angle)[0], np.cos(angle)[0]]
+        ])
+        
+        v = np.hstack([M.dot(v.T[:2, :]).T, self.v[:, -1:]])
+        
+        vel = self.vel.copy()
+        vel = np.hstack([M.dot(vel.T[:2, :]).T, self.vel[:, -1:]])
+        
+        if requiresVelocity:
+            return v, vel
+        else:
+            return v
+        
+        
+        # vRelative = self.v.copy() - vMean
+        
+    
+    
     
     def show(self, show=True, essPrev=None):
         import polyscope as ps

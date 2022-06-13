@@ -40,4 +40,3 @@ model.show()
 for i in range(200):
     model.mutateHalfGraph()
     model.show()
-    

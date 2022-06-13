@@ -38,7 +38,7 @@ args = parser.parse_args()
 args.det = not args.non_det
 
 data = pickle5.load(
-    open('/Users/Roll/Desktop/1_Main/0_Projects/1_PneuMesh+/2_codes/pyPneuMesh/output/GA_531-8-36-53/iPool_580', 'rb'))
+    open('./output/GA_531-8-36-53/iPool_580', 'rb'))
 moo = data['elitePool'][5]['moo']
 
 iObjective = 1
@@ -56,10 +56,14 @@ env = make_vec_envs_2(
 # Get a render function
 render_func = get_render_func(env)
 
+
+print(os.path.join(args.load_dir, args.env_name + ".pt"))
+
 # We need to use the same statistics for normalization as used in training
 actor_critic, obs_rms = \
             torch.load(os.path.join(args.load_dir, args.env_name + ".pt"),
                         map_location='cpu')
+
 
 vec_norm = get_vec_normalize(env)
 if vec_norm is not None:
