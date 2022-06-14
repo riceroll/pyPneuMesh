@@ -565,8 +565,8 @@ class MOO:
             assert(len(self.objectives) == self.numObjectives)
         # if self.actionSeqs.shape != ():
         #     assert(self.actionSeqs.shape == (self.numObjectives, self.numChannels, self.numActions))
-    
-    
+        
+        
     def make_env(self, iObjective):
         newModel = copy.deepcopy(self.model)
         env = TrussEnv(newModel, self, self.objectives[iObjective])
