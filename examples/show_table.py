@@ -1,42 +1,20 @@
-from utils.mooCriterion import getCriterion
 from utils.moo import MOO
 from utils.objectives import objMoveForward, objFaceForward, objTurnLeft, objTurnRight, objLowerBodyMax
-from utils.GA import GeneticAlgorithm
-
-setting = {
-    'modelDir': './data/table.json',
-    'numChannels': 6,
-    'numActions': 4,
-    'numObjectives': 3,
-    "channelMirrorMap": {
-        0: 1,
-        2: -1,
-        3: -1,
-        4: 5,
-    },
-    'objectives': [[objMoveForward, objFaceForward], [objTurnLeft], [objLowerBodyMax]]
-}
-
-moo = MOO(setting)
-model = moo.model
+import pickle5
 
 
+result = pickle5.load(open('./output/GA_531-8-36-53/iPool_580', 'rb'))
 
+print('{:20s} {:20s} {:20s} {:20s}'.format('move forward', 'face forward', 'turn left', 'lower height'))
+for i in range(len(result['elitePool'])):
+    elite = result['elitePool'][i]
+    moo = elite['moo']
+    model = moo.model
+    score = elite['score']
+    print('{:20f} {:20f} {:20f} {:20f}'.format(score[0], score[1], score[2], score[3]))
 
-# test
-import copy
-mc = copy.copy(model.maxContraction)
-ec = copy.copy(model.edgeChannel)
-model.toHalfGraph(reset=True)
-model.maxContraction *= 20
-model.edgeChannel *= 20
-model.fromHalfGraph()
-# assert((ec == model.edgeChannel).all())
+moo = result['elitePool'][5]['moo']
+moo.model.show()    # visualize the truss static shape and channels
 
-model.initHalfGraph()
-
-model.show()
-
-for i in range(200):
-    model.mutateHalfGraph()
-    model.show()
+actionSeq = moo.actionSeqs[1]   # control sequence of the second objective
+moo.simulate(actionSeq, nLoops=2, visualize=True)   # visualize the trajectory of the control

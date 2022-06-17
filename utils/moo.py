@@ -447,8 +447,6 @@ class MOO:
 
         self.model.channelMirrorMap = self.channelMirrorMap
         self.model.numChannels = self.numChannels
-        if self.numChannels < 4:
-            self.model.setToSingleChannel()
         
         if self.randInit:
             self.model.toHalfGraph()
@@ -485,8 +483,10 @@ class MOO:
         assert (actionSeq.ndim == 2)
         assert (actionSeq.shape[0] >= 1)
         assert (actionSeq.shape[1] >= 1)
-        
-        T = Model.numStepsPerActuation
+
+        modelConfigDir = self.setting.modelConfigDir
+        self.model.configure(modelConfigDir)
+        T = self.model.numStepsPerActuation
         nStepsPerCapture = self.setting.nStepsPerCapture
         
         self.refreshModel()
@@ -590,5 +590,3 @@ class MOO:
         
         pass
     #endregion
-
-

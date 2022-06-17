@@ -142,7 +142,7 @@ class Model(object):
     # angleCheckFrequency = numStepsPerActuation / 20
 
     @staticmethod
-    def configure(configDir):
+    def configure(configDir="./data/config.json"):
         with open(configDir) as ifile:
             content = ifile.read()
             data = json.loads(content)
@@ -206,6 +206,8 @@ class Model(object):
         Model.configure(configDir)
     
     # initialization =======================
+    
+    
     def load(self, modelDir):
         """
         load parameters from a json file into the model
@@ -232,11 +234,6 @@ class Model(object):
         assert(len(self.e) == len(self.lMax) == len(self.edgeChannel) == len(self.edgeActive) and len(self.maxContraction))
         self._reset()
         
-    def reload(self):
-        modelDir = self.modelDir
-        self.__init__()
-        self.load(modelDir)
-    
     def _reset(self, resetScript=False):
         """
         reset the model to the initial state with input options
@@ -273,11 +270,6 @@ class Model(object):
         except:
             self.symmetric = False
         
-    def setToSingleChannel(self):
-        # set all channels to the same channel
-        self.edgeChannel *= 0
-        self.edgeChannel += 1
-    
     # end initialization
     
     # stepping =======================
@@ -406,18 +398,6 @@ class Model(object):
     # utility ===========================
     def centroid(self):
         return self.v.sum(0) / self.v.shape[0]
-    
-    def initializePos(self):
-        """
-        put the model's centroid back to original point and wait for a while to stabilize the model
-        reset v0
-        :return:
-        """
-        self.v -= self.centroid()
-        self.v[:, 2] -= self.v[:, 2].min()
-        self.v[:, 2] += self.v[:, 2].max()
-        self.step(int(Model.numStepsPerActuation * 1.5))
-        self.v0 = self.v
         
     def computeSymmetry(self):
         """
@@ -698,12 +678,6 @@ class Model(object):
             return v, vel
         else:
             return v
-        
-        
-        # vRelative = self.v.copy() - vMean
-        
-    
-    
     
     def show(self, show=True, essPrev=None):
         import polyscope as ps
@@ -735,8 +709,7 @@ class Model(object):
         if show:
             ps.show()
         
-            
-    def loadEdgeChannel(self, edgeChannel):
+    def _loadEdgeChannel(self, edgeChannel):
         """
         load edgeChannel
         :param edgeChannel: np.array int [numEdge, ]
@@ -746,19 +719,19 @@ class Model(object):
         assert(edgeChannel.shape == (len(self.e),) )
         self.edgeChannel = edgeChannel
     
-    def loadMaxContraction(self, maxContraction):
-        """
-        load maxContraction
-        :param maxContraction: np.array float [numEdge, ]
-        """
-        exactDivisible = lambda dividend, divisor, threshold=1e-6: \
-            (dividend - (dividend / divisor).round() * divisor).mean() < threshold
-        
-        assert(type(maxContraction) == np.ndarray)
-        assert(maxContraction.shape == (len(self.e),))
-        assert(exactDivisible(maxContraction, Model.contractionInterval))
-        assert(maxContraction / Model.contractionInterval + 1e-6 < Model.contractionLevels - 1)
-        self.maxContraction = maxContraction
+    # def loadMaxContraction(self, maxContraction):
+    #     """
+    #     load maxContraction
+    #     :param maxContraction: np.array float [numEdge, ]
+    #     """
+    #     exactDivisible = lambda dividend, divisor, threshold=1e-6: \
+    #         (dividend - (dividend / divisor).round() * divisor).mean() < threshold
+    #
+    #     assert(type(maxContraction) == np.ndarray)
+    #     assert(maxContraction.shape == (len(self.e),))
+    #     assert(exactDivisible(maxContraction, Model.contractionInterval))
+    #     assert(maxContraction / Model.contractionInterval + 1e-6 < Model.contractionLevels - 1)
+    #     self.maxContraction = maxContraction
         
     def exportJSON(self, modelDir=None,
                    actionSeq=np.zeros([4, 1]),
@@ -781,7 +754,7 @@ class Model(object):
             data = json.loads(content)
 
         if edgeChannel is not None:
-            self.loadEdgeChannel(edgeChannel)
+            self._loadEdgeChannel(edgeChannel)
         data['edgeChannel'] = self.edgeChannel.tolist()
         
         if maxContraction is not None:

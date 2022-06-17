@@ -14,11 +14,11 @@ import torch.optim as optim
 from a2c_ppo_acktr import algo, utils
 from a2c_ppo_acktr.algo import gail
 from a2c_ppo_acktr.arguments import get_args
-from a2c_ppo_acktr.envs import make_vec_envs
+from a2c_ppo_acktr.envs import make_vec_envs, make_vec_envs_2
 from a2c_ppo_acktr.model import Policy
 from a2c_ppo_acktr.storage import RolloutStorage
 from evaluation import evaluate
-
+import pickle5 as pickle
 
 def main():
     args = get_args()
@@ -38,8 +38,18 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    envs = make_vec_envs(args.env_name, args.seed, args.num_processes,
-                         args.gamma, args.log_dir, device, False)
+    # envs = make_vec_envs(args.env_name, args.seed, args.num_processes,
+    #                        args.gamma, args.log_dir, device, False)
+
+    # region ================== customized gym environment ==============================
+    # load GA result
+    data = pickle.load(open('./output/GA_531-8-36-53/iPool_580', 'rb'))     # iPool file directory
+    moo = data['elitePool'][5]['moo']       # index of the elite truss
+    iObjective = 1                          # index of the objective
+    envs = make_vec_envs_2(moo, iObjective, args.seed, args.num_processes,
+                           args.gamma, args.log_dir, device, False)
+
+    # endregion
 
     actor_critic = Policy(
         envs.observation_space.shape,
@@ -165,6 +175,7 @@ def main():
         if (j % args.save_interval == 0
                 or j == num_updates - 1) and args.save_dir != "":
             save_path = os.path.join(args.save_dir, args.algo)
+            print(save_path)
             try:
                 os.makedirs(save_path)
             except OSError:
@@ -178,6 +189,24 @@ def main():
         if j % args.log_interval == 0 and len(episode_rewards) > 1:
             total_num_steps = (j + 1) * args.num_processes * args.num_steps
             end = time.time()
+            
+            try:
+                with open('output') as iFile:
+                    content = iFile.read()
+            except:
+                content = ""
+            
+            str = "Updates {}, num timesteps {}, FPS {} \n Last {} training episodes: mean/median reward {:.1f}/{:.1f}, min/max reward {:.1f}/{:.1f}\n".format(j, total_num_steps,
+                        int(total_num_steps / (end - start)),
+                        len(episode_rewards), np.mean(episode_rewards),
+                        np.median(episode_rewards), np.min(episode_rewards),
+                        np.max(episode_rewards), dist_entropy, value_loss,
+                        action_loss)
+            content += str
+            
+            with open('output', 'w') as oFile:
+                oFile.write(content)
+            
             print(
                 "Updates {}, num timesteps {}, FPS {} \n Last {} training episodes: mean/median reward {:.1f}/{:.1f}, min/max reward {:.1f}/{:.1f}\n"
                 .format(j, total_num_steps,

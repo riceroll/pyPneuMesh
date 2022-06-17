@@ -1,0 +1,184 @@
+Updates 10, num timesteps 880, FPS 30 
+ Last 10 training episodes: mean/median reward 0.43761/0.63722, min/max reward -2.45729/3.38071
+Updates 20, num timesteps 1680, FPS 30 
+ Last 10 training episodes: mean/median reward 0.74756/0.95227, min/max reward -3.82183/2.27605
+Updates 30, num timesteps 2480, FPS 30 
+ Last 10 training episodes: mean/median reward 0.08037/-0.43578, min/max reward -1.95634/3.50710
+Updates 40, num timesteps 3280, FPS 30 
+ Last 10 training episodes: mean/median reward 1.96672/1.83372, min/max reward 0.46035/3.99846
+Updates 50, num timesteps 4080, FPS 30 
+ Last 10 training episodes: mean/median reward 0.80064/0.88147, min/max reward -3.44276/2.46321
+Updates 60, num timesteps 4880, FPS 30 
+ Last 10 training episodes: mean/median reward 0.69159/0.99735, min/max reward -1.90145/3.03098
+Updates 70, num timesteps 5680, FPS 30 
+ Last 10 training episodes: mean/median reward 0.90398/0.91580, min/max reward -1.37359/3.16355
+Updates 80, num timesteps 6480, FPS 30 
+ Last 10 training episodes: mean/median reward 2.14628/2.11152, min/max reward -0.40576/5.04389
+Updates 90, num timesteps 7280, FPS 30 
+ Last 10 training episodes: mean/median reward 1.14000/1.26499, min/max reward -0.40064/2.44050
+Updates 100, num timesteps 8080, FPS 30 
+ Last 10 training episodes: mean/median reward 1.62514/1.61010, min/max reward -0.04946/3.71770
+Updates 110, num timesteps 8880, FPS 30 
+ Last 10 training episodes: mean/median reward 1.15656/0.98367, min/max reward -0.76830/3.33458
+Updates 120, num timesteps 9680, FPS 30 
+ Last 10 training episodes: mean/median reward 1.64444/1.92284, min/max reward -1.37086/3.00339
+Updates 130, num timesteps 10480, FPS 30 
+ Last 10 training episodes: mean/median reward 1.00454/0.76409, min/max reward -0.94178/3.37725
+Updates 140, num timesteps 11280, FPS 30 
+ Last 10 training episodes: mean/median reward 0.61003/0.57674, min/max reward -0.93230/2.68662
+Updates 150, num timesteps 12080, FPS 30 
+ Last 10 training episodes: mean/median reward 1.65038/1.55296, min/max reward 0.40686/3.24617
+Updates 160, num timesteps 12880, FPS 30 
+ Last 10 training episodes: mean/median reward 1.59868/1.91018, min/max reward -2.40357/4.28731
+Updates 170, num timesteps 13680, FPS 30 
+ Last 10 training episodes: mean/median reward 2.09211/1.65243, min/max reward 0.10148/4.63874
+Updates 180, num timesteps 14480, FPS 30 
+ Last 10 training episodes: mean/median reward 1.78845/2.01831, min/max reward 0.43679/3.18043
+Updates 190, num timesteps 15280, FPS 30 
+ Last 10 training episodes: mean/median reward 0.95530/0.89057, min/max reward -1.30646/3.18631
+Updates 200, num timesteps 16080, FPS 30 
+ Last 10 training episodes: mean/median reward 2.36447/2.47861, min/max reward 1.05017/4.70634
+Updates 210, num timesteps 16880, FPS 30 
+ Last 10 training episodes: mean/median reward 3.00938/2.94552, min/max reward 0.54317/5.45306
+Updates 220, num timesteps 17680, FPS 30 
+ Last 10 training episodes: mean/median reward 3.18220/3.33149, min/max reward 1.47232/5.05265
+Updates 230, num timesteps 18480, FPS 30 
+ Last 10 training episodes: mean/median reward 4.03391/4.24483, min/max reward 2.43602/5.52819
+Updates 240, num timesteps 19280, FPS 30 
+ Last 10 training episodes: mean/median reward 4.33503/4.79359, min/max reward -0.85560/6.66035
+Updates 250, num timesteps 20080, FPS 30 
+ Last 10 training episodes: mean/median reward 3.51326/4.07003, min/max reward -0.20648/5.55984
+Updates 260, num timesteps 20880, FPS 30 
+ Last 10 training episodes: mean/median reward 5.01167/5.07705, min/max reward 2.00512/6.65066
+Updates 270, num timesteps 21680, FPS 30 
+ Last 10 training episodes: mean/median reward 4.67044/5.36686, min/max reward 0.04002/6.37406
+Updates 280, num timesteps 22480, FPS 30 
+ Last 10 training episodes: mean/median reward 5.57965/5.47923, min/max reward 4.29471/7.02689
+Updates 290, num timesteps 23280, FPS 30 
+ Last 10 training episodes: mean/median reward 5.80071/5.83086, min/max reward 3.77449/7.12846
+Updates 300, num timesteps 24080, FPS 30 
+ Last 10 training episodes: mean/median reward 5.97743/6.05577, min/max reward 4.37175/7.09894
+Updates 310, num timesteps 24880, FPS 30 
+ Last 10 training episodes: mean/median reward 6.26453/6.29741, min/max reward 4.80935/7.09894
+Updates 320, num timesteps 25680, FPS 30 
+ Last 10 training episodes: mean/median reward 5.94364/6.05490, min/max reward 2.76930/7.09894
+Updates 330, num timesteps 26480, FPS 30 
+ Last 10 training episodes: mean/median reward 5.80537/5.59960, min/max reward 4.82187/7.09894
+Updates 340, num timesteps 27280, FPS 30 
+ Last 10 training episodes: mean/median reward 5.91539/5.75433, min/max reward 5.49510/7.09894
+Updates 350, num timesteps 28080, FPS 30 
+ Last 10 training episodes: mean/median reward 6.29369/6.54239, min/max reward 4.90203/7.21151
+Updates 360, num timesteps 28880, FPS 30 
+ Last 10 training episodes: mean/median reward 5.45420/5.10386, min/max reward 3.33469/7.09894
+Updates 370, num timesteps 29680, FPS 29 
+ Last 10 training episodes: mean/median reward 5.56274/5.68234, min/max reward 4.41630/7.09894
+Updates 380, num timesteps 30480, FPS 29 
+ Last 10 training episodes: mean/median reward 6.36276/6.38402, min/max reward 5.33774/7.09894
+Updates 390, num timesteps 31280, FPS 29 
+ Last 10 training episodes: mean/median reward 6.16979/6.19973, min/max reward 4.88063/7.09894
+Updates 400, num timesteps 32080, FPS 29 
+ Last 10 training episodes: mean/median reward 6.73620/7.09894, min/max reward 5.43869/7.09894
+Updates 410, num timesteps 32880, FPS 29 
+ Last 10 training episodes: mean/median reward 6.80877/7.09894, min/max reward 5.61848/7.09894
+Updates 420, num timesteps 33680, FPS 29 
+ Last 10 training episodes: mean/median reward 6.28692/6.17314, min/max reward 5.53921/7.09894
+Updates 430, num timesteps 34480, FPS 29 
+ Last 10 training episodes: mean/median reward 6.48124/6.81404, min/max reward 5.50288/7.09894
+Updates 440, num timesteps 35280, FPS 29 
+ Last 10 training episodes: mean/median reward 6.65912/7.09894, min/max reward 5.18599/7.09894
+Updates 450, num timesteps 36080, FPS 29 
+ Last 10 training episodes: mean/median reward 6.81319/7.09894, min/max reward 5.60557/7.09894
+Updates 460, num timesteps 36880, FPS 29 
+ Last 10 training episodes: mean/median reward 6.32824/6.45802, min/max reward 4.99657/7.09894
+Updates 470, num timesteps 37680, FPS 29 
+ Last 10 training episodes: mean/median reward 6.88690/7.09894, min/max reward 5.59682/7.09894
+Updates 480, num timesteps 38480, FPS 29 
+ Last 10 training episodes: mean/median reward 6.94757/7.09894, min/max reward 5.58531/7.09894
+Updates 490, num timesteps 39280, FPS 29 
+ Last 10 training episodes: mean/median reward 6.69721/7.09894, min/max reward 5.42589/7.09894
+Updates 500, num timesteps 40080, FPS 29 
+ Last 10 training episodes: mean/median reward 6.79947/7.09894, min/max reward 5.87899/7.09894
+Updates 510, num timesteps 40880, FPS 29 
+ Last 10 training episodes: mean/median reward 6.53400/7.09894, min/max reward 5.01403/7.09894
+Updates 520, num timesteps 41680, FPS 29 
+ Last 10 training episodes: mean/median reward 6.88663/7.09894, min/max reward 5.61659/7.16553
+Updates 530, num timesteps 42480, FPS 29 
+ Last 10 training episodes: mean/median reward 6.84774/7.09894, min/max reward 5.59170/7.09894
+Updates 540, num timesteps 43280, FPS 29 
+ Last 10 training episodes: mean/median reward 7.09894/7.09894, min/max reward 7.09894/7.09894
+Updates 550, num timesteps 44080, FPS 29 
+ Last 10 training episodes: mean/median reward 6.90774/7.09894, min/max reward 5.13098/7.15493
+Updates 560, num timesteps 44880, FPS 29 
+ Last 10 training episodes: mean/median reward 6.64480/7.09894, min/max reward 5.53921/7.09894
+Updates 570, num timesteps 45680, FPS 29 
+ Last 10 training episodes: mean/median reward 6.99647/7.09894, min/max reward 6.07432/7.09894
+Updates 580, num timesteps 46480, FPS 29 
+ Last 10 training episodes: mean/median reward 6.84774/7.09894, min/max reward 5.59170/7.09894
+Updates 590, num timesteps 47280, FPS 29 
+ Last 10 training episodes: mean/median reward 6.78868/7.09894, min/max reward 5.46240/7.09894
+Updates 600, num timesteps 48080, FPS 29 
+ Last 10 training episodes: mean/median reward 6.69930/7.09894, min/max reward 4.74932/7.09894
+Updates 610, num timesteps 48880, FPS 29 
+ Last 10 training episodes: mean/median reward 6.96926/7.09894, min/max reward 5.61478/7.28634
+Updates 620, num timesteps 49680, FPS 29 
+ Last 10 training episodes: mean/median reward 6.79489/7.09894, min/max reward 5.55405/7.09894
+Updates 630, num timesteps 50480, FPS 29 
+ Last 10 training episodes: mean/median reward 6.82933/7.09894, min/max reward 5.60339/7.09894
+Updates 640, num timesteps 51280, FPS 29 
+ Last 10 training episodes: mean/median reward 7.09894/7.09894, min/max reward 7.09894/7.09894
+Updates 650, num timesteps 52080, FPS 29 
+ Last 10 training episodes: mean/median reward 7.09167/7.09894, min/max reward 6.99674/7.12846
+Updates 660, num timesteps 52880, FPS 29 
+ Last 10 training episodes: mean/median reward 6.79844/7.09894, min/max reward 4.65970/7.09894
+Updates 670, num timesteps 53680, FPS 29 
+ Last 10 training episodes: mean/median reward 7.09894/7.09894, min/max reward 7.09894/7.09894
+Updates 680, num timesteps 54480, FPS 29 
+ Last 10 training episodes: mean/median reward 6.56020/7.09894, min/max reward 4.67840/7.09894
+Updates 690, num timesteps 55280, FPS 29 
+ Last 10 training episodes: mean/median reward 7.09894/7.09894, min/max reward 7.09894/7.09894
+Updates 700, num timesteps 56080, FPS 29 
+ Last 10 training episodes: mean/median reward 7.09894/7.09894, min/max reward 7.09894/7.09894
+Updates 710, num timesteps 56880, FPS 29 
+ Last 10 training episodes: mean/median reward 6.90484/7.09894, min/max reward 5.15798/7.09894
+Updates 720, num timesteps 57680, FPS 29 
+ Last 10 training episodes: mean/median reward 6.63551/7.09894, min/max reward 4.68181/7.09894
+Updates 730, num timesteps 58480, FPS 29 
+ Last 10 training episodes: mean/median reward 6.94173/7.09894, min/max reward 5.52688/7.09894
+Updates 740, num timesteps 59280, FPS 29 
+ Last 10 training episodes: mean/median reward 6.95233/7.09894, min/max reward 5.63287/7.09894
+Updates 750, num timesteps 60080, FPS 29 
+ Last 10 training episodes: mean/median reward 6.94821/7.09894, min/max reward 5.59170/7.09894
+Updates 760, num timesteps 60880, FPS 29 
+ Last 10 training episodes: mean/median reward 7.11094/7.09894, min/max reward 7.09894/7.21901
+Updates 770, num timesteps 61680, FPS 29 
+ Last 10 training episodes: mean/median reward 7.09894/7.09894, min/max reward 7.09894/7.09894
+Updates 780, num timesteps 62480, FPS 29 
+ Last 10 training episodes: mean/median reward 6.85042/7.09894, min/max reward 5.61848/7.09894
+Updates 790, num timesteps 63280, FPS 29 
+ Last 10 training episodes: mean/median reward 7.09894/7.09894, min/max reward 7.09894/7.09894
+Updates 800, num timesteps 64080, FPS 29 
+ Last 10 training episodes: mean/median reward 7.01470/7.09894, min/max reward 6.25661/7.09894
+Updates 810, num timesteps 64880, FPS 29 
+ Last 10 training episodes: mean/median reward 7.09894/7.09894, min/max reward 7.09894/7.09894
+Updates 820, num timesteps 65680, FPS 29 
+ Last 10 training episodes: mean/median reward 7.09894/7.09894, min/max reward 7.09894/7.09894
+Updates 830, num timesteps 66480, FPS 29 
+ Last 10 training episodes: mean/median reward 6.96698/7.09894, min/max reward 5.63287/7.24541
+Updates 840, num timesteps 67280, FPS 29 
+ Last 10 training episodes: mean/median reward 7.02567/7.09894, min/max reward 6.36627/7.09894
+Updates 850, num timesteps 68080, FPS 29 
+ Last 10 training episodes: mean/median reward 7.09894/7.09894, min/max reward 7.09894/7.09894
+Updates 860, num timesteps 68880, FPS 29 
+ Last 10 training episodes: mean/median reward 7.09894/7.09894, min/max reward 7.09894/7.09894
+Updates 870, num timesteps 69680, FPS 29 
+ Last 10 training episodes: mean/median reward 7.09894/7.09894, min/max reward 7.09894/7.09894
+Updates 880, num timesteps 70480, FPS 29 
+ Last 10 training episodes: mean/median reward 6.74418/7.09894, min/max reward 5.05621/7.09894
+Updates 890, num timesteps 71280, FPS 29 
+ Last 10 training episodes: mean/median reward 6.60289/7.09894, min/max reward 2.13847/7.09894
+Updates 900, num timesteps 72080, FPS 29 
+ Last 10 training episodes: mean/median reward 6.95246/7.09894, min/max reward 5.63422/7.09894
+Updates 910, num timesteps 72880, FPS 29 
+ Last 10 training episodes: mean/median reward 6.94845/7.09894, min/max reward 5.59406/7.09894
+Updates 920, num timesteps 73680, FPS 29 
+ Last 10 training episodes: mean/median reward 7.09894/7.09894, min/max reward 7.09894/7.09894
