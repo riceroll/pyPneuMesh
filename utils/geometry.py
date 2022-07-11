@@ -1,4 +1,5 @@
 import numpy as np
+import igl
 
 def getFrontDirection(v0, v, vf0=np.array([1, 0, 0])):
     """
@@ -99,6 +100,8 @@ def getClosestVector(a, b, c, d):
   if v1xv2normsqr == 0:
     # parallel
     return None
+
+
   else:
     m1 = np.zeros([3,3])
     m1[0] = c - a
@@ -120,3 +123,29 @@ def getClosestVector(a, b, c, d):
 
     return N2 - N1
 
+
+def targetVnFnVolume(objFileDir):
+    import pyvista as pv
+    # objFileDir = "/Users/Roll/Desktop/1_Main/0_Projects/1_PneuMesh+/2_codes/pyPneuMesh/data/testTable.obj"
+    pvmesh = pv.read(objFileDir)
+    vTarget = pvmesh.points
+    fTarget = pvmesh.faces.reshape(-1, 4)[:, 1:]
+
+    import tetgen
+    tet = tetgen.TetGen(pvmesh)
+    tet.tetrahedralize(order=1)
+    tet = tet.grid
+    volumeTarget = tet.volume
+    breakpoint()
+    return vTarget, fTarget, volumeTarget
+ 
+
+def shapeSimilarity(vTarget, fTarget, volumeTarget, model):
+    
+    signed_distances, _, _ = igl.signed_distance(model.v, vTarget, fTarget)
+    distance = np.abs(signed_distances).max()
+    
+    trussVolume = model.volume()
+    volumeDiff = np.abs(volumeTarget - trussVolume)
+    
+    return distance, volumeDiff

@@ -13,7 +13,7 @@ for i in range(len(result['elitePool'])):
     score = elite['score']
     print('{:20f} {:20f} {:20f} {:20f}'.format(score[0], score[1], score[2], score[3]))
 
-moo = result['elitePool'][5]['moo']
+moo = result['elitePool'][1]['moo']
 moo.model.show()    # visualize the truss static shape and channels
 
 actionSeq = moo.actionSeqs[1]   # control sequence of the second objective

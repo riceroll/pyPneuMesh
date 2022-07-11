@@ -1,0 +1,27 @@
+
+Begin at 2022-06-23 15:10:35.751064.
+mute: False
+nGenesPerPool: 8
+nGensPerPool: 5
+nSurvivedMax: 2
+nWorkers: 8
+plot: True
+saveHistory: True
+
+Begin at 2022-06-23 15:11:24.783504.
+mute: False
+nGenesPerPool: 8
+nGensPerPool: 5
+nSurvivedMax: 2
+nWorkers: 8
+plot: True
+saveHistory: True
+
+Begin at 2022-06-23 15:11:37.745966.
+mute: False
+nGenesPerPool: 8
+nGensPerPool: 5
+nSurvivedMax: 2
+nWorkers: 8
+plot: True
+saveHistory: True

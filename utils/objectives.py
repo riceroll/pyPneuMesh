@@ -30,7 +30,6 @@ def objTableUpright(vs: np.ndarray, es: np.ndarray):
     alignment = alignments / (len(vs) - 1)
     return alignment
 
-
 def objTableTilted(vs: np.ndarray, es: np.ndarray):
     indicesTop = [0, 1, 2, 3]
     vs = vs[:, indicesTop]
@@ -46,7 +45,6 @@ def objTableTilted(vs: np.ndarray, es: np.ndarray):
     
     alignment = alignments / (len(vs) - 1)
     return alignment
-
 
 def objTableHigh(vs: np.ndarray, es: np.ndarray):
     indicesTop = [0, 1, 2, 3]
@@ -76,7 +74,6 @@ def objTableLow(vs: np.ndarray, es: np.ndarray):
     zDif /= zMax
     
     return min(0, zDif)
-
 
 def objTurnLeft(vs: np.ndarray, es: np.ndarray):
     vecFront = getFrontDirection(vs[0], vs[-1])  # unit Vector
@@ -119,7 +116,6 @@ def objCurvedBridge(vs: np.ndarray, es: np.ndarray):
     
     return -np.sqrt( ((vsTop - xC) ** 2).sum(1) + ((vsTop - zC) ** 2).sum(1) ).mean()
     
-    
 def objFlatBridge(vs: np.ndarray, es: np.ndarray):
     # how much the top layer vertices are aligned with a flat line
     
@@ -135,91 +131,3 @@ def objFlatBridge(vs: np.ndarray, es: np.ndarray):
     vsTop = vs[-1, ivs]
     
     return -np.sqrt((vsTop[:, 2] - zMax0) ** 2).mean()
-
-
-# def virtualObjShape(ivs: np.ndarray, vsTargets: np.ndarray):
-#     '''
-#     virtual objective function for setting the key vertices of the target shape as the objectives
-#     :param ivs: ids of target vertices
-#     :param vsTargets: position of target vertices
-#     :return: an objective function
-#     '''
-#
-#     def objShape(vs: np.ndarray, es: np.ndarray):
-#         # vs: shape: [nFrame, nVertex, nDim]
-#         # es: shape: [nEdge, 2]
-#         avgError = np.sqrt(((vs[-1][ivs] - vsTargets) ** 2).sum(1)).mean()
-#         return avgError
-#
-#     return objShape
-
-
-def testTurn(argv):
-    vs = np.array([
-        [
-            [0, 1, 0],
-            [1, 0, 0],
-            [0, -1, 0]
-        ],
-        [
-            [-1, 0, 0],
-            [0, 1, 0],
-            [1, 0, 0]
-        ]
-    ])
-    alignment = objTurnLeft(vs, np.zeros([]))
-    assert(abs(alignment - 1) < 1e-6)
-
-    vs = np.array([
-        [
-            [0, 1, 0],
-            [1, 0, 0],
-            [0, -1, 0]
-        ],
-        [
-            [1, 0, 0],
-            [0, -1, 0],
-            [-1, 0, 0]
-        ]
-    ])
-    alignment = objTurnRight(vs, np.zeros([]))
-    assert(abs(alignment - 1) < 1e-6)
-
-def testCurvedBridge(argv):
-    v = np.array([
-        [
-        [0, 0, 0],
-        [2, 0, 0],
-        [5, 3, 0],
-        [2, 2, -2],
-        [2, 9, 0],
-        ]
-    ])
-    
-    alignment = objCurvedBridge(v, np.zeros([]))
-    assert(abs(alignment - 18.98258662289415) < 1e-6)
-
-
-def testFlatBridge(argv):
-    v = np.array([
-        [
-            [0, 0, 0],
-            [2, 0, 0],
-            [5, 3, 0],
-            [2, 2, -2],
-            [2, 9, 0],
-        ]
-    ])
-    
-    alignment = objFlatBridge(v, np.zeros([]))
-    # assert (abs(alignment - 18.98258662289415) < 1e-6)
-
-tests = {
-    'testTurn': testTurn,
-    'testCurvedBridge': testCurvedBridge,
-    'testFlatBridge': testFlatBridge,
-}
-
-if __name__ == "__main__":
-    import sys
-    testTurn(sys.argv)

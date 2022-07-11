@@ -123,9 +123,40 @@ class HalfGraph(object):
             return True
         
 class Model(object):
-    # k = 200000
+    
+    # MOO setting
+        # objectives
+        # model
+        # GA
+        
     # h = 0.001
+    
+    # gravity
     # dampingRatio = 0.999
+    
+    # k = 200000    # mass spring vs yongs modulus
+    
+    # nodeWeight
+    
+    # lengths
+        # 101, 124, 154, 174
+
+    # numChannels
+    
+    # angleThreshold = np.pi / 2
+    
+    
+    
+    # GA control
+        # numActions
+        # numStepsPerAction
+        # nLoopsSimulate
+    
+    
+    # GA parameters
+    
+    
+    
     # contractionInterval = 0.1
     # contractionLevels = 4
     # maxMaxContraction = round(contractionInterval * (contractionLevels - 1) * 100) / 100
@@ -200,6 +231,8 @@ class Model(object):
         self.vertexMirrorMap = dict()
         self.edgeMirrorMap = dict()
         self.channelMirrorMap = dict()
+        
+        self.tetList = None       # #T by 4, vertices of tetrahedrons
         
         self.showHistory = []   # edges at every update of channel growing
         
@@ -679,6 +712,63 @@ class Model(object):
         else:
             return v
     
+    def _updateTetList(self):
+        self.tetList = []
+        A = np.eye(len(self.v))
+        
+        for e in self.e:
+            A[e[0], e[1]] = 1
+            A[e[1], e[0]] = 1
+        print(A)
+        
+        for i in range(len(self.v)):
+            for j in range(len(self.v)):
+                if j == i:
+                    continue
+                
+                if A[i, j] == 0:
+                    continue
+                
+                for k in range(len(self.v)):
+                    if k in {i, j}:
+                        continue
+
+                    if A[i, k] == 0 or A[j, k] == 0:
+                        continue
+                    
+                    for l in range(len(self.v)):
+                        if l in {i, j, k}:
+                            continue
+                        
+                        if A[i, l] == A[j, l] == A[k, l] == 1:
+                            tet = tuple(sorted([i, j, k, l]))
+                            if tet in self.tetList:
+                                continue
+                            self.tetList.append( tet )
+            
+        self.tetList = np.array(self.tetList)
+        
+        
+    def volume(self):
+        try:
+            self.tetList
+        except:
+            self.tetList = None
+        
+        if self.tetList is None:
+            self._updateTetList()
+        
+        tetVertices = self.v[self.tetList]
+        v0 = tetVertices[:, 0, :]
+        v1 = tetVertices[:, 1, :]
+        v2 = tetVertices[:, 2, :]
+        v3 = tetVertices[:, 3, :]
+        
+        volumes = np.abs( ( np.cross(v1 - v0, v2 - v0) * ( v3 - v0 )).sum(1) / 6 )
+        
+        return volumes.sum()
+    
+    
     def show(self, show=True, essPrev=None):
         import polyscope as ps
         try:
@@ -719,20 +809,6 @@ class Model(object):
         assert(edgeChannel.shape == (len(self.e),) )
         self.edgeChannel = edgeChannel
     
-    # def loadMaxContraction(self, maxContraction):
-    #     """
-    #     load maxContraction
-    #     :param maxContraction: np.array float [numEdge, ]
-    #     """
-    #     exactDivisible = lambda dividend, divisor, threshold=1e-6: \
-    #         (dividend - (dividend / divisor).round() * divisor).mean() < threshold
-    #
-    #     assert(type(maxContraction) == np.ndarray)
-    #     assert(maxContraction.shape == (len(self.e),))
-    #     assert(exactDivisible(maxContraction, Model.contractionInterval))
-    #     assert(maxContraction / Model.contractionInterval + 1e-6 < Model.contractionLevels - 1)
-    #     self.maxContraction = maxContraction
-        
     def exportJSON(self, modelDir=None,
                    actionSeq=np.zeros([4, 1]),
                    edgeChannel=None,
@@ -780,55 +856,3 @@ class Model(object):
                 print('Save to {}_{}.json'.format(saveDir, str(appendix)))
                 
         return js
-
-    # end optimization
-
-
-def testModelStep(argv):
-    model = Model()
-    model.load("./test/data/lobsterIn.json")
-    v = model.step(200, ret=True)
-    js = model.exportJSON(save=False)
-    with open('./test/data/lobsterOut.json') as iFile:
-        jsTrue = iFile.read()
-        assert (js == jsTrue)
-        
-    vTrue = np.load('./test/data/lobsterOutV.npy')
-    assert ((v == vTrue).all())
-
-def testComputeSymmetry(argv):
-    model = Model()
-    model.load("./test/data/pillBugIn.json")
-    model.computeSymmetry()
-    assert(model.vertexMirrorMap == {0: -1, 1: 2, 2: 1, 3: -1, 4: 5, 5: 4, 6: 7, 7: 6, 8: -1, 9: -1, 10: 11, 11: 10, 12: 13, 13: 12, 14: 15, 15: 14, 16: 17, 17: 16})
-    assert(model.edgeMirrorMap == {0: -1, 1: 2, 2: 1, 3: 4, 4: 3, 5: -1, 6: 10, 10: 6, 7: 9, 9: 7, 8: 11, 11: 8, 12: 16, 16: 12, 13: 15, 15: 13, 14: 17, 17: 14, 18: 19, 19: 18, 20: -1, 21: 22, 22: 21, 23: -1, 24: 28, 28: 24, 25: 27, 27: 25, 26: 29, 29: 26, 30: 34, 34: 30, 31: 33, 33: 31, 32: 35, 35: 32, 36: 40, 40: 36, 37: 39, 39: 37, 38: 41, 41: 38, 42: 46, 46: 42, 43: 45, 45: 43, 44: 47, 47: 44})
-
-    model = Model()
-    model.load("./test/data/lobsterIn.json")
-    model.computeSymmetry()
-    assert(model.vertexMirrorMap == {0: -1, 1: 2, 2: 1, 3: -1, 4: 5, 5: 4, 6: 7, 7: 6, 8: -1, 9: 10, 10: 9, 11: 21, 21: 11, 12: 22, 22: 12, 13: 23, 23: 13, 14: 24, 24: 14, 15: 25, 25: 15, 16: 26, 26: 16, 17: 19, 19: 17, 18: -1, 20: -1, 27: 30, 30: 27, 28: 31, 31: 28, 29: 32, 32: 29, 33: 35, 35: 33, 34: -1, 36: 37, 37: 36, 38: -1, 39: -1, 40: 42, 42: 40, 41: 43, 43: 41, 44: 45, 45: 44, 46: -1, 47: 48, 48: 47})
-    assert(model.edgeMirrorMap == {0: -1, 1: 2, 2: 1, 3: 4, 4: 3, 5: -1, 6: 10, 10: 6, 7: 9, 9: 7, 8: 11, 11: 8, 12: 16, 16: 12, 13: 15, 15: 13, 14: 17, 17: 14, 18: -1, 19: 20, 20: 19, 21: 25, 25: 21, 22: 24, 24: 22, 23: 26, 26: 23, 27: 58, 58: 27, 28: 57, 57: 28, 29: 59, 59: 29, 30: 61, 61: 30, 31: 60, 60: 31, 32: 62, 62: 32, 33: 64, 64: 33, 34: 63, 63: 34, 35: 65, 65: 35, 36: 67, 67: 36, 37: 66, 66: 37, 38: 68, 68: 38, 39: 70, 70: 39, 40: 69, 69: 40, 41: 71, 71: 41, 42: 73, 73: 42, 43: 72, 72: 43, 44: 74, 74: 44, 45: 133, 133: 45, 46: 52, 52: 46, 47: 134, 134: 47, 48: -1, 49: 132, 132: 49, 50: 53, 53: 50, 51: -1, 54: -1, 55: 56, 56: 55, 75: 85, 85: 75, 76: 84, 84: 76, 77: 86, 86: 77, 78: 88, 88: 78, 79: 87, 87: 79, 80: 89, 89: 80, 81: 91, 91: 81, 82: 90, 90: 82, 83: 92, 92: 83, 93: 100, 100: 93, 94: 135, 135: 94, 95: 99, 99: 95, 96: -1, 97: -1, 98: 101, 101: 98, 102: 105, 105: 102, 103: 106, 106: 103, 104: 136, 136: 104, 107: -1, 108: 110, 110: 108, 109: -1, 111: 112, 112: 111, 113: -1, 114: 121, 121: 114, 115: 120, 120: 115, 116: 122, 122: 116, 117: 124, 124: 117, 118: 123, 123: 118, 119: 125, 125: 119, 126: 130, 130: 126, 127: 129, 129: 127, 128: 131, 131: 128, 137: -1, 138: 139, 139: 138})
-    
-tests = {
-    'step': testModelStep,
-    'computeSymmetry': testComputeSymmetry,
-}
-
-def testAll(argv):
-    for key in tests:
-        print('test{}{}():'.format(key[0].upper(), key[1:]))
-        tests[key](argv)
-        print('Pass.\n')
-   
-if __name__ == "__main__":
-    import sys
-    
-    if 'test' in sys.argv:
-        if 'all' in sys.argv:
-            testAll(sys.argv)
-        else:
-            for key in tests:
-                if key in sys.argv:
-                    print('test{}{}():'.format(key[0].upper(), key[1:]))
-                    tests[key](sys.argv)
-                    print('Pass.\n')
