@@ -24,6 +24,7 @@ def getR(ratings: np.ndarray) -> (np.ndarray):
     R = 0
     while -1 in Rs:
         nonDominated = (~dominatedMatrix[:, np.arange(len(Rs))[Rs == -1]]).all(1) * (Rs == -1)
+        assert(len(nonDominated) > 0)
         Rs[nonDominated] = R
         R += 1
     return Rs
@@ -52,26 +53,27 @@ def getRCD(ratings: np.ndarray) -> (np.ndarray, np.ndarray):
     CDs = getCD(ratings, Rs)
     return Rs, CDs
 
-#endregion
+# endregion
 
 class GeneticAlgorithm(object):
     class Setting:
-        def __init__(self):
+        def __init__(self, setting):
             self.nGenesPerPool = None
             self.nGensPerPool = None
             self.nSurvivedMax = None
             
-            
             self.nWorkers = None
             self.mute = None
-            self.plot = None
             self.saveHistory = None
+            # self.plot = None
+        
+            self.load(setting)
             
-        def load(self, newSetting):
-            assert(type(newSetting) is dict)
-            for key in newSetting:
+        def load(self, setting):
+            assert(type(setting) is dict)
+            for key in setting:
                 assert(hasattr(self, key))
-                setattr(self, key, newSetting[key])
+                setattr(self, key, setting[key])
         
         def data(self):
             keys = [attr for attr in dir(self) if
@@ -79,29 +81,11 @@ class GeneticAlgorithm(object):
             
             return {key: getattr(self, key) for key in keys}
         
-        @staticmethod
-        def getDefaultSetting():
-            setting = {
-                'nGenesPerPool': 8,
-                'nGensPerPool': 5,
-                'nSurvivedMax': 2,
-        
-                'nWorkers': -1,
-                'plot': True,
-                'mute': False,
-                'saveHistory': True,
-            }
-            return setting
-    
-    def __init__(self, MOOSetting, GASetting=None):
+    def __init__(self, MOOSetting, GASetting='./data/ga_setting_default.json'):
         # load default setting
-        self.setting = self.Setting()
+        self.setting = self.Setting(GASetting)
         self.MOOSetting = MOOSetting
-        self.loadSetting(self.getDefaultSetting())
-        setting = GASetting
-        if setting is not None:
-            self.loadSetting(setting)
-            
+        
         self.pop = []
         self.ratings = []
         self.Rs = []
@@ -110,7 +94,6 @@ class GeneticAlgorithm(object):
         self.genePool = []
         self.elitePool = []
         
-        
         self.heroes = []
         self.ratingsHero = []
         self.criterion = None
@@ -118,16 +101,12 @@ class GeneticAlgorithm(object):
         self.startTime = None
         self.folderDir = None
         self.iPool = None
-        
-    @staticmethod
-    def getDefaultSetting():
-        return GeneticAlgorithm.Setting.getDefaultSetting()
     
     def loadSetting(self, setting):
         self.setting.load(setting)
     
     def initPoolFromScratch(self, sizePool):
-        genePool = [{'moo': MOO(self.MOOSetting, randInit=True), 'score': None} for _ in range(sizePool)]
+        genePool = [{'moo': MOO(self.MOOSetting), 'score': None} for _ in range(sizePool)]
         return genePool
     
     def evaluate(self, genePool, nWorkers=-1):
@@ -143,7 +122,6 @@ class GeneticAlgorithm(object):
             else:
                 return getCriterion(gene['moo'])(gene['moo'])
             
-        
         with Pool(nWorkers if nWorkers != -1 else multiprocessing.cpu_count()) as p:
             scores = np.array(p.map(criterion, genePool))
         
@@ -155,17 +133,11 @@ class GeneticAlgorithm(object):
     def select(self, genePool, nSurvivedMax):
         scores = [gene['score'] for gene in genePool]
         Rs = getR(np.array(scores))
-        
-        # only keep the front genes
-        idsSurvived = np.arange(len(Rs))[Rs == 0]
-        genePool = [genePool[i] for i in idsSurvived]
-        scores = [gene['score'] for gene in genePool]
-        
         CDs = getCD(np.array(scores), Rs)
+        idsSorted = np.lexsort((CDs, Rs))[::-1]
+        idsSurvived = idsSorted[:nSurvivedMax]
+        genePool = [genePool[i] for i in idsSurvived]
         
-        idsSorted = np.argsort(CDs)[::-1]
-        genePool = [genePool[i] for i in idsSorted]
-        genePool = genePool[:nSurvivedMax]
 
         logging.info("{:<10} {:<15} {:<40} {:<10} {:<10}".format('i', 'address', 'score', 'R', 'CD'))
 
@@ -177,7 +149,6 @@ class GeneticAlgorithm(object):
         return genePool
         
     def mutateAndRegenerate(self, genePool, sizePool):
-        nGeneration = sizePool - len(genePool)
         while len(genePool) < sizePool:
             genePoolNew = [{'moo': copy.deepcopy(gene['moo']).mutate(), 'score': None} for gene in genePool]
             genePool += genePoolNew
@@ -218,7 +189,7 @@ class GeneticAlgorithm(object):
         import pickle5
         data = pickle5.load(open(str(cpDir), 'rb'))
         elitePool = data['elitePool']
-        [gene['moo'].model.configure(gene['moo'].MOOSetting.modelConfigDir) for gene in elitePool]
+        [gene['moo'].model.configure(gene['moo'].settingMOO.modelSettingDir) for gene in elitePool]
         self.elitePool = elitePool
         
     def run(self):

@@ -5,15 +5,12 @@ from utils.moo import MOO
 
 def getCriterion(mmo: MOO) -> Callable[[np.ndarray], np.ndarray]:
     def criterion(gene) -> np.ndarray:
-        
-        mmo = gene
+        moo = gene
         rating = []
-        for i in range(len(mmo.actionSeqs)):
-            actionSeq = mmo.actionSeqs[i]
+        for i in range(len(moo.actionSeqs)):
+            vs, es = moo.simulateOpenLoop(i)
             
-            vs, es = mmo.simulate(actionSeq)
-            
-            objective = mmo.objectives[i]
+            objective = moo.setting.objectives[i]
             for subObjective in objective:
                 score = subObjective(vs, es)
                 rating.append(score)

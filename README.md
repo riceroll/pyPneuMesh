@@ -24,8 +24,9 @@ python utils/ppo/main.py
 ```
 A gym environment will be initialized based a GA result. 
 You can change the GA result by changing the following three lines in the ``main.py`` file.
+
 ```python
-data = pickle.load(open('./output/GA_531-8-36-53/iPool_580', 'rb'))
+data = pickle.loadTruss(open('./output/GA_531-8-36-53/iPool_580', 'rb'))
 moo = data['elitePool'][5]['moo']
 iObjective = 1
 ```

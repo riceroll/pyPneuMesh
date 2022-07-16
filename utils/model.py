@@ -22,8 +22,8 @@ class HalfGraph(object):
         self.edges = []             # indices of two incident nodes, ne x 2, ne is the number of edges in a halfgraph
         self.ies_o = []               # ne, original indices of edges in a halfgraph
         self.channels = []          # ne, indices of channels
-        self.contractions = []      # ne, int value of contractions
-        self.esOnMirror = []          # ne, bool, if the edge in on the mirror plane
+        self.contractions = np.array([])     # ne, int value of contractions
+        self.esOnMirror = np.array([])          # ne, bool, if the edge in on the mirror plane
         
     def add_edges_from(self, esInfo):
         # input:
@@ -123,297 +123,241 @@ class HalfGraph(object):
             return True
         
 class Model(object):
-    
-    # MOO setting
-        # objectives
-        # model
-        # GA
-        
-    # h = 0.001
-    
-    # gravity
-    # dampingRatio = 0.999
-    
-    # k = 200000    # mass spring vs yongs modulus
-    
-    # nodeWeight
-    
-    # lengths
-        # 101, 124, 154, 174
+    class Setting:
+        def __init__(self, settingDir):
+            self.k = None
+            self.h = None
+            self.damping = None
+            self.gravity = None
+            self.friction = None
+            self.actuationTime = None
+            self.jointWeight = None
+            
+            self.minLengths = []
+            
+            self.nChannels = None
+            self.channelMirrorMap = None
+            
+            # calculated values
+            self.nStepsPerActuation = None
+            
+            self.loadJSON(settingDir)
+            
+        def loadJSON(self, settingDir):
+            # dir to the json configuration file
+            with open(settingDir) as iFile:
+                content = iFile.read()
+                setting = json.loads(content)
+            
+            for key in setting:
+                assert(hasattr(self, key))
+                setattr(self, key, setting[key])
+            
+            self.channelMirrorMap = {
+                int(key): self.channelMirrorMap[key]
+                for key in self.channelMirrorMap
+            }
+            self.minLengths = np.array(self.minLengths, dtype=float)
+            self.nStepsPerActuation = int(self.actuationTime / self.h)
+            dampingPerMs = self.damping
+            self.damping = dampingPerMs ** (1.0 / (0.001 / self.h))
+            
+    class Truss:
+        def __init__(self, modelDir=None):
+            self.v0 = None
+            self.e = None       # edge                  [ne x 2] int
+            self.eLengthLevel = None
+            self.eActive = None
+            self.eChannel = None
+            self.vFixed = None
+            
+            self.loadJson(modelDir)
 
-    # numChannels
-    
-    # angleThreshold = np.pi / 2
-    
-    
-    
-    # GA control
-        # numActions
-        # numStepsPerAction
-        # nLoopsSimulate
-    
-    
-    # GA parameters
-    
-    
-    
-    # contractionInterval = 0.1
-    # contractionLevels = 4
-    # maxMaxContraction = round(contractionInterval * (contractionLevels - 1) * 100) / 100
-    # contractionPercentRate = 1e-3
-    # gravityFactor = 9.8 * 10
-    # gravity = 1
-    # defaultMinLength = 1.2
-    # defaultMaxLength = defaultMinLength / (1 - maxMaxContraction)
-    # frictionFactor = 0.8
-    # numStepsPerActuation = int(2 / h)
-    # defaultNumActions = 1
-    # defaultNumChannels = 4
-    # angleThreshold = np.pi / 2
-    # angleCheckFrequency = numStepsPerActuation / 20
+        def loadJson(self, settingDir):
+            # dir to the json configuration file
+            with open(settingDir) as iFile:
+                content = iFile.read()
+                data = json.loads(content)
+            
+            self.v0 = np.array(data['v'], dtype=float)
+            self.e = np.array(data['e'], dtype=int)
+            self.eLengthLevel = np.array(data['eLengthLevel'], dtype=int)
+            self.eActive = np.array(data['eActive'], dtype=bool)
+            self.eChannel = np.array(data['eChannel'], dtype=int)
+            self.vFixed = np.array(data['vFixed'], dtype=bool)
+            
+    def __init__(self, settingDir="./data/config_model_large.json", modelDir="./data/table.json"):
+        self.settingDir = settingDir
+        self.modelDir = modelDir
+        self.setting = self.Setting(self.settingDir)
+        self.truss = self.Truss(self.modelDir)
+        
+        self.inflateChannel = None
+        self.contractionPercent = None
 
-    @staticmethod
-    def configure(configDir="./data/config.json"):
-        with open(configDir) as ifile:
-            content = ifile.read()
-            data = json.loads(content)
-            Model.k = data['k']
-            Model.h = data['h']
-            Model.dampingRatio = data['dampingRatio']
-            Model.contractionInterval = data['contractionInterval']
-            Model.contractionLevels = data['contractionLevels']
-            Model.maxMaxContraction = round(Model.contractionInterval * (Model.contractionLevels - 1) * 100) / 100
-            Model.contractionPercentRate = data['contractionPercentRate']
-            Model.gravityFactor = data['gravityFactor']
-            Model.gravity = data['gravity']
-            Model.defaultMinLength = data['defaultMinLength']
-            Model.defaultMaxLength = Model.defaultMinLength / (1 - Model.maxMaxContraction)
-            Model.frictionFactor = data['frictionFactor']
-            Model.numStepsPerActuation = int(data['numStepsActionMultiplier'] / Model.h)
-            Model.defaultNumActions = data['defaultNumActions']
-            Model.defaultNumChannels = data['defaultNumChannels']
-            Model.angleThreshold = data['angleThreshold']
-            Model.angleCheckFrequency = Model.numStepsPerActuation * data['angleCheckFrequencyMultiplier']
-            Model.directionalFriction = bool(data['directionalFriction'])
-    
-    def __init__(self, configDir="./data/config.json"):
-        
-        # ======= variable =======
-        self.v = None       # vertices locations    [nv x 3]
-        self.e = None       # edge                  [ne x 2] int
-        self.v0 = None
-        self.c = None       # indices of v at corners [nc x 3] e.g. <AOB -> [iO, iA, iB]
-        self.a0 = None      # rest angle of corresponding corner [nc]
-        self.fixedVs = None
-        self.lMax = None
-        self.edgeActive = None
-        self.edgeChannel = None
-        self.script = None
-        
-        self.maxContraction = None
+        self.v = None  # vertices locations    [nv x 3]
         self.vel = None     # velocity              [nv x 3]
         self.f = None
         self.l = None
         
+        self.c = None  # indices of v at corners [nc x 3] e.g. <AOB -> [iO, iA, iB]
+        self.a0 = None  # rest angle of corresponding corner [nc]
         self.frontVec = None
         
-        self.iAction = 0
-        self.numSteps = 0
-        self.gravity = True
-        self.simulate = True
-        
-        self.inflateChannel = None
-        self.contractionPercent = None
-        self.numChannels = None
-        self.numActions = None
-        
-        self.testing = False    # testing mode
         self.vertexMirrorMap = dict()
         self.edgeMirrorMap = dict()
-        self.channelMirrorMap = dict()
-        
         self.tetList = None       # #T by 4, vertices of tetrahedrons
-        
-        self.showHistory = []   # edges at every update of channel growing
-        
-        Model.configure(configDir)
-    
-    # initialization =======================
-    
-    
-    def load(self, modelDir):
-        """
-        load parameters from a json file into the model
-        :param modelDir: dir of the json file
-        :return: data as a dictionary
-        """
-        self.modelDir = modelDir
-        with open(modelDir) as ifile:
-            content = ifile.read()
-        data = json.loads(content)
 
-        self.v = np.array(data['v'])
-        self.v0 = self.v.copy()
-        self.e = np.array(data['e'], dtype=np.int64)
+        self.recordEveryFrame = False
+        self.nSteps = 0
+        self.vs = []     # record vertex positions with certain interval
+
+        self.reset()
         
-        self.lMax = np.array(data['lMax'])
-        self.edgeActive = np.array(data['edgeActive'], dtype=bool)
-        self.edgeChannel = np.array(data['edgeChannel'], dtype=np.int64)
-        self.maxContraction = np.array(data['maxContraction'])
-        
-        self.fixedVs = np.array(data['fixedVs'], dtype=np.int64)
-        
-        assert((self.lMax[self.edgeActive] == self.lMax[self.edgeActive][0]).all())
-        assert(len(self.e) == len(self.lMax) == len(self.edgeChannel) == len(self.edgeActive) and len(self.maxContraction))
-        self._reset()
-        
-    def _reset(self, resetScript=False):
+    def reset(self):
         """
         reset the model to the initial state with input options
-        :param resetScript: if True, reset script to zero with numChannels and numActions
         :param numChannels: if -1, use the default value from self.numChannels or self.edgeChannel
         :param numActions: if -1, use the default value from self.numActions or self.script[0]
         """
         
-        self.v = self.v0.copy()
+        self.v = self.truss.v0.copy()
         self.vel = np.zeros_like(self.v)
-        self.frontVec = None
-
-        # TODO: quick fix
-        try:
-            self.numChannels = max(self.edgeChannel.max() + 1, self.numChannels)
-        except:     # if self.numChannels not defined
-            self.numChannels = self.edgeChannel.max() + 1
         
-        self.inflateChannel = np.ones(self.numChannels)
-        self.contractionPercent = np.zeros(self.numChannels)
+        self.inflateChannel = np.ones(self.setting.nChannels)
+        self.contractionPercent = np.zeros(self.setting.nChannels)
         
-
-        self.iAction = 0
-        self.numSteps = 0
-        self.gravity = True
-        self.simulate = True
+        self.recordEveryFrame = False
+        self.nSteps = 0
+        self.vs = [self.v.copy()]   # record the first frame
         
-        # self.updateCornerAngles()
-        
-        # TODO: quick fix
         try:
             self.computeSymmetry()
             self.symmetric = True
         except:
             self.symmetric = False
+            print('Truss not symmetric.')
         
-    # end initialization
-    
-    # stepping =======================
-    def step(self, n=1, ret=False):
-        """
-        step simulation of the model if self.simulate is True
-        :param n: number of steps
-        """
+        self.updateInitAngle()
+            
+    def recordEveryFrameOn(self):
+        self.recordEveryFrame = True
         
-        if not self.simulate:
-            return True
+    def recordEveryFrameOff(self):
+        self.recordEveryFrame = False
         
-        for i in range(n):
-            self.numSteps += 1
-        
+    def step(self, nSteps=1):
+        for i in range(nSteps):
+            self.nSteps += 1
+
             # contractionPercent
+            actuationPercentRate = 1.0 / self.setting.nStepsPerActuation
             for iChannel in range(len(self.inflateChannel)):
                 if self.inflateChannel[iChannel]:
-                    self.contractionPercent[iChannel] -= Model.contractionPercentRate
+                    self.contractionPercent[iChannel] -= actuationPercentRate
                     if self.contractionPercent[iChannel] < 0:
                         self.contractionPercent[iChannel] = 0
-                    
                 else:
-                    self.contractionPercent[iChannel] += Model.contractionPercentRate
+                    self.contractionPercent[iChannel] += actuationPercentRate
                     if self.contractionPercent[iChannel] > 1:
                         self.contractionPercent[iChannel] = 1
                     
-        
             f = np.zeros_like(self.v)
         
-            iv0 = self.e[:, 0]
-            iv1 = self.e[:, 1]
+            iv0 = self.truss.e[:, 0]
+            iv1 = self.truss.e[:, 1]
+            
             v = self.v
             vec = v[iv1] - v[iv0]
             self.l = l = np.sqrt((vec ** 2).sum(1))
-            l0 = np.copy(self.lMax)
-            lMax = np.copy(self.lMax)
-            lMin = lMax * (1 - (Model.contractionLevels - 1) * self.contractionInterval )
+            
+            minLengths = self.setting.minLengths[self.truss.eLengthLevel]
+            maxLength = max(self.setting.minLengths)
             
             # edge strain
-            l0[self.edgeActive] = (lMax - self.contractionPercent[self.edgeChannel] * (lMax - lMin))[self.edgeActive]
-            fMagnitude = (l - l0) * Model.k
+            l0 = maxLength - self.contractionPercent[self.truss.eChannel] * (maxLength - minLengths)
+            l0[~self.truss.eActive] = max(self.setting.minLengths)
+            fMagnitude = (l - l0) * self.setting.k
             fEdge = vec / l.reshape(-1, 1) * fMagnitude.reshape(-1, 1)
+            
             np.add.at(f, iv0, fEdge)
             np.add.at(f, iv1, -fEdge)
             
             # gravity
-            f[:, 2] -= Model.gravityFactor * Model.gravity
+            f[:, 2] -= self.setting.gravity * self.setting.jointWeight
             self.f = f
             
-            self.vel += Model.h * f
+            # integrate velocity
+            a = f / self.setting.jointWeight
+            self.vel += self.setting.h * a
 
+            # friction
             boolUnderground = self.v[:, 2] <= 0
-            self.vel[boolUnderground, :2] *= 1 - Model.frictionFactor       # uniform friction
-            # damping
-            self.vel *= Model.dampingRatio
-            velMag = np.sqrt((self.vel ** 2).sum(1))
-            if (velMag > 5).any():
-                self.vel[velMag > 5] *= np.power(0.9, np.ceil(np.log(5 / velMag[velMag > 5]) / np.log(0.9))).reshape(-1, 1)
-
-            # directional surface
-            if Model.directionalFriction:
-                if self.numSteps % (Model.numStepsPerActuation / 20) == 0 or self.frontVec is None:
-                    self.frontVec = getFrontDirection(self.v0, self.v).reshape(-1, 1)
-                # self.frontVec = np.array([1, 0, 0]).reshape(-1, 1)
-                vel = self.vel.copy()
-                vel[2] *= 0
-    
-                dot = (vel @ self.frontVec)
-                ids = (dot < 0).reshape(-1) * boolUnderground
-                self.vel[ids] -= dot[ids] * self.frontVec.reshape(1, -1)
-                
-            self.v += Model.h * self.vel
-            self.v[np.where(np.array(self.fixedVs) == 1)] -= Model.h * self.vel[np.where(np.array(self.fixedVs) == 1)]
-
-            boolUnderground = self.v[:, 2] <= 0
-            self.vel[boolUnderground, 2] *= -1
-            self.vel[boolUnderground, 2] *= 0
-            self.v[boolUnderground, 2] = 0
-        
-            # angle check
-            # if False and self.numSteps % Model.angleCheckFrequency == 0:
-            #     a = self.getCornerAngles()
-            #     if (a - self.a0 > self.angleThreshold).any():
-            #         print("exceed angle")
-            #         return np.ones_like(self.v) * -1e6
+            self.vel[boolUnderground, :2] *= 1 - self.setting.friction       # uniform friction
+            self.vel[boolUnderground, :2] *= 0
             
-            # if self.numSteps % 100 == 0:
-            #     vs.append(self.v)
-        
-        if ret:
-            return self.v.copy()
+            # damping
+            self.vel *= self.setting.damping
+            velMag = np.sqrt((self.vel ** 2).sum(1))
+            maxVel = 100.0
+            # if (velMag > maxVel).any():
+            #     # self.vel[velMag > maxVel] = maxVel
+            #     print(1)
+            #     self.vel[velMag > maxVel] *= np.power(0.9, np.ceil(np.log(maxVel / velMag[velMag > maxVel]) / np.log(0.9))).reshape(-1,1)
+            
+            # conflict with ground
+            boolUnderground = self.v[:, 2] <= 0
+            self.vel[boolUnderground, 2][self.vel[boolUnderground, 2] < 0] *= 0
+
+            # integrate position
+            self.v += self.setting.h * self.vel
+
+            # conflict with ground
+            self.v[boolUnderground, 2] = 0
+
+            
+            # fixed points
+            self.v[np.where(np.array(self.truss.vFixed) == 1)] -= self.setting.h * self.vel[np.where(np.array(self.truss.vFixed) == 1)]
+            
+            # record trajectory
+            if self.recordEveryFrame:
+                self.vs.append(self.v.copy())
+                
+            elif self.nSteps % self.setting.nStepsPerActuation == 0 or self.nSteps == 1:    # record between every actuation
+                self.vs.append(self.v.copy())
+            
+            # angle check
+            # if (self.getBendingAngle() > np.pi / 2).any():
+            #     print('exceed')
+            # else:
+            #     print('not exceed')
+            
+            
+    # region angles
     
-    # end stepping
+    def updateInitAngle(self):
+        # update the initial angle a0
+
+        def initAngleIndices():
+            # update the indices of the corners
+            c = []
     
-    # checks =========================
-    def updateCornerAngles(self):
-        c = []
-        
-        for iv in range(len(self.v)):
-            # get indices of neighbor vertices
-            ids = np.concatenate([self.e[self.e[:, 0] == iv][:, 1], self.e[self.e[:, 1] == iv][:, 0]])
-            for i in range(len(ids) - 1):
-                id0 = ids[i]
-                id1 = ids[i+1]
-                c.append([iv, id0, id1])
-        
-        c = np.array(c)
-        self.a0 = self.getCornerAngles(c)
+            for iv in range(len(self.v)):
+                # get indices of neighbor vertices
+                ids = np.concatenate(
+                    [self.truss.e[self.truss.e[:, 0] == iv][:, 1], self.truss.e[self.truss.e[:, 1] == iv][:, 0]])
+                for i in range(len(ids) - 1):
+                    id0 = ids[i]
+                    id1 = ids[i + 1]
+                    c.append([iv, id0, id1])
     
-    def getCornerAngles(self, c):
+            self.c = np.array(c)
+        
+        initAngleIndices()
+        
+        self.a0 = self.getCurrentAngle(self.c)
+    
+    def getCurrentAngle(self, c):
         # return angles of self.c
         O = self.v[c[:, 0]]
         A = self.v[c[:, 1]]
@@ -426,9 +370,12 @@ class Model(object):
         angles = np.arccos(cos)
         return angles
     
-    # end checks
+    def getBendingAngle(self):
+        return np.abs(self.getCurrentAngle(self.c) - self.a0)
     
-    # utility ===========================
+    # endregion
+    
+    # region utility
     def centroid(self):
         return self.v.sum(0) / self.v.shape[0]
         
@@ -441,19 +388,19 @@ class Model(object):
         xzs = self.v[:, [0, 2]]
         for iv, v in enumerate(self.v):
             if iv not in vertexMirrorMap:
-                if abs(v[1]) < 0.1:
+                if abs(v[1]) < 0.001:
                     vertexMirrorMap[iv] = -1    # on the mirror plane
                 else:       # mirrored with another vertex
-                    boolMirrored = ((v[[0, 2]] - xzs) ** 2).sum(1) < 1
+                    boolMirrored = ((v[[0, 2]] - xzs) ** 2).sum(1) < 0.01
                     ivsMirrored = np.where(boolMirrored)[0]
                     ivMirrored = ivsMirrored[np.argmin(abs(v[1] + self.v[ivsMirrored][:, 1]))]
                     assert(ivMirrored not in vertexMirrorMap)
                     vertexMirrorMap[iv] = ivMirrored
                     vertexMirrorMap[ivMirrored] = iv
-
+                    
         edgeMirrorMap = dict()
         
-        for ie, e in enumerate(self.e):
+        for ie, e in enumerate(self.truss.e):
             if ie in edgeMirrorMap:
                 continue
             
@@ -471,7 +418,7 @@ class Model(object):
             if ivM0 == iv0 and ivM1 == iv1:     # edge on the mirror plane
                 edgeMirrorMap[ie] = -1
             else:
-                iesMirrored = (eM == self.e).all(1) + (eM[::-1] == self.e).all(1)
+                iesMirrored = (eM == self.truss.e).all(1) + (eM[::-1] == self.truss.e).all(1)
                 assert(iesMirrored.sum() == 1)
                 ieMirrored = np.where(iesMirrored)[0][0]
                 assert(ieMirrored not in edgeMirrorMap)
@@ -483,9 +430,12 @@ class Model(object):
         
         self.vertexMirrorMap = vertexMirrorMap
         self.edgeMirrorMap = edgeMirrorMap
+        
         return vertexMirrorMap, edgeMirrorMap
     
     def toHalfGraph(self, reset=False):
+        # reset: if True, reset all contraction to 0
+        
         G = HalfGraph()
         
         # region assigning eLeft, eRight, eMiddle
@@ -499,7 +449,7 @@ class Model(object):
             if ieMirror == -1:
                 eMiddle.append(ie)
             else:
-                if self.v[self.e[ie][0], 1] < 0 or self.v[self.e[ie][1], 1] < 0:
+                if self.v[self.truss.e[ie][0], 1] < 0 or self.v[self.truss.e[ie][1], 1] < 0:
                     eLeft.append(ie)
                     eRight.append(ieMirror)
                 else:
@@ -514,19 +464,17 @@ class Model(object):
         
         # for iv in range(len(self.v)):
         #     G.add_node(iv)
-            
+        
         # region G.add_edges_from(...)
         esInfo = []
         for ie in eLeft + eMiddle:
-            contraction = (int(round(self.maxContraction[ie] / Model.contractionInterval))) if not reset else 0
-            if not contraction in [0, 1, 2, 3]:
-                contraction = 0
+            contraction = self.truss.eLengthLevel[ie] if not reset else 0
             
-            esInfo.append((self.e[ie][0], self.e[ie][1],
+            esInfo.append((self.truss.e[ie][0], self.truss.e[ie][1],
                        {
                            'ie': ie,
                            'onMirror': ie in eMiddle,
-                           'channel': self.edgeChannel[ie],
+                           'channel': self.truss.eChannel[ie],
                            'contraction': contraction
                         }
                             )
@@ -548,25 +496,25 @@ class Model(object):
             ic = G.channels[i]
             
             # region set edgeChannel
-            self.edgeChannel[ie] = ic
+            self.truss.eChannel[ie] = ic
             ieMirror = self.edgeMirrorMap[ie]
             
             if ieMirror == -1:
                 pass
             else:
                 if ic == -1:
-                    self.edgeChannel[ieMirror] = -1
+                    self.truss.eChannel[ieMirror] = -1
                 else:
-                    icMirror = self.channelMirrorMap[ic]
+                    icMirror = self.setting.channelMirrorMap[ic]
                     if icMirror == -1:
                         icMirror = ic
-                    self.edgeChannel[ieMirror] = icMirror
+                    self.truss.eChannel[ieMirror] = icMirror
             # endregion
 
             # set maxContraction
-            self.maxContraction[ie] = contractionLevel * Model.contractionInterval
+            self.truss.eLengthLevel[ie] = contractionLevel
             if ieMirror != -1:
-                self.maxContraction[ieMirror] = contractionLevel * Model.contractionInterval
+                self.truss.eLengthLevel[ieMirror] = contractionLevel
     
     def initHalfGraph(self):
         stuck = True
@@ -583,9 +531,9 @@ class Model(object):
             iesIncidentMirrorUnassigned = set(G.iesIncidentMirror())
             iesNotMirrorUnassigned = set(G.iesNotMirror())
             
-            for iChannel in self.channelMirrorMap.keys():
+            for iChannel in self.setting.channelMirrorMap.keys():
                 # breakpoint()
-                icMirror = self.channelMirrorMap[iChannel]
+                icMirror = self.setting.channelMirrorMap[iChannel]
                 if icMirror == -1:
                     ie = np.random.choice(list(iesIncidentMirrorUnassigned))
                     iesIncidentMirrorUnassigned.remove(ie)
@@ -611,14 +559,14 @@ class Model(object):
                 # self.fromHalfGraph()
                 # self.show(show=False)
                 
-                ic = np.random.choice(list(self.channelMirrorMap.keys()))
+                ic = np.random.choice(list(self.setting.channelMirrorMap.keys()))
                 iesUnassignedAroundChannel = G.iesAroundChannel(ic)
                 if G.iesNotMirror() is not None and iesUnassignedAroundChannel is not None:
                     iesUnassignedAroundChannelNotMirror = np.intersect1d(iesUnassignedAroundChannel, G.iesNotMirror())
                 else:
                     iesUnassignedAroundChannelNotMirror = None
                 
-                icMirror = self.channelMirrorMap[ic]
+                icMirror = self.setting.channelMirrorMap[ic]
                 if icMirror != -1:
                     if iesUnassignedAroundChannelNotMirror is None or len(iesUnassignedAroundChannelNotMirror) == 0:
                         continue
@@ -631,8 +579,8 @@ class Model(object):
                 numNotUpdate = 0
                 iesUnassigned.remove(ieToAssign)
                 G.channels[ieToAssign] = ic
-                
-        self.G.contractions = np.random.randint(0, Model.contractionLevels, self.G.contractions.shape)
+        
+        self.G.contractions = np.random.randint(0, len(self.setting.minLengths), self.G.contractions.shape)
         
         self.fromHalfGraph()
         
@@ -644,10 +592,9 @@ class Model(object):
         # change its channel to one of the available channels incident to the edge
         
         G = self.G
-        
     
         iess = []
-        for ic in self.channelMirrorMap.keys():
+        for ic in self.setting.channelMirrorMap.keys():
             iess.append(G.iesAroundChannel(ic, unassigned=False))
         ies = np.array(list(set(np.concatenate(iess))))
         
@@ -660,7 +607,7 @@ class Model(object):
             ics_available = []
             for ie_incident in ies_incident:
                 ic = G.channels[ie_incident]
-                icMirror = self.channelMirrorMap[ic]
+                icMirror = self.setting.channelMirrorMap[ic]
                 if not(icMirror != -1 and G.esOnMirror[ie_incident]) and ic != ic_original:
                     ics_available.append(ic)
             
@@ -670,7 +617,7 @@ class Model(object):
                 
                 channelsConnected = True
                 
-                for iChannel in self.channelMirrorMap.keys():
+                for iChannel in self.setting.channelMirrorMap.keys():
                     channelsConnected *= G.channelConnected(iChannel)
                     
                 if channelsConnected:
@@ -682,12 +629,12 @@ class Model(object):
 
         if np.random.rand() > 0.5:  # mutate contraction
             i = np.random.randint(len(G.contractions))
-            G.contractions[i] = np.random.randint(Model.contractionLevels)
+            G.contractions[i] = np.random.randint(len(self.setting.minLengths))
             
         self.fromHalfGraph()
         
     def frontDirection(self):
-        return getFrontDirection(self.v0, self.v).reshape(-1, 1)
+        return getFrontDirection(self.truss.v0, self.v).reshape(-1, 1)
         
     def relativePositions(self, requiresVelocity=False):
 
@@ -716,7 +663,7 @@ class Model(object):
         self.tetList = []
         A = np.eye(len(self.v))
         
-        for e in self.e:
+        for e in self.truss.e:
             A[e[0], e[1]] = 1
             A[e[1], e[0]] = 1
         print(A)
@@ -748,7 +695,6 @@ class Model(object):
             
         self.tetList = np.array(self.tetList)
         
-        
     def volume(self):
         try:
             self.tetList
@@ -768,6 +714,55 @@ class Model(object):
         
         return volumes.sum()
     
+    # region stabilize & save model
+    def rescale(self):
+        # scale the input model to a proper size
+
+        iv0 = self.truss.e[:, 0]
+        iv1 = self.truss.e[:, 1]
+        v = self.truss.v0
+        vec = v[iv1] - v[iv0]
+        l = np.sqrt((vec ** 2).sum(1))
+        
+        scale = max(self.setting.minLengths) / l.mean()
+        self.truss.v0 *= scale * 1.2
+    
+    def stabilize(self):
+        self.reset()
+        self.contractionPercent *= 0
+        self.inflateChannel *= 0
+        self.inflateChannel += 1
+        
+        self.recordEveryFrameOn()
+        self.step(10000)
+    
+    def save(self, relativeJSONDir):
+        data = dict()
+        data['v'] = self.v.tolist()
+        data['e'] = self.truss.e.tolist()
+        data['eLengthLevel'] = self.truss.eLengthLevel.tolist()
+        data['eActive'] = self.truss.eActive.tolist()
+        data['eChannel'] = self.truss.eChannel.tolist()
+        data['vFixed'] = self.truss.vFixed.tolist()
+        
+        with open(self.modelDir) as iFile:
+            content = iFile.read()
+            import json
+            dataIn = json.loads(content)
+            keys = dataIn.keys()
+        
+        assert(tuple(data.keys()) == tuple(keys))
+        
+        with open(relativeJSONDir, 'w') as oFile:
+            c = json.dumps(data)
+            oFile.write(c)
+    
+    def stabilizeNSave(self):
+        self.rescale()
+        self.stabilize()
+        self.save(self.modelDir[:-5] + '_stabilized.json')
+    
+    # end region
     
     def show(self, show=True, essPrev=None):
         import polyscope as ps
@@ -777,82 +772,24 @@ class Model(object):
             pass
         
         G = self.G
-        for ic in list(np.arange(self.numChannels)):
-            ies = np.arange(len(self.e))[self.edgeChannel == ic]
+        
+        for ic in list(np.arange(self.setting.nChannels)):
+            ies = np.arange(len(self.truss.e))[self.truss.eChannel == ic]
             
             # if ic == -1:
             #     assert(len(ies) == 0)
             # else:
             #     assert(len(ies) != 0)
             
-            es = self.e[ies]
+            es = self.truss.e[ies]
             
-            if show:
-                if essPrev is not None:
-                    es = essPrev[ic]
-                
-                ps.register_curve_network(str(ic), self.v, es)
-            else:
-                self.showHistory.append(es.copy())
+            if essPrev is not None:
+                es = essPrev[ic]
             
+            ps.register_curve_network(str(ic), self.v, es)
+        
             
         if show:
             ps.show()
-        
-    def _loadEdgeChannel(self, edgeChannel):
-        """
-        load edgeChannel
-        :param edgeChannel: np.array int [numEdge, ]
-        """
-        assert(type(edgeChannel) == np.ndarray)
-        assert(edgeChannel.dtype == int)
-        assert(edgeChannel.shape == (len(self.e),) )
-        self.edgeChannel = edgeChannel
     
-    def exportJSON(self, modelDir=None,
-                   actionSeq=np.zeros([4, 1]),
-                   edgeChannel=None,
-                   maxContraction=None,
-                   saveDir=None,
-                   appendix="",
-                   save=True):
-        """
-        export the model into JSON, with original model from the JSON as name
-
-        :param modelDir: name of the imported json file
-        :param edgeChannel: np.array int [numEdge, ]
-        :param maxContraction: np.array float [numEdgeActive, ]
-        :param actionSeq: np.array [numChannel, numActions]
-        """
-        modelDir = modelDir if modelDir else self.modelDir
-        with open(modelDir) as iFile:
-            content = iFile.read()
-            data = json.loads(content)
-
-        if edgeChannel is not None:
-            self._loadEdgeChannel(edgeChannel)
-        data['edgeChannel'] = self.edgeChannel.tolist()
-        
-        if maxContraction is not None:
-            self.maxContraction(maxContraction)
-        data['maxContraction'] = self.maxContraction.tolist()
-        
-        if actionSeq is not None:
-            data['script'] = actionSeq.tolist()
-            data['numChannels'] = actionSeq.shape[0]
-            data['numActions'] = actionSeq.shape[1]
-        js = json.dumps(data)
-
-        name = modelDir.split('/')[-1].split('.')[0]
-        now = datetime.datetime.now()
-        timeStr = "{}{}-{}:{}:{}".format(now.month, now.day, now.hour, now.minute, now.second)
-        if saveDir is None:
-            saveDir = '{}/output/{}_{}.json'.format(rootPath, name, str(appendix))
-        
-        print(rootPath, name, saveDir)
-        if save:
-            with open(saveDir, 'w') as oFile:
-                oFile.write(js)
-                print('Save to {}_{}.json'.format(saveDir, str(appendix)))
-                
-        return js
+    # endregion

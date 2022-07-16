@@ -7,20 +7,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--checkpoint', help='The directory of the checkpoint file.')
 args = parser.parse_args()
 
-MOOsetting = {
+settingMOO = {
     'modelDir': './data/table.json',
-    'numChannels': 6,
-    'numActions': 4,
-    'numObjectives': 3,
-    "channelMirrorMap": {
-        0: 1,
-        2: -1,
-        3: -1,
-        4: 5,
-    },
-    # 'env': ['flat', 'cube', 'cave'],
+    'modelSettingDir': './data/model_setting_large.json',
+    'nActions': 4,
+    'nLoopPerSim': 4,
     'objectives': [[objMoveForward, objFaceForward], [objTurnLeft], [objLowerBodyMax]],
-    'nLoopSimulate': 4
 }
 
 nWorkers = multiprocessing.cpu_count()
@@ -31,13 +23,12 @@ settingGA = {
     'nSurvivedMax': int(nGensPerPool * 0.5),
     
     'nWorkers': nWorkers,
-    'plot': True,
+    # 'plot': True,
     'mute': False,
     'saveHistory': True,
 }
 
-
-ga = GeneticAlgorithm(MOOSetting=MOOsetting, GASetting=settingGA)
+ga = GeneticAlgorithm(MOOSetting=settingMOO, GASetting=settingGA)
 
 if args.checkpoint:
     checkpointDir = args.checkpoint

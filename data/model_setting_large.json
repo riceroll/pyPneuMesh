@@ -1,0 +1,23 @@
+{
+  "k": 50000.0,
+  "h": 0.001,
+  "damping": 0.99,
+  "gravity": 9.8,
+  "friction": 0.8,
+  "actuationTime": 2.0,
+  "jointWeight": 0.12,
+
+  "minLengths": [
+    0.215,
+    0.195,
+    0.165,
+    0.142
+  ],
+  "nChannels": 6,
+  "channelMirrorMap": {
+    "0": 1,
+    "2": -1,
+    "3": -1,
+    "4": 5
+  }
+}
