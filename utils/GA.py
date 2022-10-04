@@ -28,6 +28,7 @@ def getR(ratings: np.ndarray) -> (np.ndarray):
         R += 1
     return Rs
 
+
 def getCD(ratings: np.ndarray, Rs: np.ndarray) -> (np.ndarray):
     ratings = ratings.reshape(len(ratings), -1)
     CDMatrix = np.zeros_like(ratings, dtype=np.float)
@@ -43,8 +44,9 @@ def getCD(ratings: np.ndarray, Rs: np.ndarray) -> (np.ndarray):
     else:
         CDMatrix[sortedIds[1:-1, :], np.arange(len(ratings[0]))] = np.inf
     CDs = CDMatrix.mean(1)
-    
+
     return CDs
+
 
 def getRCD(ratings: np.ndarray) -> (np.ndarray, np.ndarray):
     ratings = ratings.reshape(len(ratings), -1)
@@ -52,7 +54,8 @@ def getRCD(ratings: np.ndarray) -> (np.ndarray, np.ndarray):
     CDs = getCD(ratings, Rs)
     return Rs, CDs
 
-#endregion
+
+# endregion
 
 class GeneticAlgorithm(object):
     class Setting:
@@ -60,39 +63,38 @@ class GeneticAlgorithm(object):
             self.nGenesPerPool = None
             self.nGensPerPool = None
             self.nSurvivedMax = None
-            
-            
+
             self.nWorkers = None
             self.mute = None
             self.plot = None
             self.saveHistory = None
-            
+
         def load(self, newSetting):
-            assert(type(newSetting) is dict)
+            assert (type(newSetting) is dict)
             for key in newSetting:
-                assert(hasattr(self, key))
+                assert (hasattr(self, key))
                 setattr(self, key, newSetting[key])
-        
+
         def data(self):
             keys = [attr for attr in dir(self) if
                     not callable(getattr(self, attr)) and not attr.startswith("__")]
-            
+
             return {key: getattr(self, key) for key in keys}
-        
+
         @staticmethod
         def getDefaultSetting():
             setting = {
                 'nGenesPerPool': 8,
                 'nGensPerPool': 5,
                 'nSurvivedMax': 2,
-        
+
                 'nWorkers': -1,
                 'plot': True,
                 'mute': False,
                 'saveHistory': True,
             }
             return setting
-    
+
     def __init__(self, MOOSetting, GASetting=None):
         # load default setting
         self.setting = self.Setting()
@@ -101,68 +103,66 @@ class GeneticAlgorithm(object):
         setting = GASetting
         if setting is not None:
             self.loadSetting(setting)
-            
+
         self.pop = []
         self.ratings = []
         self.Rs = []
         self.CDs = []
-        
+
         self.genePool = []
         self.elitePool = []
-        
-        
+
         self.heroes = []
         self.ratingsHero = []
         self.criterion = None
-        
+
         self.startTime = None
         self.folderDir = None
         self.iPool = None
-        
+
     @staticmethod
     def getDefaultSetting():
         return GeneticAlgorithm.Setting.getDefaultSetting()
-    
+
     def loadSetting(self, setting):
         self.setting.load(setting)
-    
+
     def initPoolFromScratch(self, sizePool):
         genePool = [{'moo': MOO(self.MOOSetting, randInit=True), 'score': None} for _ in range(sizePool)]
         return genePool
-    
+
     def evaluate(self, genePool, nWorkers=-1):
         # for i, gene in enumerate(genePool):
         #     moo = gene['moo']
         #     criterion = getCriterion(moo)
         #     score = criterion(moo)
         #     genePool[i]['score'] = score
-        
+
         def criterion(gene):
             if gene['score'] is not None:
                 return gene['score']
             else:
                 return getCriterion(gene['moo'])(gene['moo'])
-            
-        
+
         with Pool(nWorkers if nWorkers != -1 else multiprocessing.cpu_count()) as p:
             scores = np.array(p.map(criterion, genePool))
-        
+
         for i in range(len(genePool)):
             genePool[i]['score'] = scores[i]
-        
+
         return genePool
-    
+
     def select(self, genePool, nSurvivedMax):
         scores = [gene['score'] for gene in genePool]
         Rs = getR(np.array(scores))
-        
+
         # only keep the front genes
         idsSurvived = np.arange(len(Rs))[Rs == 0]
         genePool = [genePool[i] for i in idsSurvived]
         scores = [gene['score'] for gene in genePool]
-        
+
         CDs = getCD(np.array(scores), Rs)
-        
+
         idsSorted = np.argsort(CDs)[::-1]
         genePool = [genePool[i] for i in idsSorted]
         genePool = genePool[:nSurvivedMax]
@@ -175,30 +175,30 @@ class GeneticAlgorithm(object):
                                                             Rs[i], CDs[i]))
 
         return genePool
-        
+
     def mutateAndRegenerate(self, genePool, sizePool):
         nGeneration = sizePool - len(genePool)
         while len(genePool) < sizePool:
             genePoolNew = [{'moo': copy.deepcopy(gene['moo']).mutate(), 'score': None} for gene in genePool]
             genePool += genePoolNew
-        
+
         genePool = genePool[:sizePool]
         return genePool
-        
+
     def addElites(self, genePoolSurvived, elitePool):
         elitePool += genePoolSurvived
         return elitePool
-        
+
     def elitePoolFull(self, sizePool, elitePool):
         if len(elitePool) >= sizePool:
             return True
         return False
-    
+
     def initPoolFromElites(self, elitePool, sizePool):
         genePool = elitePool[:sizePool]
         elitePool = []
         return genePool, elitePool
-        
+
     def log(self, iPool, elitePool, GASetting, MOOSetting):
         fileDir = os.path.join(self.folderDir, 'iPool_{}'.format(iPool))
         data = {
@@ -206,10 +206,10 @@ class GeneticAlgorithm(object):
             'GASetting': GASetting,
             'MOOSetting': MOOSetting
         }
-        
+
         with open(fileDir, 'wb') as oFile:
             pickle.dump(data, oFile, pickle.HIGHEST_PROTOCOL)
-    
+
     def loadCheckpoint(self, checkpointDir):
         cpDir = Path(checkpointDir)
         self.folderDir = str(cpDir.parent)
@@ -220,12 +220,12 @@ class GeneticAlgorithm(object):
         elitePool = data['elitePool']
         [gene['moo'].model.configure(gene['moo'].MOOSetting.modelConfigDir) for gene in elitePool]
         self.elitePool = elitePool
-        
+
     def run(self):
         self.startTime = t = datetime.datetime.now()
         t = self.startTime
         folderName = 'GA_{}{}-{}:{}:{}'.format(t.month, t.day, t.hour, t.minute, t.second)
-        
+
         self.folderDir = './output/' + folderName if self.folderDir is None else self.folderDir
         if self.setting.saveHistory:
             Path(self.folderDir).mkdir(parents=True, exist_ok=True)
@@ -234,10 +234,10 @@ class GeneticAlgorithm(object):
                                 level=logging.WARNING if not self.setting.saveHistory else logging.INFO)
         else:
             logging.basicConfig(level=logging.WARNING if not self.setting.saveHistory else logging.INFO)
-            
+
         console = logging.StreamHandler()
         logging.getLogger().addHandler(console)
-        
+
         if not self.setting.mute:
             logging.info("\nBegin at {}.".format(self.startTime))
             data = self.setting.data()
@@ -254,9 +254,9 @@ class GeneticAlgorithm(object):
             self.genePool = self.initPoolFromScratch(sizePool)
             self.genePool = self.evaluate(self.genePool, self.setting.nWorkers)
             self.genePool = self.select(self.genePool, nSurvivedMax)
-        
+
         iPool = 0 if self.iPool is None else self.iPool
-        
+
         while True:
             iPool += 1
             print('iPool: ', iPool)
@@ -265,24 +265,17 @@ class GeneticAlgorithm(object):
                 self.genePool = self.mutateAndRegenerate(self.genePool, sizePool)
                 self.genePool = self.evaluate(self.genePool, self.setting.nWorkers)
                 self.genePool = self.select(self.genePool, nSurvivedMax)
-                
+
             self.elitePool = self.addElites(self.genePool, self.elitePool)
-            
+
             self.log(iPool, self.elitePool, self.setting, self.MOOSetting)
-            
+
             if self.elitePoolFull(sizePool, self.elitePool):
                 print('elitePoolFull')
                 self.genePool, self.elitePool = self.initPoolFromElites(self.elitePool, sizePool)
             else:
                 self.genePool = self.initPoolFromScratch(sizePool)
-            
-            
-            
-                
-            
-            
-            
-        
+
         #
         # self.pop = initPop(nPop=self.setting.nPop, lb=self.lb, ub=self.ub)
         #
