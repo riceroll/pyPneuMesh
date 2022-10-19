@@ -2,6 +2,8 @@
 from typing import Callable
 import numpy as np
 from utils.moo import MOO
+from utils.objectives.locomotion import Locomotion
+from utils.truss import Truss
 
 
 def getCriterion(mmo: MOO) -> Callable[[np.ndarray], np.ndarray]:
@@ -17,8 +19,13 @@ def getCriterion(mmo: MOO) -> Callable[[np.ndarray], np.ndarray]:
             objective = mmo.objectives[i]
             indices = mmo.keyPointsIndices  # indices specifying the key points in list of vertices
             targetMesh = mmo.targetMeshes[i]  # face definition of target Mesh
+            truss = Truss(vs, indices)
             for subObjective in objective:
-                score = subObjective(vs, es, indices, targetMesh)
+                if issubclass(subObjective, Locomotion):
+                    obj = subObjective(truss)
+                else:
+                    obj = subObjective(truss, targetMesh)
+                score = obj.execute()
                 print(score)
                 rating.append(score)
 

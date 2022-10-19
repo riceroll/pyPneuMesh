@@ -1,7 +1,9 @@
-from utils.objectives import objMoveForward, objFaceForward, objTurnLeft, objTurnRight, objLowerBodyMax
+# from utils.objectives.objective import objMoveForward, objFaceForward, objTurnLeft, objLowerBodyMax
 from utils.GA import GeneticAlgorithm
 import argparse
 import multiprocessing
+
+from utils.objectives.locomotion import MoveForward, FaceForward, TurnLeft, LowerBodyMax
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--checkpoint', help='The directory of the checkpoint file.')
@@ -19,7 +21,7 @@ MOOsetting = {
         4: 5,
     },
     # 'env': ['flat', 'cube', 'cave'],
-    'objectives': [[objMoveForward, objFaceForward], [objTurnLeft], [objLowerBodyMax]],
+    'objectives': [[MoveForward, FaceForward], [TurnLeft], [LowerBodyMax]],
     'nLoopSimulate': 4
 }
 
@@ -29,13 +31,12 @@ settingGA = {
     'nGenesPerPool': nWorkers,
     'nGensPerPool': int(nWorkers / 8 * 5),
     'nSurvivedMax': int(nGensPerPool * 0.5),
-    
+
     'nWorkers': nWorkers,
     'plot': True,
     'mute': False,
     'saveHistory': True,
 }
-
 
 ga = GeneticAlgorithm(MOOSetting=MOOsetting, GASetting=settingGA)
 
@@ -43,7 +44,4 @@ if args.checkpoint:
     checkpointDir = args.checkpoint
     ga.loadCheckpoint(checkpointDir)
 
-
 ga.run()
-
-

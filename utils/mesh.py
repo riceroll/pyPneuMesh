@@ -2,6 +2,8 @@ import numpy as np
 import json
 import copy
 
+from utils.model import Model
+
 
 class Mesh(object):
 
@@ -20,3 +22,10 @@ class Mesh(object):
         self.surface = np.array(data['f'])
         self.keyPoints = np.array(data['keyPoints'])
         self.v = np.array(data['v'])
+
+    def mapScale(self, model: Model, indices: np.ndarray):
+        mesh_v = self.v
+        truss_v = model.v[indices]
+        # assuming scale at the center
+        scale = np.mean(mesh_v / truss_v)
+        return scale

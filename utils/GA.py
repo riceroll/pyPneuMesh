@@ -155,16 +155,10 @@ class GeneticAlgorithm(object):
     def select(self, genePool, nSurvivedMax):
         scores = [gene['score'] for gene in genePool]
         Rs = getR(np.array(scores))
-
-        # only keep the front genes
-        idsSurvived = np.arange(len(Rs))[Rs == 0]
-        genePool = [genePool[i] for i in idsSurvived]
-        scores = [gene['score'] for gene in genePool]
-
         CDs = getCD(np.array(scores), Rs)
 
-        idsSorted = np.argsort(CDs)[::-1]
-        genePool = [genePool[i] for i in idsSorted]
+        indices_sorted = np.lexsort((-CDs, Rs))
+        genePool = [genePool[i] for i in indices_sorted]
         genePool = genePool[:nSurvivedMax]
 
         logging.info("{:<10} {:<15} {:<40} {:<10} {:<10}".format('i', 'address', 'score', 'R', 'CD'))
