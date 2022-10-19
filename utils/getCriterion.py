@@ -18,12 +18,12 @@ def getCriterion(mmo: MOO) -> Callable[[np.ndarray], np.ndarray]:
 
             objective = mmo.objectives[i]
             indices = mmo.keyPointsIndices  # indices specifying the key points in list of vertices
-            targetMesh = mmo.targetMeshes[i]  # face definition of target Mesh
             truss = Truss(vs, indices)
             for subObjective in objective:
                 if issubclass(subObjective, Locomotion):
                     obj = subObjective(truss)
                 else:
+                    targetMesh = mmo.targetMeshes[i]  # face definition of target Mesh
                     obj = subObjective(truss, targetMesh)
                 score = obj.execute()
                 print(score)

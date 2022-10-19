@@ -35,7 +35,10 @@ class SurfaceAlign(Transform):
         super().__init__(truss, mesh)
 
     def execute(self):
+        # apply affine transformation to the mesh to have equal ratio with the truss
+        self.mesh.affine(self.truss)
         surface: np.ndarray = self.mesh.surface
         v_mesh: np.ndarray = self.mesh.v
         v_points = self.truss.vs[-1]
-        return igl.point_mesh_squared_distance(v_points, v_mesh, surface)
+        dis, _, _ = igl.point_mesh_squared_distance(v_points, v_mesh, surface)
+        return - (sum(dis) / len(dis))

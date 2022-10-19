@@ -1,8 +1,9 @@
+import igl
 import numpy as np
 import json
 import copy
-
-from utils.model import Model
+from utils.geometry import boundingBox, bboxDiagonal, center, translationMatrix, scaleMatrix, transform3d
+from utils.truss import Truss
 
 
 class Mesh(object):
@@ -20,12 +21,17 @@ class Mesh(object):
         data = json.loads(content)
 
         self.surface = np.array(data['f'])
-        self.keyPoints = np.array(data['keyPoints'])
         self.v = np.array(data['v'])
+        self.bv = boundingBox(self.v)
+        self.keyPoints = np.array(data['keyPoints'])
+        # may not need to define keyPoints I guess ?
 
-    def mapScale(self, model: Model, indices: np.ndarray):
-        mesh_v = self.v
-        truss_v = model.v[indices]
-        # assuming scale at the center
-        scale = np.mean(mesh_v / truss_v)
-        return scale
+    def affine(self, truss: Truss):
+        mesh_c = center(self.bv)
+        truss_c = center(truss.bv)
+
+        dx, dy, dz = truss_c - mesh_c
+
+        scale = bboxDiagonal(truss.bv) / bboxDiagonal(self.bv)
+
+        self.v = transform3d(self.v, [translationMatrix(dx, dy, dz), scaleMatrix(scale, scale, scale)])

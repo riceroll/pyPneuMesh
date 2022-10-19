@@ -1,7 +1,7 @@
+import igl
 import numpy as np
 import json
-
-from utils.model import Model
+from utils.geometry import boundingBox
 
 
 class Truss(object):
@@ -15,3 +15,14 @@ class Truss(object):
         """
         self.indices = indices
         self.vs = vs
+        # print(vs.shape)
+        self.bv = boundingBox(self.vs[-1])
+        # last iteration boundingBox
+
+    # def __init__(self, trussDir):
+    #     with open(trussDir) as ifile:
+    #         content = ifile.read()
+    #     data = json.loads(content)
+    #
+    #     self.v = np.array(data['v'])
+    #     self.bv = boundingBox(self.v)
