@@ -7,8 +7,10 @@ import copy
 from gym import Env
 from gym.spaces import Discrete, Box
 
+from utils.geometry import boundingBox
 from utils.mesh import Mesh
 from utils.model import Model
+from utils.truss import Truss
 from utils.trussEnv import TrussEnv
 from utils.visualizer import showFrames
 
@@ -377,7 +379,6 @@ class MOO:
         if actionSeqs.ndim == 2:
             actionSeqs = np.expand_dims(actionSeqs, 0)
         self.actionSeqs = actionSeqs
-
         if self.randInit:
             self.actionSeqs = np.random.randint(0, 2, [self.numObjectives, self.numChannels, self.numActions])
 
@@ -385,7 +386,7 @@ class MOO:
         assert (self.numTargets != -1)  # there are target meshes
         for i in range(self.numTargets):
             assert (isinstance(self.meshDirs[i], str) and len(self.meshDirs[i]) != 0)
-            self.targetMeshes.append(Mesh(self.meshDirs[i]))
+            self.targetMeshes.append(Mesh(self.meshDirs[i], boundingBox(self.model.v)))
 
     def _loadModel(self):  # load model from modelDir
         assert (isinstance(self.modelDir, str) and len(self.modelDir) != 0)
@@ -427,7 +428,8 @@ class MOO:
     def loadGene(self, gene: np.ndarray) -> (Model, np.ndarray):  # load gene into model and actionSeqs
         return self.model, self.actionSeqs
 
-    def simulate(self, actionSeq, nLoops=1, visualize=False, export=True) -> (np.ndarray, np.ndarray):
+    def simulate(self, actionSeq, nLoops=1, visualize=False, export=True, mesh: Mesh = None) -> (
+            np.ndarray, np.ndarray):
         assert (actionSeq.ndim == 2)
         assert (actionSeq.shape[0] >= 1)
         assert (actionSeq.shape[1] >= 1)
@@ -468,9 +470,14 @@ class MOO:
 
         assert (vs.shape == (vs.shape[0], len(model.v), 3))
 
+        # # TODO delete this only for testing
+        # mesh = self.targetMeshes[0]
+        # truss = Truss(vs[0], self.keyPointsIndices)
+        # mesh.affine(truss)
+
         if visualize:
             print(len(frames))
-            showFrames(frames, model.e)
+            showFrames(frames, model.e, mesh)
 
         if export:
             path = './output/frames_.json'

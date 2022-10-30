@@ -36,7 +36,6 @@ class SurfaceAlign(Transform):
 
     def execute(self):
         # apply affine transformation to the mesh to have equal ratio with the truss
-        self.mesh.affine(self.truss)
         surface: np.ndarray = self.mesh.surface
         v_mesh: np.ndarray = self.mesh.v
         v_points = self.truss.vs[-1]

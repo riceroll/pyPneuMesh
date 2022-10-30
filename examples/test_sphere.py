@@ -13,21 +13,22 @@ args = parser.parse_args()
 MOOsetting = {
     'modelDir': './data/fullsphere.json',
     'numChannels': 4,
-    'numActions': 2,
-    'numObjectives': 2,
-    'numTargets': 2,
+    'numActions': 1,
+    'numObjectives': 1,
+    'numTargets': 1,
     "channelMirrorMap": {
         0: 1,
         2: -1,
-        3: -1
+        3: -1,
     },
-    'objectives': [[SurfaceAlign], [SurfaceAlign, KeyPointsAlign]],
-    'meshDirs': ['./data/cube_mesh.json', './data/bean_mesh.json'],
-    'keyPointsIndices': [1, 8, 9, 22, 25, 27],
+    'objectives': [[SurfaceAlign, KeyPointsAlign]],
+    'meshDirs': ['./data/bean_mesh.json'],
+    'keyPointsIndices': [14, 15, 20, 27],
     'nLoopSimulate': 1
 }
-#
+
 nWorkers = multiprocessing.cpu_count()
+# nWorkers = 1
 nGensPerPool = int(nWorkers / 8 * 5)
 settingGA = {
     'nGenesPerPool': nWorkers,

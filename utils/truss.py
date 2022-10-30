@@ -4,6 +4,7 @@ import json
 from utils.geometry import boundingBox
 
 
+# contains all the VS in the simluated STEP
 class Truss(object):
 
     def __init__(self, vs, indices):
@@ -15,14 +16,3 @@ class Truss(object):
         """
         self.indices = indices
         self.vs = vs
-        # print(vs.shape)
-        self.bv = boundingBox(self.vs[-1])
-        # last iteration boundingBox
-
-    # def __init__(self, trussDir):
-    #     with open(trussDir) as ifile:
-    #         content = ifile.read()
-    #     data = json.loads(content)
-    #
-    #     self.v = np.array(data['v'])
-    #     self.bv = boundingBox(self.v)
