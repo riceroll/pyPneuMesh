@@ -447,6 +447,7 @@ class MOO:
 
         vs = []
         frames = []
+        mesh_frames = []
 
         # v = model.step(T * self.setting.nLoopPreSimulate, ret=True)
         # vs = [v]
@@ -456,28 +457,31 @@ class MOO:
                 model.inflateChannel = actionSeq[:, iAction]
 
                 for iStep in range(T):
-                    # append at the beginning of every nStepsPerCapture including frame 0
+                    # append at the beginning of every nStepsPerCapture including frame
+
                     if model.numSteps % nStepsPerCapture == 0:
                         v = model.step(ret=True)
                         vs.append(v)
                     else:
                         v = model.step(ret=True)
-                    # print(model.contractionPercent)
-                    frames.append(v)
 
+                    if mesh != None:
+                        if vs:
+                            mesh.rigid_affine(vs[-1], v)
+                        else:
+                            mesh.rigid_affine(v, v)
+                        mesh_frames.append(mesh.v)
+
+                    frames.append(v)
         vs.append(model.v.copy())  # last frame
         vs = np.array(vs)
 
         assert (vs.shape == (vs.shape[0], len(model.v), 3))
 
-        # # TODO delete this only for testing
-        # mesh = self.targetMeshes[0]
-        # truss = Truss(vs[0], self.keyPointsIndices)
-        # mesh.affine(truss)
-
         if visualize:
             print(len(frames))
-            showFrames(frames, model.e, mesh)
+            print(len(mesh_frames))
+            showFrames(frames, model.e, mesh=mesh, mesh_frames=mesh_frames)
 
         if export:
             path = './output/frames_.json'

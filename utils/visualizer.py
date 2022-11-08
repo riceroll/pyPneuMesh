@@ -86,7 +86,7 @@ def _create_window(o3):
     return viewer
 
 
-def showFrames(frames, es, mesh=None):
+def showFrames(frames, es, mesh=None, mesh_frames=[]):
     try:
         o3, vector3d, vector3i, vector2i, LineSet, PointCloud, drawGround, TriangleMesh = _importVisualizer()
         viewer = _create_window(o3)
@@ -95,9 +95,12 @@ def showFrames(frames, es, mesh=None):
         return
 
     ls = LineSet(frames[0], es)
-    trimesh = TriangleMesh(mesh.v, mesh.surface)
+    if (mesh != None):
+        trimesh = TriangleMesh(mesh_frames[0], mesh.surface)
+        viewer.add_geometry(trimesh)
+    # trimesh = TriangleMesh(mesh.v, mesh.surface)
+
     viewer.add_geometry(ls)
-    viewer.add_geometry(trimesh)
 
     global iFrame
     iFrame = 0
@@ -112,6 +115,10 @@ def showFrames(frames, es, mesh=None):
 
         ls.points = vector3d(frames[iFrame])
         viewer.update_geometry(ls)
+
+        if (mesh != None):
+            trimesh.vertices = vector3d(mesh_frames[iFrame])
+            viewer.update_geometry(trimesh)
 
         iFrame += 10
 

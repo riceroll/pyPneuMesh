@@ -172,6 +172,12 @@ def scaleMatrix(ax, by, cz):
     return np.array([[ax, 0, 0, 0], [0, by, 0, 0], [0, 0, cz, 0], [0, 0, 0, 1]])
 
 
+def rotationMatrix(R):
+    return np.array(
+        [[R[0][0], R[0][1], R[0][2], 0], [R[1][0], R[1][1], R[1][2], 0], [R[2][0], R[2][1], R[2][2], 0], [0, 0, 0, 1]])
+
+
+# Homogeneous Transformation
 def transform3d(vs, transformations):
     vs4d = np.insert(vs, 3, 1, axis=1)
 
@@ -179,3 +185,80 @@ def transform3d(vs, transformations):
         vs4d = np.transpose(np.dot(trans, np.transpose(vs4d)))
 
     return np.delete(vs4d, 3, axis=1)
+
+
+def rigid_align(P, Q):
+    assert P.shape == Q.shape
+    n, dim = P.shape
+
+    centeredP = P - P.mean(axis=0)
+    centeredQ = Q - Q.mean(axis=0)
+
+    C = np.dot(np.transpose(centeredP), centeredQ) / n
+
+    V, S, W = np.linalg.svd(C)
+    d = (np.linalg.det(V) * np.linalg.det(W)) < 0.0
+
+    if d:
+        S[-1] = -S[-1]
+        V[:, -1] = -V[:, -1]
+
+    R = np.dot(V, W)
+
+    varP = np.var(P, axis=0).sum()
+    c = 1 / varP * np.sum(S)  # scale factor
+    # c = 1
+
+    t = Q.mean(axis=0) - P.mean(axis=0).dot(c * R)
+
+    # homogeneous transformation
+    m = P.shape[1]
+    T = np.identity(m + 1)
+    T[:m, :m] = R
+    T[:m, m] = t
+
+    return T, R, t
+
+
+def best_fit_transform(A, B):
+    '''
+    Calculates the least-squares best-fit transform that maps corresponding points A to B in m spatial dimensions
+    Input:
+      A: Nxm numpy array of corresponding points
+      B: Nxm numpy array of corresponding points
+    Returns:
+      T: (m+1)x(m+1) homogeneous transformation matrix that maps A on to B
+      R: mxm rotation matrix
+      t: mx1 translation vector
+    '''
+
+    assert A.shape == B.shape
+
+    # get number of dimensions
+    m = A.shape[1]
+
+    # translate points to their centroids
+    centroid_A = np.mean(A, axis=0)
+    centroid_B = np.mean(B, axis=0)
+    AA = A - centroid_A
+    BB = B - centroid_B
+
+    # rotation matrix
+    H = np.dot(AA.T, BB)
+    U, S, Vt = np.linalg.svd(H)
+    R = np.dot(Vt.T, U.T)
+
+    # special reflection case
+    if np.linalg.det(R) < 0:
+        Vt[m - 1, :] *= -1
+        R = np.dot(Vt.T, U.T)
+
+    # translation
+    t = centroid_B.T - np.dot(R, centroid_A.T)
+
+    # homogeneous transformation
+    T = np.identity(m + 1)
+    T[:m, :m] = R
+    T[:m, m] = t
+
+    return T, R, t

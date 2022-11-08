@@ -4,6 +4,7 @@ from utils.mesh import Mesh
 
 from utils.objectives.objective import Objective
 from utils.truss import Truss
+from utils.geometry import boundingBox
 
 
 class Transform(Objective):
@@ -35,6 +36,7 @@ class SurfaceAlign(Transform):
         super().__init__(truss, mesh)
 
     def execute(self):
+        self.mesh.affine(boundingBox(self.truss.vs[-1]))
         # apply affine transformation to the mesh to have equal ratio with the truss
         surface: np.ndarray = self.mesh.surface
         v_mesh: np.ndarray = self.mesh.v
