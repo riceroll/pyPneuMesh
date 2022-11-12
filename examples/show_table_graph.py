@@ -1,5 +1,5 @@
 from utils.moo import MOO
-from utils.objectives import objMoveForward, objFaceForward, objTurnLeft, objTurnRight, objLowerBodyMax
+from utils.objectives.locomotion import MoveForward, FaceForward, TurnLeft, LowerBodyMax
 
 MOOsetting = {
     'modelDir': './data/table.json',
@@ -12,12 +12,11 @@ MOOsetting = {
         3: -1,
         4: 5,
     },
-    'objectives': [[objMoveForward, objFaceForward], [objTurnLeft], [objLowerBodyMax]]
+    'objectives': [[MoveForward, FaceForward], [TurnLeft], [LowerBodyMax]]
 }
 
 moo = MOO(MOOsetting)
 model = moo.model
-
 
 # test
 model.toHalfGraph(reset=True)

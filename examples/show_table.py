@@ -1,7 +1,6 @@
 from utils.moo import MOO
-from utils.objectives import objMoveForward, objFaceForward, objTurnLeft, objTurnRight, objLowerBodyMax
+from utils.objectives.objective import objMoveForward, objFaceForward, objTurnLeft, objTurnRight, objLowerBodyMax
 import pickle5
-
 
 result = pickle5.load(open('./output/GA_531-8-36-53/iPool_580', 'rb'))
 
@@ -14,7 +13,7 @@ for i in range(len(result['elitePool'])):
     print('{:20f} {:20f} {:20f} {:20f}'.format(score[0], score[1], score[2], score[3]))
 
 moo = result['elitePool'][1]['moo']
-moo.model.show()    # visualize the truss static shape and channels
+moo.model.show()  # visualize the truss static shape and channels
 
-actionSeq = moo.actionSeqs[1]   # control sequence of the second objective
-moo.simulate(actionSeq, nLoops=2, visualize=True)   # visualize the trajectory of the control
+actionSeq = moo.actionSeqs[1]  # control sequence of the second objective
+moo.simulate(actionSeq, nLoops=2, visualize=True)  # visualize the trajectory of the control

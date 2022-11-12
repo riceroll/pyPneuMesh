@@ -6,7 +6,7 @@
   "contractionLevels": 5,
   "contractionPercentRate": 1e-3,
   "gravityFactor": 98,
-  "gravity": 1,
+  "gravity": 0,
   "defaultMinLength": 1.2,
   "frictionFactor": 0.8,
   "numStepsActionMultiplier": 2,

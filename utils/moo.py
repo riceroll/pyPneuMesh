@@ -7,78 +7,12 @@ import copy
 from gym import Env
 from gym.spaces import Discrete, Box
 
+from utils.geometry import boundingBox
 from utils.mesh import Mesh
 from utils.model import Model
+from utils.truss import Truss
+from utils.trussEnv import TrussEnv
 from utils.visualizer import showFrames
-
-
-class TrussEnv(Env):
-    def __init__(self, model, moo, objective):
-        self.model = model
-        self.moo = moo
-        self.model.configure(moo.setting.modelConfigDir)
-
-        self.action_space = Discrete(2 ** model.numChannels)
-        self.observation_space = Box(low=np.ones([model.v.shape[0] * 3 * 3]) * -np.inf,
-                                     high=np.ones([model.v.shape[0] * 3 * 3]) * np.inf)
-
-        vRelative, vel = self.model.relativePositions(requiresVelocity=True)
-
-        self.state = np.vstack([self.model.v.copy(), vRelative, self.model.vel.copy()]).reshape(-1)
-
-        self.numStepsPerAction = Model.numStepsPerActuation
-        self.numStepsPerSample = moo.setting.nStepsPerCapture
-        self.numStepsTotal = self.numStepsPerAction * 16
-
-        self.objective = objective
-        self.vs = [self.model.v.copy()]
-
-    def step(self, action):
-        assert (action in self.action_space)
-        self.model.inflateChannel = np.array([int(dig) for dig in bin(action)[2:]])
-        self.model.step(self.numStepsPerAction)
-        # v = self.model.v.copy()
-        # vel = self.model.vel.copy()
-
-        vRelative, vel = self.model.relativePositions(requiresVelocity=True)
-        v = self.model.v.copy()
-        self.state = np.vstack([v, vRelative, vel]).reshape(-1)
-
-        # if self.model.numSteps % self.numStepsPerSample == 0:
-        self.vs.append(v)
-
-        done = False
-        reward = 0
-        info = {}
-
-        if self.model.numSteps > self.numStepsTotal:
-            done = True
-            for subObjective in self.objective:
-                reward += subObjective(self.vs, self.model.e)
-
-        return self.state, reward, done, info
-
-    def render(self, mode="human"):
-
-        import polyscope as ps
-        try:
-            ps.init()
-        except:
-            pass
-
-        ps.register_curve_network('curves', self.model.v, self.model.e)
-
-        ps.show()
-
-    def reset(self):
-        self.model._reset()
-        self.model.configure(self.moo.setting.modelConfigDir)
-
-        vRelative, vel = self.model.relativePositions(requiresVelocity=True)
-
-        self.state = np.vstack([self.model.v.copy(), vRelative, vel]).reshape(-1)
-        self.vs = []
-        return self.state
 
 
 class MOO:
@@ -445,7 +379,6 @@ class MOO:
         if actionSeqs.ndim == 2:
             actionSeqs = np.expand_dims(actionSeqs, 0)
         self.actionSeqs = actionSeqs
-
         if self.randInit:
             self.actionSeqs = np.random.randint(0, 2, [self.numObjectives, self.numChannels, self.numActions])
 
@@ -453,7 +386,7 @@ class MOO:
         assert (self.numTargets != -1)  # there are target meshes
         for i in range(self.numTargets):
             assert (isinstance(self.meshDirs[i], str) and len(self.meshDirs[i]) != 0)
-            self.targetMeshes.append(Mesh(self.meshDirs[i]))
+            self.targetMeshes.append(Mesh(self.meshDirs[i], boundingBox(self.model.v)))
 
     def _loadModel(self):  # load model from modelDir
         assert (isinstance(self.modelDir, str) and len(self.modelDir) != 0)
@@ -495,7 +428,8 @@ class MOO:
     def loadGene(self, gene: np.ndarray) -> (Model, np.ndarray):  # load gene into model and actionSeqs
         return self.model, self.actionSeqs
 
-    def simulate(self, actionSeq, nLoops=1, visualize=False, export=True) -> (np.ndarray, np.ndarray):
+    def simulate(self, actionSeq, nLoops=1, visualize=False, export=True, mesh: Mesh = None) -> (
+            np.ndarray, np.ndarray):
         assert (actionSeq.ndim == 2)
         assert (actionSeq.shape[0] >= 1)
         assert (actionSeq.shape[1] >= 1)
@@ -513,6 +447,7 @@ class MOO:
 
         vs = []
         frames = []
+        mesh_frames = []
 
         # v = model.step(T * self.setting.nLoopPreSimulate, ret=True)
         # vs = [v]
@@ -522,15 +457,22 @@ class MOO:
                 model.inflateChannel = actionSeq[:, iAction]
 
                 for iStep in range(T):
-                    # append at the beginning of every nStepsPerCapture including frame 0
+                    # append at the beginning of every nStepsPerCapture including frame
+
                     if model.numSteps % nStepsPerCapture == 0:
                         v = model.step(ret=True)
                         vs.append(v)
                     else:
                         v = model.step(ret=True)
-                    # print(model.contractionPercent)
-                    frames.append(v)
 
+                    if mesh != None:
+                        if vs:
+                            mesh.rigid_affine(vs[-1], v)
+                        else:
+                            mesh.rigid_affine(v, v)
+                        mesh_frames.append(mesh.v)
+
+                    frames.append(v)
         vs.append(model.v.copy())  # last frame
         vs = np.array(vs)
 
@@ -538,7 +480,8 @@ class MOO:
 
         if visualize:
             print(len(frames))
-            showFrames(frames, model.e)
+            print(len(mesh_frames))
+            showFrames(frames, model.e, mesh=mesh, mesh_frames=mesh_frames)
 
         if export:
             path = './output/frames_.json'
