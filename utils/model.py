@@ -20,6 +20,88 @@ tPrev = time.time()
 import numpy as np
 
 
+class Graph(object):
+    def __init__(self, numChannels:int, ivsSub:np.array, iesSub:np.array, esSub:np.array):
+        self.numChannels = numChannels
+        self.nV = len(ivsSub)
+        self.nE = len(iesSub)
+        
+        self.ivsSub = ivsSub      # mapping from original vertex indices to new indices of the subGraph
+        self.iesSub = iesSub      # mapping from original edge indices to new indices of the subGraph
+        self.esSub = esSub       # ne x 2, edges of the subGraph
+        self.channels = np.ones(self.nE) * -1    # ne, indices of channels of edges
+        self.contractions = np.ones(self.nE) * -1  # ne, int value of contractions, Model.contractionLevels number of types of contractions
+        
+        self.esChannels = []
+        
+        self.incM = np.zeros([self.nV, self.nE])     # vertex-edge incidence matrix
+        for ie, e in enumerate(self.esSub):
+            self.incM[e[0], ie] = 1
+            self.incM[e[1], ie] = 1
+    
+    def init(self):
+        self.contractions = np.random.randint(0, Model.contractionLevels, self.contractions.shape)
+        
+        # randomly choose numChannel edges and assign channels
+        dice = np.arange(self.nE)
+        np.random.shuffle(dice)
+        ies = dice[:self.numChannels]
+        for ic, ie in enumerate(ies):
+            self.channels[ie] = ic
+        
+    def channelConnected(self, ic):
+        # check if channel ic is interconnected
+        nEic = (self.channels == ic).sum()  # number of edges of channel ic
+        
+        for ie in range(self.nE):
+            if self.channels[ie] == ic:
+                break
+        
+        queue = [ie]    # ies in the queue
+        visited = set()     # ies visited
+        
+        while queue:
+            ie = queue.pop(0)
+            visited.add(ie)
+            
+            iv0 = self.esSub[ie, 0]
+            iv1 = self.esSub[ie, 1]
+            iesConnected0 = np.where(self.incM[iv0] == 1)[0]
+            iesConnected1 = np.where(self.incM[iv1] == 1)[0]
+            iesConnected = np.concatenate([iesConnected0, iesConnected1])
+            for ie in iesConnected:
+                if ie not in visited:
+                    queue.append(ie)
+        
+        return nEic == len(visited)
+    
+    def mutate(self):
+        # mutate one digit of contractions and one edge channel
+        self.contractions = self.contractions[np.random.choice(len(self.contractions))] = np.random.randint(Model.contractionLevels)
+        
+        ies = np.arange(self.nE)
+        np.random.shuffle(ies)
+        for ie in ies:
+            e = self.esSub[ie]
+            iv0 = e[0]
+            iv1 = e[1]
+            ies0 = np.where((self.esSub == iv0).sum(1))[0]
+            ies1 = np.where((self.esSub == iv1).sum(1))[0]
+            iesConnected = np.concatenate([ies0, ies1])
+            
+            icOld = self.channels[ie]
+            icsConnected = self.channels[iesConnected].tolist()
+            icsConnected = set(icsConnected)
+            icsConnected.remove(icOld)
+            
+            for icNew in icsConnected:
+                self.channels[ie] = icNew   # change the channel of the edge
+                if self.channelConnected(icOld):    # if the changed channel is still connected
+                    return  # mutation finished
+                else:
+                    self.channels[ie] = icOld   # revert channel change
+        
+
 class HalfGraph(object):
     def __init__(self):
         self.ins_o = []  # nn, original indices of nodes in a halfgraph
@@ -261,7 +343,7 @@ class Model(object):
         self.maxContraction = np.array(data['maxContraction'])
 
         self.fixedVs = np.array(data['fixedVs'], dtype=np.int64)
-
+        
         # assert ((self.lMax[self.edgeActive] == self.lMax[self.edgeActive][0]).all())
         assert (len(self.e) == len(self.lMax) == len(self.edgeChannel) == len(self.edgeActive) and len(
             self.maxContraction))
@@ -484,6 +566,7 @@ class Model(object):
         self.edgeMirrorMap = edgeMirrorMap
         return vertexMirrorMap, edgeMirrorMap
 
+    # halfgraph
     def toHalfGraph(self, reset=False):
         G = HalfGraph()
 
@@ -532,12 +615,12 @@ class Model(object):
                           )
         G.add_edges_from(esInfo)
         # end region
-        self.G = G
+        self.HG = G
         return G
 
     def fromHalfGraph(self):
         # set values for self.maxContraction, self.edgeChannel
-        G = self.G
+        G = self.HG
 
         for i, edge in enumerate(G.edges):
 
@@ -571,12 +654,12 @@ class Model(object):
         stuck = True
         while stuck:
             stuck = False
-
-            G = self.G
+            
+            G = self.HG
             G.channels *= 0
             G.channels += -1
             G.contractions *= 0
-
+            
             # init channels
             iesUnassigned = set(np.arange(len(G.edges)))  # halfgraph indices of edges
             iesIncidentMirrorUnassigned = set(G.iesIncidentMirror())
@@ -631,7 +714,7 @@ class Model(object):
                 iesUnassigned.remove(ieToAssign)
                 G.channels[ieToAssign] = ic
 
-        self.G.contractions = np.random.randint(0, Model.contractionLevels, self.G.contractions.shape)
+        self.HG.contractions = np.random.randint(0, Model.contractionLevels, self.HG.contractions.shape)
 
         self.fromHalfGraph()
 
@@ -641,7 +724,7 @@ class Model(object):
         # find all edges that can be changed
         # randomly pick one edge
         # change its channel to one of the available channels incident to the edge
-        G = self.G
+        G = self.HG
 
         iess = []
         for ic in self.channelMirrorMap.keys():
@@ -682,7 +765,46 @@ class Model(object):
             G.contractions[i] = np.random.randint(Model.contractionLevels)
 
         self.fromHalfGraph()
+        
+    # graph
+    def initGraph(self):
+        # create a graph with only active edges, assuming it is an interconnected graph
+        
+        iesSub = np.where(self.edgeActive)[0]
+        ivsSub = sorted(set(self.e[iesSub].reshape(-1).tolist()))
+        
+        esSub = []
+        for e in self.e:
+            iv0 = ivsSub.index(e[0])
+            iv1 = ivsSub.index(e[1])
+            esSub.append([iv0, iv1])
+            
+        self.G = Graph(numChannels=self.numChannels, ivsSub=ivsSub, iesSub=iesSub, esSub=esSub)
+        
+    def mutateGraph(self):
+        self.G.mutate()
+    
+    def fromGraph(self):
+        # set values for self.maxContraction, self.edgeChannel
+        self.maxContraction = np.zeros(len(self.e))
+        self.edgeChannel = np.zeros(len(self.e))
 
+        G = self.G
+        
+        for ieSub, ie in G.iesSub:
+            self.maxContraction[ie] = G.contractions[ieSub] * Model.contractionInterval
+            self.edgeChannel[ie] = G.channels[ieSub]
+            
+        
+    def mutate(self):
+        if self.symmetric:
+            self.mutateHalfGraph()
+            self.fromHalfGraph()
+        else:
+            self.mutateGraph()
+            self.fromGraph()
+    
+    
     def frontDirection(self):
         return getFrontDirection(self.v0, self.v).reshape(-1, 1)
 
@@ -771,7 +893,7 @@ class Model(object):
         except:
             pass
 
-        G = self.G
+        G = self.HG
         for ic in list(np.arange(self.numChannels)):
             ies = np.arange(len(self.e))[self.edgeChannel == ic]
 

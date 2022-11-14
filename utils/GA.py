@@ -254,7 +254,7 @@ class GeneticAlgorithm(object):
             data = self.setting.data()
             for key in data:
                 logging.info("{}: {}".format(key, data[key]))
-
+                
         sizePool = self.setting.nGenesPerPool
         nGenPerPool = self.setting.nGensPerPool
         nSurvivedMax = self.setting.nSurvivedMax
