@@ -146,6 +146,8 @@ class GeneticAlgorithm(object):
 
         with Pool(nWorkers if nWorkers != -1 else multiprocessing.cpu_count()) as p:
             scores = np.array(p.map(criterion, genePool))
+        
+        # scores = np.array([criterion(gene) for gene in genePool])
 
         for i in range(len(genePool)):
             genePool[i]['score'] = scores[i]

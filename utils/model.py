@@ -22,7 +22,7 @@ import numpy as np
 
 class Graph(object):
     def __init__(self, numChannels:int, ivsSub:np.array, iesSub:np.array, esSub:np.array):
-        self.numChannels = numChannels
+        self.numChannels = int(numChannels)
         self.nV = len(ivsSub)
         self.nE = len(iesSub)
         
@@ -30,7 +30,7 @@ class Graph(object):
         self.iesSub = iesSub      # mapping from original edge indices to new indices of the subGraph
         self.esSub = esSub       # ne x 2, edges of the subGraph
         self.channels = np.ones(self.nE) * -1    # ne, indices of channels of edges
-        self.contractions = np.ones(self.nE) * -1  # ne, int value of contractions, Model.contractionLevels number of types of contractions
+        self.contractions = np.zeros(self.nE)  # ne, int value of contractions, Model.contractionLevels number of types of contractions
         
         self.esChannels = []
         
@@ -38,6 +38,17 @@ class Graph(object):
         for ie, e in enumerate(self.esSub):
             self.incM[e[0], ie] = 1
             self.incM[e[1], ie] = 1
+        
+        self.ieAdjList = []     # nE x X, each row includes indices of adjacent edges of ie, np.array
+        for ie in range(self.nE):
+            iv0 = self.esSub[ie, 0]
+            iv1 = self.esSub[ie, 1]
+            iesConnected0 = np.where(self.incM[iv0] == 1)[0]
+            iesConnected1 = np.where(self.incM[iv1] == 1)[0]
+            iesConnected = np.concatenate([iesConnected0, iesConnected1])
+            self.ieAdjList.append(iesConnected)
+        
+        self.init()
     
     def init(self):
         self.contractions = np.random.randint(0, Model.contractionLevels, self.contractions.shape)
@@ -48,6 +59,21 @@ class Graph(object):
         ies = dice[:self.numChannels]
         for ic, ie in enumerate(ies):
             self.channels[ie] = ic
+        
+        # grow channels to fill the entire graph
+        while (self.channels == -1).any():
+            iesToGrow = []
+            for ie in range(self.nE):
+                iesConnected = self.ieAdjList[ie]
+                if (self.channels[iesConnected] == -1).any():
+                    iesToGrow.append(ie)
+            
+            ie = np.random.choice(iesToGrow)
+            iesConnected = self.ieAdjList[ie]
+            np.random.shuffle(iesConnected)
+            for ieConnected in iesConnected:
+                if self.channels[ieConnected] == -1:
+                    self.channels[ieConnected] = self.channels[ie]
         
     def channelConnected(self, ic):
         # check if channel ic is interconnected
@@ -70,37 +96,36 @@ class Graph(object):
             iesConnected1 = np.where(self.incM[iv1] == 1)[0]
             iesConnected = np.concatenate([iesConnected0, iesConnected1])
             for ie in iesConnected:
-                if ie not in visited:
+                if ie not in visited and self.channels[ie] == ic:
                     queue.append(ie)
         
         return nEic == len(visited)
     
     def mutate(self):
         # mutate one digit of contractions and one edge channel
-        self.contractions = self.contractions[np.random.choice(len(self.contractions))] = np.random.randint(Model.contractionLevels)
+        self.contractions[np.random.choice(len(self.contractions))] = np.random.randint(Model.contractionLevels)
         
         ies = np.arange(self.nE)
         np.random.shuffle(ies)
         for ie in ies:
-            e = self.esSub[ie]
-            iv0 = e[0]
-            iv1 = e[1]
-            ies0 = np.where((self.esSub == iv0).sum(1))[0]
-            ies1 = np.where((self.esSub == iv1).sum(1))[0]
-            iesConnected = np.concatenate([ies0, ies1])
+            iesConnected = self.ieAdjList[ie]
             
             icOld = self.channels[ie]
             icsConnected = self.channels[iesConnected].tolist()
             icsConnected = set(icsConnected)
             icsConnected.remove(icOld)
+            icsConnected = np.array(list(icsConnected))
+            if len(icsConnected):
+                np.random.shuffle(icsConnected)
             
             for icNew in icsConnected:
                 self.channels[ie] = icNew   # change the channel of the edge
                 if self.channelConnected(icOld):    # if the changed channel is still connected
-                    return  # mutation finished
+                    return True     # mutation finished
                 else:
                     self.channels[ie] = icOld   # revert channel change
-        
+        print('mutation failed')
+        return False
 
 class HalfGraph(object):
     def __init__(self):
@@ -367,8 +392,9 @@ class Model(object):
         except:  # if self.numChannels not defined
             self.numChannels = self.edgeChannel.max() + 1
 
-        self.inflateChannel = np.ones(self.numChannels)
-        self.contractionPercent = np.zeros(self.numChannels)
+        self.inflateChannel = np.ones(int(self.numChannels))
+        
+        self.contractionPercent = np.zeros(int(self.numChannels))
 
         self.iAction = 0
         self.numSteps = 0
@@ -774,10 +800,12 @@ class Model(object):
         ivsSub = sorted(set(self.e[iesSub].reshape(-1).tolist()))
         
         esSub = []
-        for e in self.e:
+        for ieSub in iesSub:
+            e = self.e[ieSub]
             iv0 = ivsSub.index(e[0])
             iv1 = ivsSub.index(e[1])
             esSub.append([iv0, iv1])
+        esSub = np.array(esSub, dtype=int)
             
         self.G = Graph(numChannels=self.numChannels, ivsSub=ivsSub, iesSub=iesSub, esSub=esSub)
         
@@ -791,10 +819,12 @@ class Model(object):
 
         G = self.G
         
-        for ieSub, ie in G.iesSub:
+        for ieSub, ie in enumerate(G.iesSub):
             self.maxContraction[ie] = G.contractions[ieSub] * Model.contractionInterval
             self.edgeChannel[ie] = G.channels[ieSub]
-            
+        
+        self.edgeChannel = self.edgeChannel.astype(np.int)
+        
         
     def mutate(self):
         if self.symmetric:
@@ -893,7 +923,8 @@ class Model(object):
         except:
             pass
 
-        G = self.HG
+
+        # breakpoint()
         for ic in list(np.arange(self.numChannels)):
             ies = np.arange(len(self.e))[self.edgeChannel == ic]
 
