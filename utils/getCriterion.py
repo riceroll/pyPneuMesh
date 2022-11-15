@@ -15,10 +15,10 @@ def getCriterion(mmo: MOO) -> Callable[[np.ndarray], np.ndarray]:
             actionSeq = mmo.actionSeqs[i]
 
             # TODO FIX THIS LATER REMOVE TARGETMESH
-            vs, es = mmo.simulate(actionSeq)
+            vs, es, vEnergys = mmo.simulate(actionSeq)
             objective = mmo.objectives[i]
             indices = mmo.keyPointsIndices  # indices specifying the key points in list of vertices
-            truss = Truss(vs, indices)
+            truss = Truss(vs, indices, vEnergys)
             for subObjective in objective:
                 if issubclass(subObjective, Locomotion):
                     obj = subObjective(truss)

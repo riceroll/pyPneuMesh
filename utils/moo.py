@@ -32,7 +32,7 @@ class MOO:
         self.numObjectives: int = -1
         self.numTargets: int = -1
         self.channelMirrorMap: dict = dict()
-        
+
         self.objectives: List = []
         self.actionSeqs: np.ndarray = np.zeros([])
         self.gene: np.ndarray = np.zeros([])
@@ -152,7 +152,7 @@ class MOO:
         assert (actionSeq.ndim == 2)
         assert (actionSeq.shape[0] >= 1)
         assert (actionSeq.shape[1] >= 1)
-        
+
         modelConfigDir = self.setting.modelConfigDir
         self.model.configure(modelConfigDir)
         T = self.model.numStepsPerActuation
@@ -180,18 +180,22 @@ class MOO:
 
                     if model.numSteps % nStepsPerCapture == 0:
                         v = model.step(ret=True)
+                        if mesh != None and vs:
+                            mesh.rigid_affine(vs[-1], v)
                         vs.append(v)
+
                     else:
                         v = model.step(ret=True)
 
-                    if mesh != None:
-                        if vs:
-                            mesh.rigid_affine(vs[-1], v)
-                        else:
-                            mesh.rigid_affine(v, v)
-                        mesh_frames.append(mesh.v)
+                    if (mesh != None):
+                        mesh_frames.append(mesh.v.copy())
 
                     frames.append(v)
+        if (mesh != None):
+            mesh.rigid_affine(vs[-1], v)
+            mesh_frames.append(mesh.v.copy())
+            frames.append(model.v.copy())
+
         vs.append(model.v.copy())  # last frame
         vs = np.array(vs)
 
@@ -215,18 +219,18 @@ class MOO:
             with open(path, 'w') as oFile:
                 oFile.write(js)
 
-        return vs, self.model.e.copy()
+        return vs, self.model.e.copy(), self.model.vEnergy.copy()
 
     def mutate(self):
         self.model.mutate()
-        
+
         shape = self.actionSeqs.shape
         tp = self.actionSeqs.dtype
         actionSeqs = self.actionSeqs.reshape(-1)
         i = np.random.randint(len(actionSeqs))
         actionSeqs[i] = np.random.randint(2)
         self.actionSeqs = actionSeqs.reshape(shape).astype(tp)
-        
+
         return self
 
     def make_env(self, iObjective):

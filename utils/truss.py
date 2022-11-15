@@ -7,7 +7,7 @@ from utils.geometry import boundingBox
 # contains all the VS in the simluated STEP
 class Truss(object):
 
-    def __init__(self, vs, indices):
+    def __init__(self, vs, indices, vEnergys):
         # ======= variable =======
         """
                load parameters from a json file into the mesh
@@ -16,3 +16,4 @@ class Truss(object):
         """
         self.indices = indices
         self.vs = vs
+        self.vEnergys = vEnergys
