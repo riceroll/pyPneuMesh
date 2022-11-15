@@ -47,7 +47,7 @@ class Mesh(object):
     def affine(self, truss_bv, init=False):
         scale = 1
         if init:
-            scale = self.calc_scale(truss_bv=truss_bv, mesh_bv=self.bv)
+            scale = self.calc_scale(truss_bv=truss_bv, mesh_bv=self.bv, alpha=0.9)
         self.v = transform3d(self.v, [scaleMatrix(scale, scale, scale)])
         self.keyPoints = transform3d(self.keyPoints, [scaleMatrix(scale, scale, scale)])
         new_bv_mesh = boundingBox(self.v)
@@ -64,4 +64,4 @@ class Mesh(object):
         T, R, t = best_fit_transform(v_prev, v)
 
         self.v = transform3d(self.v, [T])
-        self.keyPoints = transform3d(self.v, [T])
+        self.keyPoints = transform3d(self.keyPoints, [T])
