@@ -24,6 +24,7 @@ def _importVisualizer():
             vs.append([x, 1 - n, 0])
             vs.append([x, n - 1, 0])
             es.append([i * 2, i * 2 + 1])
+        vs = [[v[0]*0.1, v[1]*0.1, v[2]*0.1] for v in vs]
         lines = o3.geometry.LineSet(points=o3.utility.Vector3dVector(vs), lines=o3.utility.Vector2iVector(es))
         viewer.add_geometry(lines)
 
@@ -33,6 +34,7 @@ def _importVisualizer():
             vs.append([1 - n, x, 0])
             vs.append([n - 1, x, 0])
             es.append([i * 2, i * 2 + 1])
+        vs = [[v[0]*0.1, v[1]*0.1, v[2]*0.1] for v in vs]
         lines = o3.geometry.LineSet(points=o3.utility.Vector3dVector(vs), lines=o3.utility.Vector2iVector(es))
         viewer.add_geometry(lines)
 
@@ -43,6 +45,7 @@ def _importVisualizer():
         vs.append([1, 0, 0.5])
         es.append([0, 1])
         cs.append([1, 0, 0])
+        vs = [[v[0]*0.1, v[1]*0.1, v[2]*0.1] for v in vs]
         lines = o3.geometry.LineSet(points=o3.utility.Vector3dVector(vs), lines=o3.utility.Vector2iVector(es))
         lines.colors = o3.utility.Vector3dVector(cs)
         viewer.add_geometry(lines)
@@ -54,6 +57,7 @@ def _importVisualizer():
         vs.append([0, 1, 0.5])
         es.append([0, 1])
         cs.append([0, 1, 0])
+        vs = [[v[0]*0.1, v[1]*0.1, v[2]*0.1] for v in vs]
         lines = o3.geometry.LineSet(points=o3.utility.Vector3dVector(vs), lines=o3.utility.Vector2iVector(es))
         lines.colors = o3.utility.Vector3dVector(cs)
         viewer.add_geometry(lines)
@@ -65,6 +69,7 @@ def _importVisualizer():
         vs.append([0, 0, 1.5])
         es.append([0, 1])
         cs.append([0, 0, 1])
+        vs = [[v[0]*0.1, v[1]*0.1, v[2]*0.1] for v in vs]
         lines = o3.geometry.LineSet(points=o3.utility.Vector3dVector(vs), lines=o3.utility.Vector2iVector(es))
         lines.colors = o3.utility.Vector3dVector(cs)
         viewer.add_geometry(lines)

@@ -16,3 +16,4 @@ class Truss(object):
         """
         self.indices = indices
         self.vs = vs
+

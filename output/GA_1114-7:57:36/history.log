@@ -1,0 +1,9 @@
+
+Begin at 2022-11-14 07:57:36.364470.
+mute: False
+nGenesPerPool: 8
+nGensPerPool: 5
+nSurvivedMax: 2
+nWorkers: 8
+plot: True
+saveHistory: True

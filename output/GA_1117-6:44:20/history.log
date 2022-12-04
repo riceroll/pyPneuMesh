@@ -1,0 +1,12 @@
+
+Begin at 2022-11-17 06:44:20.568781.
+mute: False
+nGenesPerPool: 8
+nGensPerPool: 5
+nSurvivedMax: 2
+nWorkers: 8
+plot: True
+saveHistory: True
+i          address         score                                    R          CD        
+0          0x7fb348b87b90> [ 0.06271337  0.99996094  0.01323945 -0.56526275 -0.14100353] 0          inf       
+1          0x7fb348b76a90> [ 0.2915463   0.84371512  0.35693218 -0.62521556 -0.15887552] 0          inf       

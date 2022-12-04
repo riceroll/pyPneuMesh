@@ -11,6 +11,7 @@ from utils.moo import MOO
 from utils.getCriterion import getCriterion
 import pickle
 import copy
+import time
 
 
 # region functions: multi-objective genetic algorithm NSGA-II
@@ -159,7 +160,7 @@ class GeneticAlgorithm(object):
         Rs = getR(np.array(scores))
         CDs = getCD(np.array(scores), Rs)
 
-        indices_sorted = np.lexsort((-CDs, Rs))
+        indices_sorted = np.lexsort((-CDs, Rs))     # TODO
         genePool = [genePool[i] for i in indices_sorted]
         genePool = genePool[:nSurvivedMax]
 
@@ -269,12 +270,18 @@ class GeneticAlgorithm(object):
             self.genePool = self.select(self.genePool, nSurvivedMax)
 
         iPool = 0 if self.iPool is None else self.iPool
+        t0 = time.time()
 
         while True:
-            iPool += 1
-            print('iPool: ', iPool)
+            logging.info('iPool ' + str(iPool))
             for iGen in range(nGenPerPool):
-                print('iGen: ', iGen)
+
+                if iGen > 0:
+                    tAvg = (time.time() - t0) / iGen
+                    logging.info('tAvg: {:.2f}'.format(tAvg))
+                    
+                logging.info('iGen: ' + str(iGen))
+                
                 self.genePool = self.mutateAndRegenerate(self.genePool, sizePool)
                 self.genePool = self.evaluate(self.genePool, self.setting.nWorkers)
                 self.genePool = self.select(self.genePool, nSurvivedMax)
@@ -289,7 +296,7 @@ class GeneticAlgorithm(object):
             else:
                 self.genePool = self.initPoolFromScratch(sizePool)
 
-        #
+            iPool += 1
         # self.pop = initPop(nPop=self.setting.nPop, lb=self.lb, ub=self.ub)
         #
         # self.ratings, self.Rs, self.CDs = evaluate(pop=self.pop, criterion=self.criterion,

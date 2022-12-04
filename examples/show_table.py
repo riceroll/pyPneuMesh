@@ -1,19 +1,42 @@
 from utils.moo import MOO
-from utils.objectives.objective import objMoveForward, objFaceForward, objTurnLeft, objTurnRight, objLowerBodyMax
 import pickle5
 
-result = pickle5.load(open('./output/GA_531-8-36-53/iPool_580', 'rb'))
+result = pickle5.load(open('/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/output/GA_1117-12:12:23/iPool_3', 'rb'))
 
-print('{:20s} {:20s} {:20s} {:20s}'.format('move forward', 'face forward', 'turn left', 'lower height'))
 for i in range(len(result['elitePool'])):
     elite = result['elitePool'][i]
     moo = elite['moo']
     model = moo.model
     score = elite['score']
-    print('{:20f} {:20f} {:20f} {:20f}'.format(score[0], score[1], score[2], score[3]))
+    # print(i, ' {:.2f} {:.2f} {:.2f} {:.2f} {:.2f}'.format(score[0], score[1], score[2], score[3], score[4]))
 
-moo = result['elitePool'][1]['moo']
-moo.model.show()  # visualize the truss static shape and channels
+import numpy as np
+scores = np.array([gene['score'] for gene in result['elitePool']])
 
-actionSeq = moo.actionSeqs[1]  # control sequence of the second objective
-moo.simulate(actionSeq, nLoops=2, visualize=True)  # visualize the trajectory of the control
+for i in range(len(scores)):
+    score = scores[i]
+    if score[0] > 0.1:
+        if score[1] > 0.5:
+            if score[2] > 0.5:
+                if score[3] > -0.7:
+                    if score[4] > -0.2:
+                        print(i, ' {:.2f} {:.2f} {:.2f} {:.2f} {:.2f}'.format(score[0], score[1], score[2], score[3], score[4]))
+
+moo = result['elitePool'][17]['moo']
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

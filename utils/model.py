@@ -5,6 +5,7 @@ import datetime
 import json
 import argparse
 import numpy as np
+import torch
 import networkx as nx
 import copy
 from gym import Env
@@ -318,6 +319,7 @@ class Model(object):
         self.script = None
 
         self.maxContraction = None
+        self.contractionLevel = None
         self.vel = None  # velocity              [nv x 3]
         self.f = None
         self.l = None
@@ -366,6 +368,7 @@ class Model(object):
         self.edgeActive = np.array(data['edgeActive'], dtype=bool)
         self.edgeChannel = np.array(data['edgeChannel'], dtype=np.int64)
         self.maxContraction = np.array(data['maxContraction'])
+        self.contractionLevel = np.array(data['contractionLevel'], dtype=np.int32)
 
         self.fixedVs = np.array(data['fixedVs'], dtype=np.int64)
         
@@ -413,6 +416,125 @@ class Model(object):
     # end initialization
 
     # stepping =======================
+    def step2(self, n=1, ret=False):
+        # convert to torch and init values
+        p = torch.tensor(self.v, dtype=torch.float64, requires_grad=True)
+        v = torch.tensor(self.vel, dtype=torch.float64)
+        f = torch.zeros_like(v, dtype=torch.float64)
+        e = torch.tensor(self.e, dtype=torch.long)
+        lMax = torch.tensor(self.lMax, dtype=torch.float64)
+        edgeChannel = torch.tensor(self.edgeChannel, dtype=torch.long)
+        edgeActive = torch.tensor(self.edgeActive, dtype=torch.bool)
+        contractionLevel = torch.tensor(self.contractionLevel, dtype=torch.int32)
+        
+        h = Model.h     # time step
+        contractionPercentRate = Model.contractionPercentRate       # the change of the contraction ratio along time
+        contractionLevels = Model.contractionLevels     # the change of the contraction ratio along time
+        contractionInterval = self.contractionInterval
+        gravity = Model.gravityFactor * Model.gravity
+        wLength = 1000000
+        mu = 0.8       # coefficient of sliding friction
+        damping = 0.99
+        mNode = 0.08    # kg
+        
+        for i in range(n):
+            self.numSteps += 1
+            
+            # update contraction Percent
+            for iChannel in range(len(self.inflateChannel)):
+                if self.inflateChannel[iChannel]:
+                    self.contractionPercent[iChannel] -= contractionPercentRate
+                    if self.contractionPercent[iChannel] < 0:
+                        self.contractionPercent[iChannel] = 0
+                else:
+                    self.contractionPercent[iChannel] += contractionPercentRate
+                    if self.contractionPercent[iChannel] > 1:
+                        self.contractionPercent[iChannel] = 1
+            
+            # update l0
+            lMin = lMax * (1 - contractionLevel * contractionInterval)
+            l0 = lMax.clone()     # for inactive edges, the default l0 is lMax
+            l0[self.edgeActive] = (lMax - torch.tensor(self.contractionPercent, dtype=torch.float32)[edgeChannel] * (lMax - lMin))[edgeActive]
+
+            lMin = lMin.reshape(-1, 1)
+            lMax = lMax.reshape(-1, 1)
+            l0 = l0.reshape(-1, 1)
+
+            # region calculate forces
+            f = torch.zeros_like(p, dtype=torch.float32)
+
+            # # energy-based force : length energy + angle energy(optional, not implemented)
+            en = torch.tensor(0, dtype=torch.float32)
+
+            l = (p[e[:, 0]] - p[e[:, 1]]).norm(dim=1, keepdim=True)
+            # en += ((l - l0) ** 2).sum()
+            #
+            # if p.grad:
+            #     p.grad *= 0
+            # en.backward()
+
+            # f -= wLength * p.grad
+            #
+            # ff = (p[e[:, 0]] - p[e[:, 1]]) / l * (l-l0) * wLength
+            # f.index_add(0, e[:, 0], ff)
+            # f.index_add(0, e[:, 1], -ff)
+
+            # # gravity force
+            # fGravity = torch.zeros_like(f, dtype=torch.float32)
+            # fGravity[:, 2] -= gravity * 20
+            # f += fGravity
+            #
+            # # # support force
+            # boolGround = p[:, 2] <= 0          # True if the vertex is on the ground
+            # boolForceDownwards = f[:, 2] < 0    # True if the vertex has force with a negative vertical part
+            # fDownwards = f.clone()
+            # fDownwards[:, 0: 2] *= 0
+            # fDownwards[~(boolGround * boolForceDownwards)] *= 0
+            #
+            # fSupport = -fDownwards
+            # f += fSupport
+            #
+            # # # friction force
+            # vHorizontal = v.clone()
+            # vHorizontal[:, 2] *= 0    # only keep the velocity parallel to x-y plane
+            # vHorizontalMag = vHorizontal.norm(dim=1, keepdim=True)     # magnitude of the horizontal part of velocity
+            # ivsNoneZeroV = (vHorizontalMag > 0).reshape(-1)     # ids of vertices with non-zero velocities
+            # vHorizontalUnit = vHorizontal   # unitize the velocity, vMag = 1 / 0
+            # vHorizontalUnit[ivsNoneZeroV] /= vHorizontalMag[ivsNoneZeroV]
+            #
+            # fFrictionMag = fSupport.norm(dim=1, keepdim=True) * mu  # the magnitude of sliding friction force
+            # # delta of magnitude of horizontal velocity, = min(h * friction, vHorizontal)
+            # deltaVHorizontalMag = torch.hstack([fFrictionMag * h, vHorizontalMag]).min(dim=1, keepdim=True)[0]
+            # fFrictionMag = deltaVHorizontalMag / h
+            #
+            # fFriction = -vHorizontalUnit * fFrictionMag       # friction force
+            # f += fFriction
+            # # endregion
+            #
+            # region update velocity
+            # # hitting the ground
+            boolMovingDownwards = (v[:, 2] < 0)             # vertices that moving downwards
+            # v[boolMovingDownwards * boolGround, 2] *= 0     # stop vertices on the ground from moving downwards
+
+            # # damping
+            v *= damping
+            # endregion
+            
+            # update location
+            p.requires_grad = False
+            # p[boolGround, 2] *= 0    # move underground vertices back to the ground
+            
+            # integration
+            v += h * f * mNode
+            p += h * v
+        
+        # self.v = p.detach().numpy()
+        # self.vel = v.detach().numpy()
+        #
+        # if ret:
+        #     return self.v.copy()
+        
+        
     def step(self, n=1, ret=False):
         """
         step simulation of the model if self.simulate is True
@@ -825,7 +947,6 @@ class Model(object):
         
         self.edgeChannel = self.edgeChannel.astype(np.int)
         
-        
     def mutate(self):
         if self.symmetric:
             self.mutateHalfGraph()
@@ -833,7 +954,6 @@ class Model(object):
         else:
             self.mutateGraph()
             self.fromGraph()
-    
     
     def frontDirection(self):
         return getFrontDirection(self.v0, self.v).reshape(-1, 1)

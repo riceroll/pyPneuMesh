@@ -1,0 +1,24 @@
+
+Begin at 2022-11-22 04:51:26.038025.
+mute: False
+nGenesPerPool: 8
+nGensPerPool: 5
+nSurvivedMax: 2
+nWorkers: 8
+plot: True
+saveHistory: True
+i          address         score                                    R          CD        
+0          0x7fb4d8b99e90> [ 0.16406175  0.95267733  0.23110975 -0.58917038] 0          inf       
+1          0x7fb4f0bb9dd0> [ 0.0276495  -0.92468136  0.66620652 -0.96142435] 0          inf       
+iPool 0
+iGen: 0
+i          address         score                                    R          CD        
+0          0x7fb4d8b99e90> [ 0.16406175  0.95267733  0.23110975 -0.58917038] 0          inf       
+1          0x7fb4d8ba4d50> [-0.40896462 -0.96401484  0.99280816 -1.11613425] 0          0.5416935157389066
+tAvg: 41.25
+iGen: 1
+i          address         score                                    R          CD        
+0          0x7fb4d8b99e90> [ 0.16406175  0.95267733  0.23110975 -0.58917038] 0          inf       
+1          0x7fb4d8ba4d50> [-0.40896462 -0.96401484  0.99280816 -1.11613425] 0          inf       
+tAvg: 42.12
+iGen: 2

@@ -80,12 +80,6 @@ class MOO:
         assert (len(set(
             list(self.channelMirrorMap.keys()) + list(self.channelMirrorMap.values()))) - 1 == self.numChannels)
 
-        # try getGene for channelMirrorMap
-        # try:
-        #     self.getGene()
-        # except Exception as e:
-        #     print("getGene failed. channelMirrorMap is likely inalid. ")
-        #     self.channelMirrorMap = {ic: -1 for ic in range(self.numChannels)}
 
     def _loadActionSeqs(self):
         assert (isinstance(self.modelDir, str) and len(self.modelDir) != 0)
