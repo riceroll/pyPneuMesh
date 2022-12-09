@@ -45,64 +45,9 @@ else()
   message( FATAL_ERROR "CXX compiler not recognized. CMake will quit." )
 endif()
 
-# libigl
-option(LIBIGL_USE_STATIC_LIBRARY "Use libigl as static library" OFF)
-option(LIBIGL_WITH_ANTTWEAKBAR       "Use AntTweakBar"    OFF)
-option(LIBIGL_WITH_CGAL              "Use CGAL"           OFF)
-option(LIBIGL_WITH_COMISO            "Use CoMiso"         OFF)
-option(LIBIGL_WITH_CORK              "Use Cork"           OFF)
-option(LIBIGL_WITH_EMBREE            "Use Embree"         OFF)
-option(LIBIGL_WITH_LIM               "Use LIM"            OFF)
-option(LIBIGL_WITH_MATLAB            "Use Matlab"         OFF)
-option(LIBIGL_WITH_MOSEK             "Use MOSEK"          OFF)
-option(LIBIGL_WITH_OPENGL            "Use OpenGL"         ON)
-option(LIBIGL_WITH_OPENGL_GLFW       "Use GLFW"           ON)
-option(LIBIGL_WITH_OPENGL_GLFW_IMGUI "Use ImGui"          ON)
-option(LIBIGL_WITH_PNG               "Use PNG"            OFF)
-option(LIBIGL_WITH_PYTHON            "Use Python"         OFF)
-option(LIBIGL_WITH_TETGEN            "Use Tetgen"         OFF)
-option(LIBIGL_WITH_TRIANGLE          "Use Triangle"       OFF)
-option(LIBIGL_WITH_VIEWER            "Use OpenGL viewer"  ON)
-option(LIBIGL_WITH_XML               "Use XML"            OFF)
 
-find_package(LIBIGL REQUIRED QUIET)
+include_directories("./include/eigen-3.4.0/")
 
-include_directories("./include/")
-include_directories("./include/boost/")
-#include_directories("./lib/libigl/external/triangle")
-include_directories("/Users/Roll/Desktop/eigen-3.4.0/")
-
-# ============================= linking ===============================
-
-# JZ: use llvm Clang to use openmp
-#set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm/bin/clang")
-# enable openmp, enable c++ std library, enable o3 optimization level
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -lc++ -o3")
-# link openmp in llvm
-# TODO: link_directories should be avoided: https://cmake.org/cmake/help/latest/command/link_directories.html
-#link_directories("/usr/local/opt/llvm/lib")
-
-#add_subdirectory(lib/libShapeOp)
-#include_directories(lib/libShapeOp/src)
 
 add_subdirectory(pybind11)
-
-#add_library(model SHARED model.cpp )
-#target_link_libraries(model igl::core igl::opengl_glfw_imgui)
-
 pybind11_add_module(model SHARED Model.cpp)
-##target_compile_definitions(model PRIVATE ROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(model PRIVATE igl::core igl::opengl_glfw_imgui)
-
-
-#add_executable(${PROJECT_NAME}  main.cpp)
-#target_compile_definitions(${PROJECT_NAME} PRIVATE ROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
-#target_link_libraries(${PROJECT_NAME}  PRIVATE igl::core igl::opengl_glfw_imgui)
-#target_link_libraries(${PROJECT_NAME}  PRIVATE model)
-
-#
-#include_directories(src)
-#
-#add_subdirectory(pybind11)
-#pybind11_add_module(greet src/greet.cpp)
-##add_library(greet SHARED greet.cpp)
