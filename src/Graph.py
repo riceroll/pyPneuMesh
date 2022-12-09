@@ -2,8 +2,8 @@ import pathlib
 import copy
 import numpy as np
 
-from utils.FullGraph import FullGraph
-from utils.HalfGraph import HalfGraph
+from src.FullGraph import FullGraph
+from src.HalfGraph import HalfGraph
 
 class Graph(object):
     

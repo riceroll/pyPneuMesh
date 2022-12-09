@@ -1,7 +1,7 @@
 import pathlib
 import numpy as np
 import copy
-from utils import subObjectives
+from src import subObjectives
 
 class MultiObjective(object):
     def __init__(self, objectives, multiMotion):

@@ -1,4 +1,6 @@
-from utils.utils import json2Data, data2Npy
+# used to convert previous json file to npy file
+
+from src.utils import json2Data, data2Npy
 
 folderDir = "/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/data/"
 
@@ -11,12 +13,12 @@ names = [
     'lobster_grabgo',
     'lobster_walk',
     'table1',
-'table2',
-'table3',
-'table4',
-'table5',
-'table6'
-         ]
+    'table2',
+    'table3',
+    'table4',
+    'table5',
+    'table6'
+]
 
 for name in names:
     data = json2Data(folderDir+name + '.json')

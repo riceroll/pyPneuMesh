@@ -4,7 +4,7 @@ import time
 rootPath = os.path.split(os.path.realpath(__file__))[0]
 rootPath = os.path.split(rootPath)[0]
 
-from utils.utils import getDefaultValue, getLength
+from src.utils import getDefaultValue, getLength
 from cppPneuMesh.model import Model as CModel
 
 import numpy as np

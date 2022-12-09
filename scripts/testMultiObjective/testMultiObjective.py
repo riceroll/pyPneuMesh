@@ -1,9 +1,9 @@
 import numpy as np
 
-from utils.utils import readNpy
-from utils.Model import Model
-from utils.MultiMotion import MultiMotion
-from utils.MultiObjective import MultiObjective
+from src.utils import readNpy
+from src.Model import Model
+from src.MultiMotion import MultiMotion
+from src.MultiObjective import MultiObjective
 
 trussParam = readNpy('examples/testMultiObjective/table/table.trussparam.npy')
 simParam = readNpy('examples/testMultiObjective/table/table.simparam.npy')

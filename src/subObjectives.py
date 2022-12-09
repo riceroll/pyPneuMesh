@@ -1,5 +1,5 @@
 import numpy as np
-from utils.geometry import getFrontDirection
+from src.geometry import getFrontDirection
 
 
 def objMoveForward(vs: np.ndarray):

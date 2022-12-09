@@ -1,6 +1,6 @@
 import numpy as np
 
-from utils.Model import Model
+from src.Model import Model
 
 class FullGraph(object):
     def __init__(self, model):

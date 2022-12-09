@@ -7,55 +7,14 @@ from pathos.multiprocessing import ProcessPool as Pool
 import multiprocessing
 from typing import List
 import logging
-from utils.MOO import MOO
-from utils.getCriterion import getCriterion
+from src.MOO import MOO
 import pickle
 import copy
 import time
-from utils.utils import readMooDict, readNpy
+from src.utils import readMooDict, readNpy
 
 
 # region functions: multi-objective genetic algorithm NSGA-II
-def getR(ratings: np.ndarray) -> np.ndarray:
-    ratings = ratings.reshape(len(ratings), -1)
-    ratingsCol = ratings.reshape([ratings.shape[0], 1, ratings.shape[1]])
-    ratingsRow = ratings.reshape([1, ratings.shape[0], ratings.shape[1]])
-    dominatedMatrix = (ratingsCol <= ratingsRow).all(2) * (ratingsCol < ratingsRow).any(2)
-
-    Rs = np.ones(len(ratings), dtype=int) * -1
-    R = 0
-    while -1 in Rs:
-        nonDominated = (~dominatedMatrix[:, np.arange(len(Rs))[Rs == -1]]).all(1) * (Rs == -1)
-        Rs[nonDominated] = R
-        R += 1
-    return Rs
-
-
-def getCD(ratings: np.ndarray, Rs: np.ndarray) -> np.ndarray:
-    ratings = ratings.reshape(len(ratings), -1)
-    CDMatrix = np.zeros_like(ratings, dtype=np.float)
-    sortedIds = np.argsort(ratings, axis=0)
-    CDMatrix[sortedIds[0], np.arange(len(ratings[0]))] = np.inf
-    CDMatrix[sortedIds[-1], np.arange(len(ratings[0]))] = np.inf
-    ids0 = sortedIds[:-1, :]
-    ids1 = sortedIds[1:, :]
-    distances = ratings[ids1, np.arange(len(ratings[0]))] - ratings[ids0, np.arange(len(ratings[0]))]
-    if ((ratings.max(0) - ratings.min(0)) > 0).all():
-        CDMatrix[sortedIds[1:-1, :], np.arange(len(ratings[0]))] = \
-            (distances[1:] + distances[:-1]) / (ratings.max(0) - ratings.min(0))
-    else:
-        CDMatrix[sortedIds[1:-1, :], np.arange(len(ratings[0]))] = np.inf
-    CDs = CDMatrix.mean(1)
-
-    return CDs
-
-
-def getRCD(ratings: np.ndarray) -> (np.ndarray, np.ndarray):
-    ratings = ratings.reshape(len(ratings), -1)
-    Rs = getR(ratings)
-    CDs = getCD(ratings, Rs)
-    return Rs, CDs
-
 
 # endregion
 
@@ -73,7 +32,7 @@ class GA(object):
         self.GASetting = GASetting
         self.nGenesPerPool = GASetting['nGenesPerPool']
         self.nGensPerPool = GASetting['nGensPerPool']
-        self.nSurvivedMax = GASetting['nSurvivedMax']
+        self.nSurvivedMin = GASetting['nSurvivedMin']
         self.contractionMutationChance = GASetting['contractionMutationChance']
         self.actionMutationChance = GASetting['actionMutationChance']
         
@@ -112,6 +71,10 @@ class GA(object):
     @staticmethod
     def __initFromGACheckpointDir(GACheckpointDir):
         gaCheckpoint = readNpy(GACheckpointDir)
+        if 'nSurvivedMax' in gaCheckpoint['GASetting']:
+            print('nSurvivedMax')
+            gaCheckpoint['GASetting']['nSurvivedMin'] = gaCheckpoint['GASetting']['nSurvivedMax']
+            del gaCheckpoint['GASetting']['nSurvivedMax']
         
         GASetting = gaCheckpoint['GASetting']
         nPoolsTrained = gaCheckpoint['nPoolsTrained']
@@ -132,7 +95,6 @@ class GA(object):
         checkpointFolderPath = pathlib.Path(GACheckpointDir).parent
         return GASetting, genePool, elitePool, nPoolsTrained, secondsPassed, checkpointFolderPath
         
-
     def __initializeLogger(self):
         logging.getLogger().handlers = []
         
@@ -146,7 +108,112 @@ class GA(object):
         
         now = datetime.datetime.now()
         logging.info(now.strftime("%Y-%m-%d %H:%M:%S"))
+
+    @staticmethod
+    def logLine(character):
+        terminal_width = os.get_terminal_size().columns
+        logging.info(character * terminal_width)
+
+    def logTrainingTime(self):
+        m, s = divmod(int(self.secondsPassed), 60)
+        h, m = divmod(m, 60)
+        logging.info('Training time: {}:{}:{}'.format(h, m, s))
+
+    def logObjectives(self):
+        objectives = self.mooDict['objectives']
+        objectiveStrings = []
+        for key in objectives:
+            objective = objectives[key]
+            subObjectiveStrings = ['{:^20.20s}'.format(subObjective) for subObjective in objective['subObjectives']]
+            objectiveString = ''.join(subObjectiveStrings)
+            objectiveStrings.append(objectiveString[:-1])
+        objectivesString = '|'.join(objectiveStrings)
+
+        logging.info("{:<20.20s}{}".format('', objectivesString))
         
+    def logPool(self, pool, name=None,
+                printing=False,
+                showAllGenes=False,
+                showRValue=False):
+        lines = []
+        if showAllGenes:
+            if showRValue:
+                Rs, _ = self.getRCD(np.array([gene['score'] for gene in pool]))
+            else:
+                Rs = None
+                
+            for iGene, gene in enumerate(pool):
+                scoresStr = ['{:<20.6s}'.format(str(score)) for score in gene['score']]
+                if Rs is not None:
+                    scoresStr.append('{:<20d}'.format(Rs[iGene]))
+                scoreStr = "".join(scoresStr)
+                
+                outputString = "{:<8d}{}".format(iGene, scoreStr)
+                lines.append(outputString)
+
+        # mean / max values
+        meanScore, maxScore = self.getMeanMaxScore(pool)
+        scoresStr = [
+            '{:^20}'.format(
+                '{:.6} / {:.6}'.format(str(meanScore[i]), str(maxScore[i]))
+            )
+            for i in range(len(meanScore))]
+        scoreStr = "".join(scoresStr)
+        scoreStr = "{:<20s}{}".format(name if name is not None else "", scoreStr)
+        lines.append(scoreStr)
+        
+        if printing:
+            for line in lines:
+                print(line)
+        else:
+            for line in lines:
+                logging.info(line)
+
+
+    def saveCheckPoint(self):
+        genePoolMOODict = [
+            {
+                'mooDict': gene['moo'].getMooDict(),
+                'score': gene['score']
+            }
+            for gene in self.genePool
+        ]
+        elitePoolMOODict = [
+            {
+                'mooDict': gene['moo'].getMooDict(),
+                'score': gene['score']
+            }
+            for gene in self.elitePool
+        ]
+        gaCheckPoint = {
+            'GASetting': self.GASetting,
+            'genePoolMOODict': genePoolMOODict,
+            'elitePoolMOODict': elitePoolMOODict,
+            'nPoolsTrained': self.nPoolsTrained,
+            'secondsPassed': self.secondsPassed
+        }
+
+        np.save(
+            str(self.checkpointFolderPath.joinpath('ElitePool_{}.gacheckpoint'.format(self.nPoolsTrained - 1))),
+            gaCheckPoint
+        )
+
+    @staticmethod
+    def getMeanMaxScore(pool):
+        scores = []
+        for gene in pool:
+            if gene['score'] is not None:
+                scores.append(gene['score'])
+        scores = np.array(scores, dtype=float)
+        if len(scores):
+            maxScores = np.max(scores, axis=0)
+            meanScores = np.mean(scores, axis=0)
+        else:
+            maxScores = []
+            meanScores = []
+
+        return meanScores, maxScores
+    
     def evaluate(self):
         
         def criterion(gene):
@@ -162,24 +229,55 @@ class GA(object):
                 score = moo.evaluate()
             return score
 
-        # parallel
-        # with Pool(self.nWorkers) as p:
-        #     scores = np.array(p.map(criterion, self.genePool))
-            
-        # non-parallel
-        scores = np.array([criterion(gene) for gene in self.genePool])
+        if self.nWorkers > 1:
+            with Pool(self.nWorkers) as p:
+                scores = np.array(p.map(criterion, self.genePool))
+        else:
+            scores = np.array([criterion(gene) for gene in self.genePool])
 
         for i in range(len(self.genePool)):
             self.genePool[i]['score'] = scores[i]
 
+    @staticmethod
+    def getRCD(ratings: np.ndarray) -> (np.ndarray, np.ndarray):
+        # get R
+        ratings = ratings.reshape(len(ratings), -1)
+        ratingsCol = ratings.reshape([ratings.shape[0], 1, ratings.shape[1]])
+        ratingsRow = ratings.reshape([1, ratings.shape[0], ratings.shape[1]])
+        dominatedMatrix = (ratingsCol <= ratingsRow).all(2) * (ratingsCol < ratingsRow).any(2)
+    
+        Rs = np.ones(len(ratings), dtype=int) * -1
+        R = 0
+        while -1 in Rs:
+            nonDominated = (~dominatedMatrix[:, np.arange(len(Rs))[Rs == -1]]).all(1) * (Rs == -1)
+            Rs[nonDominated] = R
+            R += 1
+        
+        # get CD
+        CDMatrix = np.zeros_like(ratings, dtype=np.float)
+        sortedIds = np.argsort(ratings, axis=0)
+        CDMatrix[sortedIds[0], np.arange(len(ratings[0]))] = np.inf
+        CDMatrix[sortedIds[-1], np.arange(len(ratings[0]))] = np.inf
+        ids0 = sortedIds[:-1, :]
+        ids1 = sortedIds[1:, :]
+        distances = ratings[ids1, np.arange(len(ratings[0]))] - ratings[ids0, np.arange(len(ratings[0]))]
+        if ((ratings.max(0) - ratings.min(0)) > 0).all():
+            CDMatrix[sortedIds[1:-1, :], np.arange(len(ratings[0]))] = \
+                (distances[1:] + distances[:-1]) / (ratings.max(0) - ratings.min(0))
+        else:
+            CDMatrix[sortedIds[1:-1, :], np.arange(len(ratings[0]))] = np.inf
+        CDs = CDMatrix.mean(1)
+
+        return Rs, CDs
+
     def select(self):
         scores = [gene['score'] for gene in self.genePool]
-        Rs = getR(np.array(scores))
-        CDs = getCD(np.array(scores), Rs)
+        Rs, CDs = self.getRCD(np.array(scores))
 
-        indices_sorted = np.lexsort((-CDs, Rs))     # TODO check it
+        indices_sorted = np.lexsort((-CDs, Rs))
         self.genePool = [self.genePool[i] for i in indices_sorted]
-        self.genePool = self.genePool[:self.nSurvivedMax]
+        nGenesR0 = (Rs == 0).sum()
+        self.genePool = self.genePool[:max(self.nSurvivedMin, nGenesR0)]
 
     def refillGenePoolByMutationAndRegeneration(self):
         while len(self.genePool) < self.nGenesPerPool:
@@ -212,85 +310,9 @@ class GA(object):
         return False
 
     def elitePool2genePool(self):
-        self.genePool = self.elitePool
+        self.genePool = self.elitePool[:self.nGenesPerPool]
         self.elitePool = []
         
-    @ staticmethod
-    def logLine(character):
-        terminal_width = os.get_terminal_size().columns
-        logging.info(character * terminal_width)
-    
-    def logTrainingTime(self):
-        m, s = divmod(int(self.secondsPassed), 60)
-        h, m = divmod(m, 60)
-        logging.info('Training time: {}:{}:{}'.format(h, m, s))
-    
-    def logObjectives(self):
-        objectives = self.mooDict['objectives']
-        objectiveStrings = []
-        for key in objectives:
-            objective = objectives[key]
-            subObjectiveStrings = ['{:^20.20s}'.format(subObjective) for subObjective in objective['subObjectives']]
-            objectiveString = ''.join(subObjectiveStrings)
-            objectiveStrings.append(objectiveString[:-1])
-        objectivesString = '|'.join(objectiveStrings)
-    
-        logging.info("{:<20.20s}{}".format('', objectivesString))
-    
-    def logPoolMax(self, pool, index):
-        # for iGene, gene in enumerate(pool):
-        #     scoresStr = ['{:<20.20s}'.format(str(score)) for score in gene['score']]
-        #     scoreStr = "".join(scoresStr)
-        #     logging.info("{:<8d}{}".format(iGene, scoreStr))
-        
-        if len(pool):
-            maxScore = self.getMaxScore(pool)
-            scoresStr = ['{:^20.10s}'.format(str(score)) for score in maxScore]
-            scoreStr = "".join(scoresStr)
-            logging.info("{:<20s}{}".format(index, scoreStr))
-        
-
-    def saveCheckPoint(self):
-        genePoolMOODict = [
-            {
-                'mooDict': gene['moo'].getMooDict(),
-                'score': gene['score']
-            }
-            for gene in self.genePool
-        ]
-        elitePoolMOODict = [
-            {
-                'mooDict': gene['moo'].getMooDict(),
-                'score': gene['score']
-            }
-            for gene in self.elitePool
-        ]
-        gaCheckPoint = {
-            'GASetting': self.GASetting,
-            'genePoolMOODict': genePoolMOODict,
-            'elitePoolMOODict': elitePoolMOODict,
-            'nPoolsTrained': self.nPoolsTrained,
-            'secondsPassed': self.secondsPassed
-        }
-        
-        np.save(
-            str(self.checkpointFolderPath.joinpath('ElitePool_{}.gacheckpoint'.format(self.nPoolsTrained - 1))),
-            gaCheckPoint
-        )
-
-    @staticmethod
-    def getMaxScore(pool):
-        scores = []
-        for gene in pool:
-            if gene['score'] is not None:
-                scores.append(gene['score'])
-        scores = np.array(scores, dtype=float)
-        if len(scores):
-            maxScores = np.max(scores, axis=0)
-        else:
-            maxScores = 0
-
-        return maxScores
         
     def run(self):
         self.__initializeLogger()
@@ -307,7 +329,7 @@ class GA(object):
                 self.evaluate()
                 self.select()
                 
-                self.logPoolMax(self.genePool, "gen:{:>4d}".format(iGen))
+                self.logPool(self.genePool, "gen:{:>4d}".format(iGen), showRValue=True)
                 
             self.collectElites()
             if self.elitePoolFull():
@@ -317,7 +339,7 @@ class GA(object):
             self.secondsPassed += time.time() - t0
             self.saveCheckPoint()
             logging.info('')
-            self.logPoolMax(self.elitePool, 'ElitePool:{:<4d}'.format(self.nPoolsTrained - 1))
+            self.logPool(self.elitePool, 'ElitePool:{:<4d}'.format(self.nPoolsTrained - 1))
             self.logTrainingTime()
             
             

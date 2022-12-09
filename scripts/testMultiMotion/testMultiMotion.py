@@ -1,6 +1,6 @@
-from utils.utils import readNpy
-from utils.Model import Model
-from utils.MultiMotion import MultiMotion
+from src.utils import readNpy
+from src.Model import Model
+from src.MultiMotion import MultiMotion
 
 trussParam = readNpy('examples/testMultiMotion/table/table.trussparam.npy')
 simParam = readNpy('examples/testMultiMotion/table/table.simparam.npy')

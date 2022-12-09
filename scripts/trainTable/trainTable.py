@@ -2,32 +2,32 @@ import numpy as np
 import json
 import multiprocessing
 
-from utils.utils import readNpy, readMooDict
-from utils.Model import Model
-from utils.Graph import Graph
-from utils.MOO import MOO
-from utils.GA import GA
+from src.utils import readNpy, readMooDict
+from src.Model import Model
+from src.Graph import Graph
+from src.MOO import MOO
+from src.GA import GA
 
 
 mode = "start"
 mode = "continue"
 mode = "load"
-mode = "configMOO"
+# mode = "configMOO"
 
-GACheckpointDir = "/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/examples/trainTable/output/2022-12-08_16-24-30/ElitePool_2.gacheckpoint.npy"
+GACheckpointDir = "/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/trainTable/output/2022-12-08_18-29-14/ElitePool_287.gacheckpoint.npy"
 
 if mode == "start":
     GASetting = {
-        'nGenesPerPool': 16,
-        'nSurvivedMax': 8,
-        'nGensPerPool': 2,
+        'nGenesPerPool': 64,
+        'nSurvivedMin': 16,
+        'nGensPerPool': 8,
         
         'nWorkers': multiprocessing.cpu_count(),
         
-        'folderDir': 'examples/trainTable/',
+        'folderDir': 'scripts/trainTable/',
         
         'contractionMutationChance': 0.1,
-        'actionMutationChance': 0.2
+        'actionMutationChance': 0.2,
     }
     ga = GA(GASetting=GASetting)
     ga.run()
@@ -35,13 +35,14 @@ if mode == "start":
 elif mode == "continue":
     ga = GA(GACheckpointDir=GACheckpointDir)
     ga.run()
-
+    
 elif mode == "load":
     ga = GA(GACheckpointDir=GACheckpointDir)
-
+    
 elif mode == "configMOO":
-    mooDict = readMooDict('./examples/trainTable/data')
-
-
+    mooDict = readMooDict('./scripts/trainTable/data')
+    moo = MOO(mooDict=mooDict)
+    
+    
 
 

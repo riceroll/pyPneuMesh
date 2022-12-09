@@ -1,10 +1,10 @@
 import pathlib
 
-from utils.utils import readNpy
-from utils.Model import Model
-from utils.MultiMotion import MultiMotion
-from utils.MultiObjective import MultiObjective
-from utils.Graph import Graph
+from src.utils import readNpy
+from src.Model import Model
+from src.MultiMotion import MultiMotion
+from src.MultiObjective import MultiObjective
+from src.Graph import Graph
 
 class MOO(object):
     def __init__(self,
@@ -62,4 +62,4 @@ class MOO(object):
     
     def animate(self, *args, **kwargs):
         self.multiMotion.animate(*args, **kwargs)
-
+        

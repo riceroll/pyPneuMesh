@@ -2,10 +2,10 @@ import numpy as np
 import json
 import multiprocessing
 
-from utils.utils import readNpy
-from utils.Model import Model
-from utils.Graph import Graph
-from utils.GA import GA
+from src.utils import readNpy
+from src.Model import Model
+from src.Graph import Graph
+from src.GA import GA
 
 trussParam = readNpy('examples/testGraph/table/table.trussparam.npy')
 simParam = readNpy('examples/testGraph/table/table.simparam.npy')

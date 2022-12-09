@@ -1,9 +1,9 @@
-from utils.utils import readNpy, readMooDict
-from utils.Model import Model
-from utils.MultiMotion import MultiMotion
-from utils.MultiObjective import MultiObjective
-from utils.Graph import Graph
-from utils.MOO import MOO
+from src.utils import readNpy, readMooDict
+from src.Model import Model
+from src.MultiMotion import MultiMotion
+from src.MultiObjective import MultiObjective
+from src.Graph import Graph
+from src.MOO import MOO
 
 trussParam = readNpy('examples/testMOO/table/table.trussparam.npy')
 simParam = readNpy('examples/testMOO/table/table.simparam.npy')

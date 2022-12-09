@@ -2,7 +2,7 @@ import numpy as np
 import copy
 import pathlib
 
-from utils.Model import Model
+from src.Model import Model
 
 class HalfGraph(object):
     def __init__(self, model: Model, graphSetting):

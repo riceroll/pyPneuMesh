@@ -1,7 +1,7 @@
 import pathlib
 import numpy as np
 import copy
-from utils.Model import Model
+from src.Model import Model
 
 class MultiMotion(object):
     def __init__(self, actionSeqs, model):
