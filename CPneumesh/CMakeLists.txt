@@ -47,7 +47,7 @@ endif()
 
 
 include_directories("./include/eigen-3.4.0/")
-
+#set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} ./include/eigen-3.4.0/)
 
 add_subdirectory(pybind11)
 pybind11_add_module(model SHARED Model.cpp)

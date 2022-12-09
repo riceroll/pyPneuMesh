@@ -54,10 +54,10 @@ RM = /opt/local/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/Roll/desktop/pyPneuMesh-dev/pyPneuMesh/CPneumesh
+CMAKE_SOURCE_DIR = /Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/CPneumesh
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/Roll/desktop/pyPneuMesh-dev/pyPneuMesh/build
+CMAKE_BINARY_DIR = /Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/build
 
 #=============================================================================
 # Directory level rules for the build root directory
@@ -98,14 +98,14 @@ pybind11/clean:
 CMakeFiles/model.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/model.dir/build.make CMakeFiles/model.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/model.dir/build.make CMakeFiles/model.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/Roll/desktop/pyPneuMesh-dev/pyPneuMesh/build/CMakeFiles --progress-num=1,2 "Built target model"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/build/CMakeFiles --progress-num=1,2 "Built target model"
 .PHONY : CMakeFiles/model.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/model.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/Roll/desktop/pyPneuMesh-dev/pyPneuMesh/build/CMakeFiles 2
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/build/CMakeFiles 2
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/model.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/Roll/desktop/pyPneuMesh-dev/pyPneuMesh/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/build/CMakeFiles 0
 .PHONY : CMakeFiles/model.dir/rule
 
 # Convenience name for target.

@@ -77,7 +77,7 @@ def docs(session: nox.Session) -> None:
     session.run("sphinx-build", "-M", "html", ".", "_build")
 
     if "serve" in session.posargs:
-        session.saveCheckPoint("Launching docs at http://localhost:8000/ - use Ctrl-C to quit")
+        session.log("Launching docs at http://localhost:8000/ - use Ctrl-C to quit")
         session.run("python", "-m", "http.server", "8000", "-d", "_build/html")
     elif session.posargs:
         session.error("Unsupported argument to docs")
@@ -99,9 +99,9 @@ def build(session: nox.Session) -> None:
     """
 
     session.install("build")
-    session.saveCheckPoint("Building normal files")
+    session.log("Building normal files")
     session.run("python", "-m", "build", *session.posargs)
-    session.saveCheckPoint("Building pybind11-global files (PYBIND11_GLOBAL_SDIST=1)")
+    session.log("Building pybind11-global files (PYBIND11_GLOBAL_SDIST=1)")
     session.run(
         "python", "-m", "build", *session.posargs, env={"PYBIND11_GLOBAL_SDIST": "1"}
     )

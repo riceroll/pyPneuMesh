@@ -1,0 +1,236 @@
+Compiling the Fortran compiler identification source file "CMakeFortranCompilerId.F" failed.
+Compiler: /usr/local/bin/gfortran 
+Build flags: 
+Id flags: -v 
+
+The output was:
+1
+Driving: /usr/local/bin/gfortran -v CMakeFortranCompilerId.F -mmacosx-version-min=12.0.0 -asm_macosx_version_min=12.0 -nodefaultexport -l gfortran -shared-libgcc
+Using built-in specs.
+COLLECT_GCC=/usr/local/bin/gfortran
+COLLECT_LTO_WRAPPER=/usr/local/Cellar/gcc/12.2.0/bin/../libexec/gcc/x86_64-apple-darwin21/12/lto-wrapper
+Target: x86_64-apple-darwin21
+Configured with: ../configure --prefix=/usr/local/opt/gcc --libdir=/usr/local/opt/gcc/lib/gcc/current --disable-nls --enable-checking=release --with-gcc-major-version-only --enable-languages=c,c++,objc,obj-c++,fortran --program-suffix=-12 --with-gmp=/usr/local/opt/gmp --with-mpfr=/usr/local/opt/mpfr --with-mpc=/usr/local/opt/libmpc --with-isl=/usr/local/opt/isl --with-zstd=/usr/local/opt/zstd --with-pkgversion='Homebrew GCC 12.2.0' --with-bugurl=https://github.com/Homebrew/homebrew-core/issues --with-system-zlib --build=x86_64-apple-darwin21 --with-sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk
+Thread model: posix
+Supported LTO compression algorithms: zlib zstd
+gcc version 12.2.0 (Homebrew GCC 12.2.0) 
+COLLECT_GCC_OPTIONS='-v' '-mmacosx-version-min=12.0.0' '-asm_macosx_version_min=12.0' '-nodefaultexport' '-shared-libgcc' '-mtune=core2' '-dumpdir' 'a-'
+ /usr/local/Cellar/gcc/12.2.0/bin/../libexec/gcc/x86_64-apple-darwin21/12/f951 CMakeFortranCompilerId.F -ffixed-form -cpp=/var/folders/b0/z855xnr52wqddwjq7_8406yr0000gn/T//ccHpk5uq.f90 -quiet -v -iprefix /usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/ -D__DYNAMIC__ CMakeFortranCompilerId.F -fPIC -quiet -dumpdir a- -dumpbase CMakeFortranCompilerId.F -dumpbase-ext .F -mmacosx-version-min=12.0.0 -mtune=core2 -version -fintrinsic-modules-path /usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/finclude -o /var/folders/b0/z855xnr52wqddwjq7_8406yr0000gn/T//ccu5gQAF.s
+GNU Fortran (Homebrew GCC 12.2.0) version 12.2.0 (x86_64-apple-darwin21)
+	compiled by GNU C version 12.2.0, GMP version 6.2.1, MPFR version 4.1.0, MPC version 1.2.1, isl version isl-0.25-GMP
+
+warning: MPFR header version 4.1.0 differs from library version 4.1.0-p13.
+GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+ignoring nonexistent directory "/usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/../../../../../../x86_64-apple-darwin21/include"
+ignoring duplicate directory "/usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/x86_64-apple-darwin21/12/include"
+ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/usr/local/include"
+ignoring duplicate directory "/usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/x86_64-apple-darwin21/12/include-fixed"
+ignoring nonexistent directory "/usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/x86_64-apple-darwin21/12/../../../../../../x86_64-apple-darwin21/include"
+ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/usr/include"
+#include "..." search starts here:
+#include <...> search starts here:
+ /usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/finclude
+ /usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/include
+ /usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/include-fixed
+End of search list.
+GNU Fortran2008 (Homebrew GCC 12.2.0) version 12.2.0 (x86_64-apple-darwin21)
+	compiled by GNU C version 12.2.0, GMP version 6.2.1, MPFR version 4.1.0, MPC version 1.2.1, isl version isl-0.25-GMP
+
+warning: MPFR header version 4.1.0 differs from library version 4.1.0-p13.
+GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+COLLECT_GCC_OPTIONS='-v' '-mmacosx-version-min=12.0.0'  '-nodefaultexport' '-shared-libgcc' '-mtune=core2' '-dumpdir' 'a-'
+ as -arch x86_64 -v -mmacosx-version-min=12.0 -mllvm -x86-pad-for-align=false -force_cpusubtype_ALL -o /var/folders/b0/z855xnr52wqddwjq7_8406yr0000gn/T//ccmWU8xb.o /var/folders/b0/z855xnr52wqddwjq7_8406yr0000gn/T//ccu5gQAF.s
+Apple clang version 11.0.0 (clang-1100.0.33.12)
+Target: x86_64-apple-darwin21.1.0
+Thread model: posix
+InstalledDir: /Library/Developer/CommandLineTools/usr/bin
+clang: error: invalid version number in '-mmacosx-version-min=12.0'
+
+
+Compiling the Fortran compiler identification source file "CMakeFortranCompilerId.F" failed.
+Compiler: /usr/local/bin/gfortran 
+Build flags: 
+Id flags:  
+
+The output was:
+1
+clang: error: invalid version number in '-mmacosx-version-min=12.0'
+
+
+Compiling the Fortran compiler identification source file "CMakeFortranCompilerId.F" failed.
+Compiler: /usr/local/bin/gfortran 
+Build flags: 
+Id flags: -c 
+
+The output was:
+1
+clang: error: invalid version number in '-mmacosx-version-min=12.0'
+
+
+Compiling the Fortran compiler identification source file "CMakeFortranCompilerId.F" failed.
+Compiler: /usr/local/bin/gfortran 
+Build flags: 
+Id flags: -fpp 
+
+The output was:
+1
+gfortran: error: unrecognized command-line option '-fpp'; did you mean '-cpp'?
+
+
+Compiling the Fortran compiler identification source file "CMakeFortranCompilerId.F" failed.
+Compiler: /usr/local/bin/gfortran 
+Build flags: 
+Id flags: -v 
+
+The output was:
+1
+Driving: /usr/local/bin/gfortran -v CMakeFortranCompilerId.F -mmacosx-version-min=12.0.0 -asm_macosx_version_min=12.0 -nodefaultexport -l gfortran -shared-libgcc
+Using built-in specs.
+COLLECT_GCC=/usr/local/bin/gfortran
+COLLECT_LTO_WRAPPER=/usr/local/Cellar/gcc/12.2.0/bin/../libexec/gcc/x86_64-apple-darwin21/12/lto-wrapper
+Target: x86_64-apple-darwin21
+Configured with: ../configure --prefix=/usr/local/opt/gcc --libdir=/usr/local/opt/gcc/lib/gcc/current --disable-nls --enable-checking=release --with-gcc-major-version-only --enable-languages=c,c++,objc,obj-c++,fortran --program-suffix=-12 --with-gmp=/usr/local/opt/gmp --with-mpfr=/usr/local/opt/mpfr --with-mpc=/usr/local/opt/libmpc --with-isl=/usr/local/opt/isl --with-zstd=/usr/local/opt/zstd --with-pkgversion='Homebrew GCC 12.2.0' --with-bugurl=https://github.com/Homebrew/homebrew-core/issues --with-system-zlib --build=x86_64-apple-darwin21 --with-sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk
+Thread model: posix
+Supported LTO compression algorithms: zlib zstd
+gcc version 12.2.0 (Homebrew GCC 12.2.0) 
+COLLECT_GCC_OPTIONS='-v' '-mmacosx-version-min=12.0.0' '-asm_macosx_version_min=12.0' '-nodefaultexport' '-shared-libgcc' '-mtune=core2' '-dumpdir' 'a-'
+ /usr/local/Cellar/gcc/12.2.0/bin/../libexec/gcc/x86_64-apple-darwin21/12/f951 CMakeFortranCompilerId.F -ffixed-form -cpp=/var/folders/b0/z855xnr52wqddwjq7_8406yr0000gn/T//ccfB4DIG.f90 -quiet -v -iprefix /usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/ -D__DYNAMIC__ CMakeFortranCompilerId.F -fPIC -quiet -dumpdir a- -dumpbase CMakeFortranCompilerId.F -dumpbase-ext .F -mmacosx-version-min=12.0.0 -mtune=core2 -version -fintrinsic-modules-path /usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/finclude -o /var/folders/b0/z855xnr52wqddwjq7_8406yr0000gn/T//ccdyHHHI.s
+GNU Fortran (Homebrew GCC 12.2.0) version 12.2.0 (x86_64-apple-darwin21)
+	compiled by GNU C version 12.2.0, GMP version 6.2.1, MPFR version 4.1.0, MPC version 1.2.1, isl version isl-0.25-GMP
+
+warning: MPFR header version 4.1.0 differs from library version 4.1.0-p13.
+GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+ignoring nonexistent directory "/usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/../../../../../../x86_64-apple-darwin21/include"
+ignoring duplicate directory "/usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/x86_64-apple-darwin21/12/include"
+ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/usr/local/include"
+ignoring duplicate directory "/usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/x86_64-apple-darwin21/12/include-fixed"
+ignoring nonexistent directory "/usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/x86_64-apple-darwin21/12/../../../../../../x86_64-apple-darwin21/include"
+ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/usr/include"
+#include "..." search starts here:
+#include <...> search starts here:
+ /usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/finclude
+ /usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/include
+ /usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/include-fixed
+End of search list.
+GNU Fortran2008 (Homebrew GCC 12.2.0) version 12.2.0 (x86_64-apple-darwin21)
+	compiled by GNU C version 12.2.0, GMP version 6.2.1, MPFR version 4.1.0, MPC version 1.2.1, isl version isl-0.25-GMP
+
+warning: MPFR header version 4.1.0 differs from library version 4.1.0-p13.
+GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+COLLECT_GCC_OPTIONS='-v' '-mmacosx-version-min=12.0.0'  '-nodefaultexport' '-shared-libgcc' '-mtune=core2' '-dumpdir' 'a-'
+ as -arch x86_64 -v -mmacosx-version-min=12.0 -mllvm -x86-pad-for-align=false -force_cpusubtype_ALL -o /var/folders/b0/z855xnr52wqddwjq7_8406yr0000gn/T//ccCkZ6ey.o /var/folders/b0/z855xnr52wqddwjq7_8406yr0000gn/T//ccdyHHHI.s
+Apple clang version 11.0.0 (clang-1100.0.33.12)
+Target: x86_64-apple-darwin21.1.0
+Thread model: posix
+InstalledDir: /Library/Developer/CommandLineTools/usr/bin
+clang: error: invalid version number in '-mmacosx-version-min=12.0'
+
+
+Compiling the Fortran compiler identification source file "CMakeFortranCompilerId.F" failed.
+Compiler: /usr/local/bin/gfortran 
+Build flags: 
+Id flags:  
+
+The output was:
+1
+clang: error: invalid version number in '-mmacosx-version-min=12.0'
+
+
+Compiling the Fortran compiler identification source file "CMakeFortranCompilerId.F" failed.
+Compiler: /usr/local/bin/gfortran 
+Build flags: 
+Id flags: -c 
+
+The output was:
+1
+clang: error: invalid version number in '-mmacosx-version-min=12.0'
+
+
+Compiling the Fortran compiler identification source file "CMakeFortranCompilerId.F" failed.
+Compiler: /usr/local/bin/gfortran 
+Build flags: 
+Id flags: -fpp 
+
+The output was:
+1
+gfortran: error: unrecognized command-line option '-fpp'; did you mean '-cpp'?
+
+
+Checking whether the Fortran compiler is Compaq using "-what" did not match "Compaq Visual Fortran":
+gfortran: error: unrecognized command-line option '-what'
+gfortran: fatal error: no input files
+compilation terminated.
+Checking whether the Fortran compiler is NAG using "-V" did not match "NAG Fortran Compiler":
+gfortran: error: unrecognized command-line option '-V'
+gfortran: fatal error: no input files
+compilation terminated.
+Checking whether the Fortran compiler is Compaq using "-what" did not match "Compaq Visual Fortran":
+gfortran: error: unrecognized command-line option '-what'
+gfortran: fatal error: no input files
+compilation terminated.
+Checking whether the Fortran compiler is NAG using "-V" did not match "NAG Fortran Compiler":
+gfortran: error: unrecognized command-line option '-V'
+gfortran: fatal error: no input files
+compilation terminated.
+Detecting Fortran compiler ABI info failed to compile with the following output:
+Change Dir: /Users/Roll/Desktop/eigen-3.4.0/build/test/CMakeFiles/CheckFortran/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_9fd1d/fast && /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_9fd1d.dir/build.make CMakeFiles/cmTC_9fd1d.dir/build
+Building Fortran object CMakeFiles/cmTC_9fd1d.dir/CMakeFortranCompilerABI.F90.o
+/usr/local/bin/gfortran   -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk   -v -Wl,-v -c /opt/local/share/cmake-3.22/Modules/CMakeFortranCompilerABI.F90 -o CMakeFiles/cmTC_9fd1d.dir/CMakeFortranCompilerABI.F90.o
+Using built-in specs.
+COLLECT_GCC=/usr/local/bin/gfortran
+Target: x86_64-apple-darwin21
+Configured with: ../configure --prefix=/usr/local/opt/gcc --libdir=/usr/local/opt/gcc/lib/gcc/current --disable-nls --enable-checking=release --with-gcc-major-version-only --enable-languages=c,c++,objc,obj-c++,fortran --program-suffix=-12 --with-gmp=/usr/local/opt/gmp --with-mpfr=/usr/local/opt/mpfr --with-mpc=/usr/local/opt/libmpc --with-isl=/usr/local/opt/isl --with-zstd=/usr/local/opt/zstd --with-pkgversion='Homebrew GCC 12.2.0' --with-bugurl=https://github.com/Homebrew/homebrew-core/issues --with-system-zlib --build=x86_64-apple-darwin21 --with-sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk
+Thread model: posix
+Supported LTO compression algorithms: zlib zstd
+gcc version 12.2.0 (Homebrew GCC 12.2.0) 
+COLLECT_GCC_OPTIONS='-isysroot' '/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk' '-v' '-c' '-o' 'CMakeFiles/cmTC_9fd1d.dir/CMakeFortranCompilerABI.F90.o' '-mmacosx-version-min=12.0.0' '-asm_macosx_version_min=12.0' '-nodefaultexport' '-mtune=core2' '-dumpdir' 'CMakeFiles/cmTC_9fd1d.dir/'
+ /usr/local/Cellar/gcc/12.2.0/bin/../libexec/gcc/x86_64-apple-darwin21/12/f951 /opt/local/share/cmake-3.22/Modules/CMakeFortranCompilerABI.F90 -cpp=/var/folders/b0/z855xnr52wqddwjq7_8406yr0000gn/T//cc258qVb.f90 -quiet -v -iprefix /usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/ -D__DYNAMIC__ -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk /opt/local/share/cmake-3.22/Modules/CMakeFortranCompilerABI.F90 -fPIC -quiet -dumpdir CMakeFiles/cmTC_9fd1d.dir/ -dumpbase CMakeFortranCompilerABI.F90.F90 -dumpbase-ext .F90 -mmacosx-version-min=12.0.0 -mtune=core2 -version -fintrinsic-modules-path /usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/finclude -o /var/folders/b0/z855xnr52wqddwjq7_8406yr0000gn/T//cc3m5Uoa.s
+GNU Fortran (Homebrew GCC 12.2.0) version 12.2.0 (x86_64-apple-darwin21)
+	compiled by GNU C version 12.2.0, GMP version 6.2.1, MPFR version 4.1.0, MPC version 1.2.1, isl version isl-0.25-GMP
+
+warning: MPFR header version 4.1.0 differs from library version 4.1.0-p13.
+GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+ignoring nonexistent directory "/usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/../../../../../../x86_64-apple-darwin21/include"
+ignoring duplicate directory "/usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/x86_64-apple-darwin21/12/include"
+ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/local/include"
+ignoring duplicate directory "/usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/x86_64-apple-darwin21/12/include-fixed"
+ignoring nonexistent directory "/usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/../../../../lib/gcc/current/gcc/x86_64-apple-darwin21/12/../../../../../../x86_64-apple-darwin21/include"
+#include "..." search starts here:
+#include <...> search starts here:
+ /usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/finclude
+ /usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/include
+ /usr/local/Cellar/gcc/12.2.0/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/12/include-fixed
+ /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/include
+End of search list.
+GNU Fortran2008 (Homebrew GCC 12.2.0) version 12.2.0 (x86_64-apple-darwin21)
+	compiled by GNU C version 12.2.0, GMP version 6.2.1, MPFR version 4.1.0, MPC version 1.2.1, isl version isl-0.25-GMP
+
+warning: MPFR header version 4.1.0 differs from library version 4.1.0-p13.
+GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+COLLECT_GCC_OPTIONS='-isysroot' '/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk' '-v' '-c' '-o' 'CMakeFiles/cmTC_9fd1d.dir/CMakeFortranCompilerABI.F90.o' '-mmacosx-version-min=12.0.0'  '-nodefaultexport' '-mtune=core2' '-dumpdir' 'CMakeFiles/cmTC_9fd1d.dir/'
+ as -arch x86_64 -v -mmacosx-version-min=12.0 -mllvm -x86-pad-for-align=false -force_cpusubtype_ALL -o CMakeFiles/cmTC_9fd1d.dir/CMakeFortranCompilerABI.F90.o /var/folders/b0/z855xnr52wqddwjq7_8406yr0000gn/T//cc3m5Uoa.s
+Apple clang version 11.0.0 (clang-1100.0.33.12)
+Target: x86_64-apple-darwin21.1.0
+Thread model: posix
+InstalledDir: /Library/Developer/CommandLineTools/usr/bin
+clang: error: invalid version number in '-mmacosx-version-min=12.0'
+make[1]: *** [CMakeFiles/cmTC_9fd1d.dir/CMakeFortranCompilerABI.F90.o] Error 1
+make: *** [cmTC_9fd1d/fast] Error 2
+
+
+
+
+Determining if the Fortran compiler works failed with the following output:
+Change Dir: /Users/Roll/Desktop/eigen-3.4.0/build/test/CMakeFiles/CheckFortran/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_e0a4a/fast && /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_e0a4a.dir/build.make CMakeFiles/cmTC_e0a4a.dir/build
+Building Fortran object CMakeFiles/cmTC_e0a4a.dir/testFortranCompiler.f.o
+/usr/local/bin/gfortran   -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk -c /Users/Roll/Desktop/eigen-3.4.0/build/test/CMakeFiles/CheckFortran/CMakeFiles/CMakeTmp/testFortranCompiler.f -o CMakeFiles/cmTC_e0a4a.dir/testFortranCompiler.f.o
+clang: error: invalid version number in '-mmacosx-version-min=12.0'
+make[1]: *** [CMakeFiles/cmTC_e0a4a.dir/testFortranCompiler.f.o] Error 1
+make: *** [cmTC_e0a4a/fast] Error 2
+
+
+

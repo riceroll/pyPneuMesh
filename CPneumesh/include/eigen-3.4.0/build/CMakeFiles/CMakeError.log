@@ -1,0 +1,199 @@
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /Library/Developer/CommandLineTools/usr/bin/cc 
+Build flags: 
+Id flags:  
+
+The output was:
+1
+ld: library not found for -lSystem
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+Compiler: /Library/Developer/CommandLineTools/usr/bin/c++ 
+Build flags: 
+Id flags:  
+
+The output was:
+1
+ld: library not found for -lc++
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+
+
+Performing C++ SOURCE FILE Test COMPILER_SUPPORT_Wlogicalop failed with the following output:
+Change Dir: /Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_c1822/fast && /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_c1822.dir/build.make CMakeFiles/cmTC_c1822.dir/build
+Building CXX object CMakeFiles/cmTC_c1822.dir/src.cxx.o
+/Library/Developer/CommandLineTools/usr/bin/c++ -DCOMPILER_SUPPORT_Wlogicalop  -std=c++03 -pedantic -Wall -Wextra -Wundef -Wcast-align -Wchar-subscripts -Wnon-virtual-dtor -Wunused-local-typedefs -Wpointer-arith -Wwrite-strings -Wformat-security -Wshorten-64-to-32 -Werror -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk   -Wlogical-op -MD -MT CMakeFiles/cmTC_c1822.dir/src.cxx.o -MF CMakeFiles/cmTC_c1822.dir/src.cxx.o.d -o CMakeFiles/cmTC_c1822.dir/src.cxx.o -c /Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp/src.cxx
+error: unknown warning option '-Wlogical-op'; did you mean '-Wlong-long'? [-Werror,-Wunknown-warning-option]
+make[1]: *** [CMakeFiles/cmTC_c1822.dir/src.cxx.o] Error 1
+make: *** [cmTC_c1822/fast] Error 2
+
+
+Source file was:
+int main() { return 0; }
+Performing C++ SOURCE FILE Test COMPILER_SUPPORT_Wnopsabi failed with the following output:
+Change Dir: /Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_34054/fast && /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_34054.dir/build.make CMakeFiles/cmTC_34054.dir/build
+Building CXX object CMakeFiles/cmTC_34054.dir/src.cxx.o
+/Library/Developer/CommandLineTools/usr/bin/c++ -DCOMPILER_SUPPORT_Wnopsabi  -std=c++03 -pedantic -Wall -Wextra -Wundef -Wcast-align -Wchar-subscripts -Wnon-virtual-dtor -Wunused-local-typedefs -Wpointer-arith -Wwrite-strings -Wformat-security -Wshorten-64-to-32 -Wenum-conversion -Wc++11-extensions -Wdouble-promotion -Wshadow -Werror -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk   -Wno-psabi -MD -MT CMakeFiles/cmTC_34054.dir/src.cxx.o -MF CMakeFiles/cmTC_34054.dir/src.cxx.o.d -o CMakeFiles/cmTC_34054.dir/src.cxx.o -c /Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp/src.cxx
+error: unknown warning option '-Wno-psabi' [-Werror,-Wunknown-warning-option]
+make[1]: *** [CMakeFiles/cmTC_34054.dir/src.cxx.o] Error 1
+make: *** [cmTC_34054/fast] Error 2
+
+
+Source file was:
+int main() { return 0; }
+Performing C++ SOURCE FILE Test COMPILER_SUPPORT_wd981 failed with the following output:
+Change Dir: /Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_0da0d/fast && /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_0da0d.dir/build.make CMakeFiles/cmTC_0da0d.dir/build
+Building CXX object CMakeFiles/cmTC_0da0d.dir/src.cxx.o
+/Library/Developer/CommandLineTools/usr/bin/c++ -DCOMPILER_SUPPORT_wd981  -std=c++03 -pedantic -Wall -Wextra -Wundef -Wcast-align -Wchar-subscripts -Wnon-virtual-dtor -Wunused-local-typedefs -Wpointer-arith -Wwrite-strings -Wformat-security -Wshorten-64-to-32 -Wenum-conversion -Wc++11-extensions -Wdouble-promotion -Wshadow -Wno-variadic-macros -Wno-long-long -fno-check-new -fno-common -fstrict-aliasing -Werror -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk   -wd981 -MD -MT CMakeFiles/cmTC_0da0d.dir/src.cxx.o -MF CMakeFiles/cmTC_0da0d.dir/src.cxx.o.d -o CMakeFiles/cmTC_0da0d.dir/src.cxx.o -c /Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp/src.cxx
+clang: error: unknown argument: '-wd981'
+make[1]: *** [CMakeFiles/cmTC_0da0d.dir/src.cxx.o] Error 1
+make: *** [cmTC_0da0d/fast] Error 2
+
+
+Source file was:
+int main() { return 0; }
+Performing C++ SOURCE FILE Test COMPILER_SUPPORT_wd2304 failed with the following output:
+Change Dir: /Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_f2dcc/fast && /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_f2dcc.dir/build.make CMakeFiles/cmTC_f2dcc.dir/build
+Building CXX object CMakeFiles/cmTC_f2dcc.dir/src.cxx.o
+/Library/Developer/CommandLineTools/usr/bin/c++ -DCOMPILER_SUPPORT_wd2304  -std=c++03 -pedantic -Wall -Wextra -Wundef -Wcast-align -Wchar-subscripts -Wnon-virtual-dtor -Wunused-local-typedefs -Wpointer-arith -Wwrite-strings -Wformat-security -Wshorten-64-to-32 -Wenum-conversion -Wc++11-extensions -Wdouble-promotion -Wshadow -Wno-variadic-macros -Wno-long-long -fno-check-new -fno-common -fstrict-aliasing -Werror -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk   -wd2304 -MD -MT CMakeFiles/cmTC_f2dcc.dir/src.cxx.o -MF CMakeFiles/cmTC_f2dcc.dir/src.cxx.o.d -o CMakeFiles/cmTC_f2dcc.dir/src.cxx.o -c /Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp/src.cxx
+clang: error: unknown argument: '-wd2304'
+make[1]: *** [CMakeFiles/cmTC_f2dcc.dir/src.cxx.o] Error 1
+make: *** [cmTC_f2dcc/fast] Error 2
+
+
+Source file was:
+int main() { return 0; }
+Performing C++ SOURCE FILE Test COMPILER_SUPPORT_STRICTANSI failed with the following output:
+Change Dir: /Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_1481c/fast && /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_1481c.dir/build.make CMakeFiles/cmTC_1481c.dir/build
+Building CXX object CMakeFiles/cmTC_1481c.dir/src.cxx.o
+/Library/Developer/CommandLineTools/usr/bin/c++ -DCOMPILER_SUPPORT_STRICTANSI  -std=c++03 -pedantic -Wall -Wextra -Wundef -Wcast-align -Wchar-subscripts -Wnon-virtual-dtor -Wunused-local-typedefs -Wpointer-arith -Wwrite-strings -Wformat-security -Wshorten-64-to-32 -Wenum-conversion -Wc++11-extensions -Wdouble-promotion -Wshadow -Wno-variadic-macros -Wno-long-long -fno-check-new -fno-common -fstrict-aliasing -Werror -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk   -strict-ansi -MD -MT CMakeFiles/cmTC_1481c.dir/src.cxx.o -MF CMakeFiles/cmTC_1481c.dir/src.cxx.o.d -o CMakeFiles/cmTC_1481c.dir/src.cxx.o -c /Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp/src.cxx
+clang: error: unknown argument: '-strict-ansi'
+make[1]: *** [CMakeFiles/cmTC_1481c.dir/src.cxx.o] Error 1
+make: *** [cmTC_1481c/fast] Error 2
+
+
+Source file was:
+int main() { return 0; }
+Performing C++ SOURCE FILE Test COMPILER_SUPPORT_OPENMP failed with the following output:
+Change Dir: /Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_db192/fast && /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_db192.dir/build.make CMakeFiles/cmTC_db192.dir/build
+Building CXX object CMakeFiles/cmTC_db192.dir/src.cxx.o
+/Library/Developer/CommandLineTools/usr/bin/c++ -DCOMPILER_SUPPORT_OPENMP  -std=c++03 -pedantic -Wall -Wextra -Wundef -Wcast-align -Wchar-subscripts -Wnon-virtual-dtor -Wunused-local-typedefs -Wpointer-arith -Wwrite-strings -Wformat-security -Wshorten-64-to-32 -Wenum-conversion -Wc++11-extensions -Wdouble-promotion -Wshadow -Wno-variadic-macros -Wno-long-long -fno-check-new -fno-common -fstrict-aliasing -Qunused-arguments -ansi  -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk   -fopenmp -MD -MT CMakeFiles/cmTC_db192.dir/src.cxx.o -MF CMakeFiles/cmTC_db192.dir/src.cxx.o.d -o CMakeFiles/cmTC_db192.dir/src.cxx.o -c /Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp/src.cxx
+clang: error: unsupported option '-fopenmp'
+make[1]: *** [CMakeFiles/cmTC_db192.dir/src.cxx.o] Error 1
+make: *** [cmTC_db192/fast] Error 2
+
+
+Source file was:
+int main() { return 0; }
+Looking for a Fortran compiler failed with the following output:
+-- The Fortran compiler identification is unknown
+-- Checking whether Fortran compiler has -isysroot
+-- Checking whether Fortran compiler has -isysroot - yes
+-- Checking whether Fortran compiler supports OSX deployment target flag
+-- Checking whether Fortran compiler supports OSX deployment target flag - yes
+-- Detecting Fortran compiler ABI info
+-- Detecting Fortran compiler ABI info - failed
+-- Check for working Fortran compiler: /usr/local/bin/gfortran
+-- Check for working Fortran compiler: /usr/local/bin/gfortran - broken
+CMake Error at /opt/local/share/cmake-3.22/Modules/CMakeTestFortranCompiler.cmake:61 (message):
+  The Fortran compiler
+
+    "/usr/local/bin/gfortran"
+
+  is not able to compile a simple test program.
+
+  It fails with the following output:
+
+    Change Dir: /Users/Roll/Desktop/eigen-3.4.0/build/test/CMakeFiles/CheckFortran/CMakeFiles/CMakeTmp
+    
+    Run Build Command(s):/usr/bin/make -f Makefile cmTC_e0a4a/fast && /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_e0a4a.dir/build.make CMakeFiles/cmTC_e0a4a.dir/build
+    Building Fortran object CMakeFiles/cmTC_e0a4a.dir/testFortranCompiler.f.o
+    /usr/local/bin/gfortran   -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk -c /Users/Roll/Desktop/eigen-3.4.0/build/test/CMakeFiles/CheckFortran/CMakeFiles/CMakeTmp/testFortranCompiler.f -o CMakeFiles/cmTC_e0a4a.dir/testFortranCompiler.f.o
+    clang: error: invalid version number in '-mmacosx-version-min=12.0'
+    make[1]: *** [CMakeFiles/cmTC_e0a4a.dir/testFortranCompiler.f.o] Error 1
+    make: *** [cmTC_e0a4a/fast] Error 2
+    
+    
+
+  
+
+  CMake will not be able to correctly generate this project.
+Call Stack (most recent call first):
+  CMakeLists.txt:2 (project)
+
+
+-- Configuring incomplete, errors occurred!
+See also "/Users/Roll/Desktop/eigen-3.4.0/build/test/CMakeFiles/CheckFortran/CMakeFiles/CMakeOutput.log".
+See also "/Users/Roll/Desktop/eigen-3.4.0/build/test/CMakeFiles/CheckFortran/CMakeFiles/CMakeError.log".
+
+Performing C SOURCE FILE Test SCOTCH_Num_4 failed with the following compile output:
+Change Dir: /Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_9d212/fast && /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_9d212.dir/build.make CMakeFiles/cmTC_9d212.dir/build
+Building C object CMakeFiles/cmTC_9d212.dir/src.c.o
+/Library/Developer/CommandLineTools/usr/bin/cc -DSCOTCH_Num_4  -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk -MD -MT CMakeFiles/cmTC_9d212.dir/src.c.o -MF CMakeFiles/cmTC_9d212.dir/src.c.o.d -o CMakeFiles/cmTC_9d212.dir/src.c.o -c /Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp/src.c
+/Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp/src.c:4:10: fatal error: 'scotch.h' file not found
+#include <scotch.h>
+         ^~~~~~~~~~
+1 error generated.
+make[1]: *** [CMakeFiles/cmTC_9d212.dir/src.c.o] Error 1
+make: *** [cmTC_9d212/fast] Error 2
+
+
+...and run output:
+
+Return value: 1
+Source file was:
+
+#include <stdio.h>
+#include <stdint.h>
+#include <scotch.h>
+int main(int argc, char **argv) {
+  if (sizeof(SCOTCH_Num) == 4)
+    return 0;
+  else
+    return 1;
+}
+
+Performing C SOURCE FILE Test SCOTCH_Num_8 failed with the following compile output:
+Change Dir: /Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_09c94/fast && /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_09c94.dir/build.make CMakeFiles/cmTC_09c94.dir/build
+Building C object CMakeFiles/cmTC_09c94.dir/src.c.o
+/Library/Developer/CommandLineTools/usr/bin/cc -DSCOTCH_Num_8  -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk -MD -MT CMakeFiles/cmTC_09c94.dir/src.c.o -MF CMakeFiles/cmTC_09c94.dir/src.c.o.d -o CMakeFiles/cmTC_09c94.dir/src.c.o -c /Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp/src.c
+/Users/Roll/desktop/eigen-3.4.0/build/CMakeFiles/CMakeTmp/src.c:4:10: fatal error: 'scotch.h' file not found
+#include <scotch.h>
+         ^~~~~~~~~~
+1 error generated.
+make[1]: *** [CMakeFiles/cmTC_09c94.dir/src.c.o] Error 1
+make: *** [cmTC_09c94/fast] Error 2
+
+
+...and run output:
+
+Return value: 1
+Source file was:
+
+#include <stdio.h>
+#include <stdint.h>
+#include <scotch.h>
+int main(int argc, char **argv) {
+  if (sizeof(SCOTCH_Num) == 8)
+    return 0;
+  else
+    return 1;
+}
+

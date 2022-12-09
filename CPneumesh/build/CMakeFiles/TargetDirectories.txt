@@ -1,0 +1,5 @@
+/Users/Roll/desktop/pyPneuMesh-dev/pyPneuMesh/CPneumesh/build/CMakeFiles/model.dir
+/Users/Roll/desktop/pyPneuMesh-dev/pyPneuMesh/CPneumesh/build/CMakeFiles/edit_cache.dir
+/Users/Roll/desktop/pyPneuMesh-dev/pyPneuMesh/CPneumesh/build/CMakeFiles/rebuild_cache.dir
+/Users/Roll/desktop/pyPneuMesh-dev/pyPneuMesh/CPneumesh/build/pybind11/CMakeFiles/edit_cache.dir
+/Users/Roll/desktop/pyPneuMesh-dev/pyPneuMesh/CPneumesh/build/pybind11/CMakeFiles/rebuild_cache.dir
