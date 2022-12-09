@@ -11,10 +11,10 @@ from src.GA import GA
 
 mode = "start"
 mode = "continue"
-# mode = "load"
+mode = "load"
 # mode = "configMOO"
 
-GACheckpointDir = "/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/trainTable/output/4_steps_for_2_actions2022-12-08_18-29-14/ElitePool_287.gacheckpoint.npy"
+GACheckpointDir = "/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/trainTable/output/2022-12-09_07-07-13/ElitePool_55.gacheckpoint.npy"
 
 if mode == "start":
     GASetting = {
@@ -38,6 +38,10 @@ elif mode == "continue":
     
 elif mode == "load":
     ga = GA(GACheckpointDir=GACheckpointDir)
+    print('genePool')
+    ga.logPool(ga.genePool, printing=True, showAllGenes=True, showRValue=True)
+    print('elitePool')
+    ga.logPool(ga.elitePool, printing=True, showAllGenes=True, showRValue=True)
     
 elif mode == "configMOO":
     mooDict = readMooDict('./scripts/trainTable/data')

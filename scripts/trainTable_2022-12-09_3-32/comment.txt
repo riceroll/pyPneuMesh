@@ -1,0 +1,4 @@
+"2022-12-09_04-20-35/ElitePool_13.gacheckpoint.npy"
+Got a pretty good result.
+Elite 0 has a pretty natural Gorilla walking style and a cute tilting motion.
+It is saved as the data of 'scripts/trainTable_2022-12-09_4-23' and 'scripts/trainTable_2022-12-09_4-53'.

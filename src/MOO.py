@@ -53,13 +53,21 @@ class MOO(object):
         self.multiMotion.randomize()
         self.graph.randomize()
         
-    def mutate(self, contractionMutationChance, actionMutationChance):
-        self.graph.mutate(contractionMutationChance)
+    def mutate(self, graphMutationChance, contractionMutationChance, actionMutationChance):
+        self.graph.mutate(
+            graphMutationChance=graphMutationChance,
+            contractionMutationChance=contractionMutationChance
+        )
         self.multiMotion.mutate(actionMutationChance)
+    
+    def cross(self, moo, contractionCrossChance, actionCrossChance):
+        self.graph.cross(moo.graph, contractionCrossChance)
+        self.multiMotion.cross(moo.multiMotion, actionCrossChance)
     
     def evaluate(self):
         return self.multiObjective.evaluate()
     
     def animate(self, *args, **kwargs):
         self.multiMotion.animate(*args, **kwargs)
-        
+
+

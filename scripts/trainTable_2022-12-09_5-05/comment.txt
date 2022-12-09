@@ -1,0 +1,6 @@
+/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/trainTable_2022-12-09_5-05/output/2022-12-09_05-32-52/ElitePool_23.gacheckpoint.npy
+
+Elite 17 got a very interesting tilting motion by kneeing onto the floor. The walking motion is having the head up.
+I feel it important to include the crossover now.
+
+I will keep the pool to next training and add the crossover function.

@@ -1,0 +1,13 @@
+Only change action a little bit.
+'contractionMutationChance': 0.00,
+'actionMutationChance': 0.01,
+'graphMutationChance': 0.0,
+
+Elite 1 of 2022-12-09_04-53-16/ElitePool_15.gacheckpoint.npy is very good.
+In addition to the smooth walking, it also has very gentle left turn.
+The lowering body still causes the top to tilt.
+The tilting causes table to lower.
+
+After referring to Elite 0, I changed one digit in the 4th action of Elite 1 and it's tilting looks good now.
+
+I save the modified Elite 1 to "trainTable_2022-12-09_5-05". Let's see.

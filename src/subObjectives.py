@@ -44,6 +44,14 @@ def objTableTilt(vs: np.ndarray):
 
     return np.dot(unitVec, unitVec45)
 
+def objTableNoTilt(vs: np.ndarray):
+    # minimize the z axis difference of the two pairs of the top four nodes
+    return - abs(vs[-1, 45, 2]-vs[-1, 46, 2]) - abs(vs[-1, 47, 2] - vs[-1, 48, 2])
+
+def objTableAlwaysNoTilt(vs: np.ndarray):
+    # minimize the z axis difference of the two pairs of the top four nodes
+    return - ((vs[:, 45, 2]-vs[:, 46, 2])**2).sum() - ((vs[:, 47, 2] - vs[:, 48, 2])**2).sum()
+
 def objTurnRight(vs: np.ndarray):
     vecFront = getFrontDirection(vs[0], vs[-1])  # unit Vector
     assert (abs((vecFront ** 2).sum() - 1) < 1e-6)

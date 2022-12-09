@@ -1,0 +1,13 @@
+Implemented crossover
+
+        'contractionMutationChance': 0.01,
+        'actionMutationChance': 0.01,
+        'graphMutationChance': 0.1,
+        'contractionCrossChance': 0.02,
+        'actionCrossChance': 0.02,
+        'crossChance': 0.5,
+
+Add more objectives
+    moveForward      tableAlwaysNoTilt |      turnLeft     |     lowerBody          tableNoTilt    |     tableTilt
+
+I will run this on the server.

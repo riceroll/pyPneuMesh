@@ -28,6 +28,14 @@ class MultiMotion(object):
             maskMutation = np.random.rand(actionSeq.shape[0], actionSeq.shape[1]) < chance
             self.actionSeqs[i][maskMutation] = actionSeqRand[maskMutation]
     
+    def cross(self, multiMotion, chance):
+        for i, actionSeq in enumerate(self.actionSeqs):
+            maskMutation = np.random.rand(actionSeq.shape[0], actionSeq.shape[1]) < chance
+            tmp = self.actionSeqs[i][maskMutation].copy()
+            self.actionSeqs[i][maskMutation] = multiMotion.actionSeqs[i][maskMutation]
+            multiMotion.actionSeqs[i][maskMutation] = tmp
+        
+    
     def simulate(self, iAction, numLoop):
         actionSeq = self.actionSeqs[iAction]
         actionSeq = np.vstack([actionSeq] * numLoop)

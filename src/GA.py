@@ -35,6 +35,11 @@ class GA(object):
         self.nSurvivedMin = GASetting['nSurvivedMin']
         self.contractionMutationChance = GASetting['contractionMutationChance']
         self.actionMutationChance = GASetting['actionMutationChance']
+        self.graphMutationChance = GASetting['graphMutationChance']
+        self.contractionCrossChance = GASetting['contractionCrossChance']
+        self.actionCrossChance = GASetting['actionCrossChance']
+        self.crossChance = GASetting['crossChance']
+        self.randomInit = GASetting['randomInit']       # randomize the init truss or follow the init truss
         
         self.nWorkers = GASetting['nWorkers']
         self.folderPath = pathlib.Path(GASetting['folderDir'])
@@ -169,6 +174,8 @@ class GA(object):
             for line in lines:
                 logging.info(line)
 
+    # def plotPool(self, pool, idsObjective):
+    #     pass
 
     def saveCheckPoint(self):
         genePoolMOODict = [
@@ -240,6 +247,8 @@ class GA(object):
 
     @staticmethod
     def getRCD(ratings: np.ndarray) -> (np.ndarray, np.ndarray):
+        if len(ratings) == 0:
+            return np.array([]), np.array([])
         # get R
         ratings = ratings.reshape(len(ratings), -1)
         ratingsCol = ratings.reshape([ratings.shape[0], 1, ratings.shape[1]])
@@ -279,23 +288,51 @@ class GA(object):
         nGenesR0 = (Rs == 0).sum()
         self.genePool = self.genePool[:max(self.nSurvivedMin, nGenesR0)]
 
-    def refillGenePoolByMutationAndRegeneration(self):
+    def refillGenePoolByMutationCrossRegeneration(self):
         while len(self.genePool) < self.nGenesPerPool:
             nGenesSurviving = len(self.genePool)
             nGenesToClone = min(self.nGenesPerPool - nGenesSurviving, nGenesSurviving)
             nGenesToInitialize = self.nGenesPerPool - (nGenesToClone + nGenesSurviving)
             
-            # mutation
+            # mutation or cross
             for i in range(nGenesToClone):
-                mooExisting: MOO = self.genePool[i]['moo']
-                moo = MOO(mooDict=mooExisting.getMooDict(), randomize=False)
-                moo.mutate(actionMutationChance=self.actionMutationChance, contractionMutationChance=self.contractionMutationChance)
-                geneNew = {'moo': moo, 'score': None}
+                if np.random.random() < self.crossChance:
+                    iMoo0 = np.random.randint(nGenesToClone)
+                    iMoo1 = np.random.randint(nGenesToClone)
+                    mooDict0 = self.genePool[iMoo0]['moo'].getMooDict()
+                    mooDict1 = self.genePool[iMoo1]['moo'].getMooDict()
+                    moo0 = MOO(mooDict=mooDict0, randomize=False)
+                    moo1 = MOO(mooDict=mooDict1, randomize=False)
+                    moo0.cross(moo1,
+                               contractionCrossChance=self.contractionCrossChance,
+                               actionCrossChance=self.actionCrossChance
+                               )
+                    geneNew = {'moo': moo0, 'score': None}
+                else:
+                    iMoo = np.random.randint(nGenesToClone)
+                    mooExisting: MOO = self.genePool[iMoo]['moo']
+                    moo = MOO(mooDict=mooExisting.getMooDict(), randomize=False)
+                    
+                    moo.mutate(
+                        graphMutationChance=self.graphMutationChance,
+                        actionMutationChance=self.actionMutationChance,
+                        contractionMutationChance=self.contractionMutationChance
+                    )
+                    geneNew = {'moo': moo, 'score': None}
                 self.genePool.append(geneNew)
+                
             
             # initialize
             for i in range(nGenesToInitialize):
-                moo = MOO(mooDict=self.mooDict, randomize=True)
+                if self.randomInit:
+                    moo = MOO(mooDict=self.mooDict, randomize=True)
+                else:
+                    moo = MOO(mooDict=self.mooDict, randomize=False)
+                    moo.mutate(
+                        graphMutationChance=self.graphMutationChance,
+                        actionMutationChance=self.actionMutationChance,
+                        contractionMutationChance=self.contractionMutationChance
+                    )
                 geneNew = {'moo': moo, 'score': None}
                 self.genePool.append(geneNew)
 
@@ -325,7 +362,7 @@ class GA(object):
             self.logObjectives()
             
             for iGen in range(self.nGensPerPool):
-                self.refillGenePoolByMutationAndRegeneration()
+                self.refillGenePoolByMutationCrossRegeneration()
                 self.evaluate()
                 self.select()
                 

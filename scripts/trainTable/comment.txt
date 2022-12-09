@@ -1,0 +1,5 @@
+Only change a little bit of contraction makes good progress in the log file.
+
+'contractionMutationChance': 0.01,
+'actionMutationChance': 0.00,
+'graphMutationChance': 0.0,

@@ -30,7 +30,10 @@ class Graph(object):
     def getGraphSetting(self):
         pass
     
-    def mutate(self, chance):
+    def mutate(self, graphMutationChance, contractionMutationChance):
+        pass
+
+    def cross(self, graph, chance):
         pass
     
     def randomize(self):

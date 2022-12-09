@@ -251,7 +251,13 @@ class HalfGraph(object):
         
         self.toModel()
         
-    def mutate(self, chance):
+    def mutate(self, graphMutationChance, contractionMutationChance):
+        if np.random.random() < graphMutationChance:
+            self.mutateGraph()
+        self.mutateContraction(contractionMutationChance)
+        self.toModel()
+        
+    def mutateGraph(self):
         # choose a random edge and change its channel
     
         # find all edges that can be changed
@@ -290,15 +296,22 @@ class HalfGraph(object):
                 else:
                     self.channels[ie] = ic_original
                     ics_available.remove(ic)
-    
+                    
+    def mutateContraction(self, chance):
         maskMutation = np.random.rand(len(self.contractions))
         contraction = np.random.randint(
             np.zeros(len(self.contractions)), self.model.NUM_CONTRACTION_LEVEL * np.ones(len(self.contractions)))
         for ie in range(len(self.contractions)):
             if maskMutation[ie] < chance:
                 self.contractions[ie] = contraction[ie]
-    
-        self.toModel()
+
+    def cross(self, graph, chance):
+        maskMutation = np.random.rand(len(self.contractions))
+        for ie in range(len(self.contractions)):
+            if maskMutation[ie] < chance:
+                tmp = self.contractions[ie]
+                self.contractions[ie] = graph.contractions[ie]
+                graph.contractions[ie] = tmp
         
     def iesIncidentMirror(self):
         # indices of edges on / connecting to the mirror plane
