@@ -2,10 +2,10 @@ import numpy as np
 import json
 import multiprocessing
 
-from src.utils import readNpy
-from src.Model import Model
-from src.Graph import Graph
-from src.GA import GA
+from pyPneuMesh.utils import readNpy
+from pyPneuMesh.Model import Model
+from pyPneuMesh.Graph import Graph
+from pyPneuMesh.GA import GA
 
 trussParam = readNpy('examples/testGraph/table/table.trussparam.npy')
 simParam = readNpy('examples/testGraph/table/table.simparam.npy')

@@ -1,9 +1,9 @@
-from src.utils import readNpy, readMooDict
-from src.Model import Model
-from src.MultiMotion import MultiMotion
-from src.MultiObjective import MultiObjective
-from src.Graph import Graph
-from src.MOO import MOO
+from pyPneuMesh.utils import readNpy, readMooDict
+from pyPneuMesh.Model import Model
+from pyPneuMesh.MultiMotion import MultiMotion
+from pyPneuMesh.MultiObjective import MultiObjective
+from pyPneuMesh.Graph import Graph
+from pyPneuMesh.MOO import MOO
 
 trussParam = readNpy('examples/testMOO/table/table.trussparam.npy')
 simParam = readNpy('examples/testMOO/table/table.simparam.npy')

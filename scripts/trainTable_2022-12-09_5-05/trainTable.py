@@ -2,11 +2,11 @@ import numpy as np
 import json
 import multiprocessing
 
-from src.utils import readNpy, readMooDict
-from src.Model import Model
-from src.Graph import Graph
-from src.MOO import MOO
-from src.GA import GA
+from pyPneuMesh.utils import readNpy, readMooDict
+from pyPneuMesh.Model import Model
+from pyPneuMesh.Graph import Graph
+from pyPneuMesh.MOO import MOO
+from pyPneuMesh.GA import GA
 
 
 mode = "start"

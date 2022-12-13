@@ -1,6 +1,6 @@
-from src.utils import readNpy
-from src.Model import Model
-from src.MultiMotion import MultiMotion
+from pyPneuMesh.utils import readNpy
+from pyPneuMesh.Model import Model
+from pyPneuMesh.MultiMotion import MultiMotion
 
 trussParam = readNpy('examples/testLobster/lobster/Lobster_0.trussparam.npy')
 simParam = readNpy('examples/testLobster/lobster/lobster.simparam.npy')

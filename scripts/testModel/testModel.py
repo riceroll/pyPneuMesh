@@ -1,7 +1,7 @@
 import numpy as np
 
-from src.utils import readNpy
-from src.Model import Model
+from pyPneuMesh.utils import readNpy
+from pyPneuMesh.Model import Model
 
 trussParam = readNpy('examples/testModel/table/table.trussparam.npy')
 simParam = readNpy('examples/testModel/table/table.simparam.npy')

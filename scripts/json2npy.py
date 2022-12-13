@@ -1,6 +1,6 @@
 # used to convert previous json file to npy file
 
-from src.utils import json2Data, data2Npy
+from pyPneuMesh.utils import json2Data, data2Npy
 
 folderDir = "/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/data/"
 

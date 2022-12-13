@@ -2,25 +2,25 @@ import numpy as np
 import json
 import multiprocessing
 
-from src.utils import readNpy, readMooDict
-from src.Model import Model
-from src.Graph import Graph
-from src.MOO import MOO
-from src.GA import GA
+from pyPneuMesh.utils import readNpy, readMooDict
+from pyPneuMesh.Model import Model
+from pyPneuMesh.Graph import Graph
+from pyPneuMesh.MOO import MOO
+from pyPneuMesh.GA import GA
 
 
 mode = "start"
-# mode = "continue"
-# mode = "load"
+mode = "continue"
+mode = "load"
 # mode = "configMOO"
 
-GACheckpointDir = "/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/trainTable_2022-12-09_5-51/output/2022-12-09_05-32-52/ElitePool_23.gacheckpoint.npy"
+GACheckpointDir = "/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/trainTable_2022-12-09_5-51/output/gcp_2022-12-09_12-19-30/ElitePool_390.gacheckpoint.npy"
 
 if mode == "start":
     GASetting = {
         'nGenesPerPool': 512,
-        'nSurvivedMin': 256,
-        'nGensPerPool': 16,
+        'nSurvivedMin': 128,     # actually is max
+        'nGensPerPool': 6,
         
         'nWorkers': multiprocessing.cpu_count(),
         
@@ -48,6 +48,16 @@ elif mode == "load":
     ga.logPool(ga.genePool, printing=True, showAllGenes=True, showRValue=True)
     print('elitePool')
     ga.logPool(ga.elitePool, printing=True, showAllGenes=True, showRValue=True)
+
+    genes = []
+    for gene in ga.elitePool:
+        if 2 < gene['score'][0] < 4 and gene['score'][1] > -200 and \
+                gene['score'][2] > 0.5 and \
+                gene['score'][3] > -1.0 and gene['score'][4] > -0.01:
+                # gene['score'][5] > 0.7:
+            genes.append(gene)
+    print(genes)
+    
     
 elif mode == "configMOO":
     mooDict = readMooDict('scripts/trainTable_2022-12-09_5-51/data/')

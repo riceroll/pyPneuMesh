@@ -1,9 +1,9 @@
 import numpy as np
 
-from src.utils import readNpy
-from src.Model import Model
-from src.MultiMotion import MultiMotion
-from src.MultiObjective import MultiObjective
+from pyPneuMesh.utils import readNpy
+from pyPneuMesh.Model import Model
+from pyPneuMesh.MultiMotion import MultiMotion
+from pyPneuMesh.MultiObjective import MultiObjective
 
 trussParam = readNpy('examples/testMultiObjective/table/table.trussparam.npy')
 simParam = readNpy('examples/testMultiObjective/table/table.simparam.npy')

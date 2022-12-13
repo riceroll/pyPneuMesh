@@ -11,3 +11,5 @@ Add more objectives
     moveForward      tableAlwaysNoTilt |      turnLeft     |     lowerBody          tableNoTilt    |     tableTilt
 
 I will run this on the server.
+
+One result is doing great. I extract it with trainTable.py and save it as data in /scripts/trainTable_2022-12-09_13-56
