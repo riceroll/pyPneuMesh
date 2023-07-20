@@ -39,7 +39,8 @@ class GA(object):
         self.contractionCrossChance = GASetting['contractionCrossChance']
         self.actionCrossChance = GASetting['actionCrossChance']
         self.crossChance = GASetting['crossChance']
-        self.randomInit = GASetting['randomInit']       # randomize the init truss or follow the init truss
+        self.graphRandomInit = GASetting['graphRandomInit']       # randomize the init truss or follow the init truss
+        self.contractionActionRandomInit = GASetting['contractionActionRandomInit']
         
         self.nWorkers = GASetting['nWorkers']
         self.folderPath = pathlib.Path(GASetting['folderDir'])
@@ -89,11 +90,11 @@ class GA(object):
         elitePoolMOODict = gaCheckpoint['elitePoolMOODict']
         
         genePool = [
-            {'moo': MOO(mooDict=geneMooDict['mooDict'], randomize=False),
+            {'moo': MOO(mooDict=geneMooDict['mooDict'], graphRandomize=False, contractionRandomize=False, actionRandomize=False),
              'score': geneMooDict['score']}
             for geneMooDict in genePoolMOODict]
         elitePool = [
-            {'moo': MOO(mooDict=eliteMOODict['mooDict'], randomize=False),
+            {'moo': MOO(mooDict=eliteMOODict['mooDict'], graphRandomize=False, contractionRandomize=False, actionRandomize=False),
              'score': eliteMOODict['score']}
             for eliteMOODict in elitePoolMOODict]
         
@@ -254,36 +255,45 @@ class GA(object):
         ratingsCol = ratings.reshape([ratings.shape[0], 1, ratings.shape[1]])
         ratingsRow = ratings.reshape([1, ratings.shape[0], ratings.shape[1]])
         dominatedMatrix = (ratingsCol <= ratingsRow).all(2) * (ratingsCol < ratingsRow).any(2)
-    
+        
         Rs = np.ones(len(ratings), dtype=int) * -1
         R = 0
         while -1 in Rs:
             nonDominated = (~dominatedMatrix[:, np.arange(len(Rs))[Rs == -1]]).all(1) * (Rs == -1)
             Rs[nonDominated] = R
             R += 1
-        
+            
         # get CD
-        CDMatrix = np.zeros_like(ratings, dtype=np.float)
-        sortedIds = np.argsort(ratings, axis=0)
-        CDMatrix[sortedIds[0], np.arange(len(ratings[0]))] = np.inf
-        CDMatrix[sortedIds[-1], np.arange(len(ratings[0]))] = np.inf
-        ids0 = sortedIds[:-1, :]
-        ids1 = sortedIds[1:, :]
-        distances = ratings[ids1, np.arange(len(ratings[0]))] - ratings[ids0, np.arange(len(ratings[0]))]
-        if ((ratings.max(0) - ratings.min(0)) > 0).all():
-            CDMatrix[sortedIds[1:-1, :], np.arange(len(ratings[0]))] = \
-                (distances[1:] + distances[:-1]) / (ratings.max(0) - ratings.min(0))
-        else:
-            CDMatrix[sortedIds[1:-1, :], np.arange(len(ratings[0]))] = np.inf
-        CDs = CDMatrix.mean(1)
-
+        CDs = np.zeros(len(ratings))
+        R = 0
+        while R in Rs:
+            ratingsSurface = ratings[Rs == R]
+            CDMatrix = np.zeros_like(ratingsSurface, dtype=np.float)
+            sortedIds = np.argsort(ratingsSurface, axis=0)
+            CDMatrix[sortedIds[0], np.arange(len(ratingsSurface[0]))] = np.inf
+            CDMatrix[sortedIds[-1], np.arange(len(ratingsSurface[0]))] = np.inf
+            ids0 = sortedIds[:-1, :]
+            ids1 = sortedIds[1:, :]
+            distances = ratingsSurface[ids1, np.arange(len(ratingsSurface[0]))] - ratingsSurface[ids0, np.arange(len(ratingsSurface[0]))]
+            
+            if ((ratingsSurface.max(0) - ratingsSurface.min(0)) > 0).all():
+                CDMatrix[sortedIds[1:-1, :], np.arange(len(ratingsSurface[0]))] = \
+                    (distances[1:] + distances[:-1]) / (ratingsSurface.max(0) - ratingsSurface.min(0))
+            else:
+                CDMatrix[sortedIds[1:-1, :], np.arange(len(ratingsSurface[0]))] = np.inf
+            CDsSurface = CDMatrix.mean(1)
+            CDs[Rs == R] = CDsSurface
+            R += 1
+        
+        
         return Rs, CDs
 
     def select(self):
         scores = [gene['score'] for gene in self.genePool]
         Rs, CDs = self.getRCD(np.array(scores))
-
+        
         indices_sorted = np.lexsort((-CDs, Rs))
+        # return Rs, CDs, indices_sorted
         self.genePool = [self.genePool[i] for i in indices_sorted]
         # nGenesR0 = (Rs == 0).sum()
         self.genePool = self.genePool[:self.nSurvivedMin]
@@ -301,8 +311,8 @@ class GA(object):
                     iMoo1 = np.random.randint(nGenesToClone)
                     mooDict0 = self.genePool[iMoo0]['moo'].getMooDict()
                     mooDict1 = self.genePool[iMoo1]['moo'].getMooDict()
-                    moo0 = MOO(mooDict=mooDict0, randomize=False)
-                    moo1 = MOO(mooDict=mooDict1, randomize=False)
+                    moo0 = MOO(mooDict=mooDict0, graphRandomize=False, contractionRandomize=False, actionRandomize=False)
+                    moo1 = MOO(mooDict=mooDict1, graphRandomize=False, contractionRandomize=False, actionRandomize=False)
                     moo0.cross(moo1,
                                contractionCrossChance=self.contractionCrossChance,
                                actionCrossChance=self.actionCrossChance
@@ -311,7 +321,7 @@ class GA(object):
                 else:
                     iMoo = np.random.randint(nGenesToClone)
                     mooExisting: MOO = self.genePool[iMoo]['moo']
-                    moo = MOO(mooDict=mooExisting.getMooDict(), randomize=False)
+                    moo = MOO(mooDict=mooExisting.getMooDict(), graphRandomize=False, contractionRandomize=False, actionRandomize=False)
                     
                     moo.mutate(
                         graphMutationChance=self.graphMutationChance,
@@ -324,15 +334,15 @@ class GA(object):
             
             # initialize
             for i in range(nGenesToInitialize):
-                if self.randomInit:
-                    moo = MOO(mooDict=self.mooDict, randomize=True)
-                else:
-                    moo = MOO(mooDict=self.mooDict, randomize=False)
-                    moo.mutate(
-                        graphMutationChance=self.graphMutationChance,
-                        actionMutationChance=self.actionMutationChance,
-                        contractionMutationChance=self.contractionMutationChance
-                    )
+                moo = MOO(mooDict=self.mooDict, graphRandomize=self.graphRandomInit,
+                          contractionRandomize=self.contractionActionRandomInit,
+                          actionRandomize=self.contractionActionRandomInit
+                          )
+                moo.mutate(
+                    graphMutationChance=self.graphMutationChance,
+                    actionMutationChance=self.actionMutationChance,
+                    contractionMutationChance=self.contractionMutationChance
+                )
                 geneNew = {'moo': moo, 'score': None}
                 self.genePool.append(geneNew)
 

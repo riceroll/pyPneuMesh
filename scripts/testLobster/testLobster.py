@@ -1,32 +1,25 @@
-from pyPneuMesh.utils import readNpy
+from pyPneuMesh.utils import readNpy, readMooDict
 from pyPneuMesh.Model import Model
+from pyPneuMesh.MOO import MOO
 from pyPneuMesh.MultiMotion import MultiMotion
 
-trussParam = readNpy('examples/testLobster/lobster/Lobster_0.trussparam.npy')
-simParam = readNpy('examples/testLobster/lobster/lobster.simparam.npy')
-actionSeqs = readNpy('examples/testLobster/lobster/Lobster_0.actionseqs.npy')
+mooDict = readMooDict('/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/testLobster/data')
+trussParam = readNpy('/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/testLobster/data/Lobster_0.trussparam.npy')
+simParam = readNpy('/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/testLobster/data/lobster.simparam.npy')
 
-m = Model(trussParam, simParam)
-mm = MultiMotion(actionSeqs, m)
+v0 = mooDict['trussParam']['v0']
+v0_new = v0 - v0.mean(0)
 
-mm.animate(0, 10, 10)
-
-
-trussParam = readNpy('examples/testLobster/lobster/lobster_grabgo.trussparam.npy')
-simParam = readNpy('examples/testLobster/lobster/lobster.simparam.npy')
-actionSeqs = readNpy('examples/testLobster/lobster/lobster_grabgo.actionseqs.npy')
-
-m = Model(trussParam, simParam)
-mm = MultiMotion(actionSeqs, m)
-
-mm.animate(0, 10, 10)
+a = 0
+np.array([[np.cos(a), -np.sin(a)], [np.sin(a), np.cos(a)]])
 
 
-trussParam = readNpy('examples/testLobster/lobster/lobster_walk.trussparam.npy')
-simParam = readNpy('examples/testLobster/lobster/lobster.simparam.npy')
-actionSeqs = readNpy('examples/testLobster/lobster/lobster_walk.actionseqs.npy')
 
-m = Model(trussParam, simParam)
-mm = MultiMotion(actionSeqs, m)
+mooDict['trussParam']['v0'] = v0_new
 
-mm.animate(0, 10, 10)
+trussParam['v0'] = v0_new
+
+model = Model(trussParam, simParam)
+
+
+moo = MOO(mooDict=mooDict)

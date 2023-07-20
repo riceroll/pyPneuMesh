@@ -1,6 +1,7 @@
 import time
 import json
 
+import scipy.optimize as optimize
 import tqdm
 import pathlib
 import numpy as np
@@ -19,11 +20,17 @@ class JointGenerator(object):
         self.channelMargin = jointGeneratorParam['channelMargin']
         
         self.numPointsOnEdge = jointGeneratorParam['numPointsOnEdge']
-        self.wContractingOnEdge = jointGeneratorParam['wContractingOnEdge']
+        self.wContracting = jointGeneratorParam['wContracting']
         self.wRepelling = jointGeneratorParam['wRepelling']
-        self.wContractingAtIntersection = jointGeneratorParam['wContractingAtIntersection']
+        self.wRepellingMultiplier = jointGeneratorParam['wRepellingMultiplier']
+        self.seqLengthMultiplier = jointGeneratorParam['seqLengthMultiplier']
         self.h = jointGeneratorParam['h']
+        self.beta = jointGeneratorParam['beta']     # momentum
+        self.decay = jointGeneratorParam['decay']   # gradient decay
         self.numSteps = jointGeneratorParam['numSteps']
+
+        self.wRepellingChanging = self.wRepelling
+        self.segLength = (self.sphereRadius - self.spherePadding) / (self.numPointsOnEdge - 1)
     
     def getJointGeneratorParam(self):
         jointGeneratorParam = {
@@ -33,10 +40,13 @@ class JointGenerator(object):
             'channelMargin': self.channelMargin,
         
             'numPointsOnEdge': self.numPointsOnEdge,
-            'wContractingOnEdge': self.wContractingOnEdge,
-            'wContractingAtIntersection': self.wContractingAtIntersection,
+            'wContracting': self.wContracting,
             'wRepelling': self.wRepelling,
+            'wRepellingMultiplier': self.wRepellingMultiplier,
+            'seqLengthMultiplier': self.seqLengthMultiplier,
             'h': self.h,
+            'beta': self.beta,
+            'decay': self.decay,
             'numSteps': self.numSteps
         }
         
@@ -54,27 +64,27 @@ class JointGenerator(object):
         # positions of points represent the absolute positions of the channels at every time step
         
         vtP = []
-        vE = []
+        vEOnEdge = []
         vEIntersection = []
         V = []
         
         numV = len(self.model.v0)
-        numV = 1
+        # numV = 1
         with multiprocessing.Pool(multiprocessing.cpu_count()) as p:
-            vtPvEevEi = list(tqdm.tqdm(p.imap(self.generateJoint, np.arange(numV)), total=numV))
+            vtPvEevEi = list(tqdm.tqdm(p.imap(self.generateJoint, np.arange(0, numV)), total=numV))
         
-        # vtPvE = []
-        # for i in range(len(self.model.v0)):
-        #     tP, E = self.generateJoint(i)
-        #     vtPvE.append([tP, E])
+        # vtPvEevEi = []
+        # for i in range(numV):
+            # tP, Ee, Ei = self.generateJoint(i)
+            # vtPvEevEi.append([tP, Ee, Ei])
         
         for iv, tPEeEi in enumerate(vtPvEevEi):
             vtP.append(tPEeEi[0])
-            vE.append(tPEeEi[1])
+            vEOnEdge.append(tPEeEi[1])
             vEIntersection.append(tPEeEi[2])
             V.append(self.model.v0[iv])
         
-        return vtP, vE, vEIntersection, V
+        return vtP, vEOnEdge, vEIntersection, V
     
     def generateJointsChannels(self, vtP, vE, vEIntersection, V):
         # returns
@@ -141,10 +151,10 @@ class JointGenerator(object):
         with open(outDir, 'w') as oFile:
             oFile.write(js)
     
-    def generateJointsAndExport(self, folderDir, name):
+    def exportJoints(self, folderDir, name, vtP, vE, vEIntersection, V):
         folderPath = pathlib.Path(folderDir)
         outDir = folderPath.joinpath('{}.jointsdict'.format(name))
-        vtP, vE, vEIntersection, V = self.generateJoints()
+        # vtP, vE, vEIntersection, V = self.generateJoints()
         
         vChannelP, V = self.generateJointsChannels(vtP, vE, vEIntersection, V)
         
@@ -173,19 +183,78 @@ class JointGenerator(object):
             tmp += len(ipsOnEdges * self.numPointsOnEdge)
             ipsOnEdges.append(tmp)
             
-        esContractingOnEdgeEnergy, esContractingAtIntersectionEnergy, esRepellingEnergy, psSphereRepellingEnergy, psAnchorConstraint = self.__getConstraints(ies, ipsOnEdges)
-        
+        esContractingOnEdgeEnergy, esContractingAtIntersectionEnergy, esChannelRepellingEnergy, psSphereRepellingEnergy, psAnchorConstraint, pssIntersectionConstraint = self.__getConstraints(ies, ipsOnEdges)
+
+
+        # # scipy minimize
+        # P = P.detach().numpy()
+        # tP = [P.copy()]
+        #
+        # shape0 = P.shape[0]
+        # shape1 = P.shape[1]
+        #
+        # def func(PNumpy):
+        #     P = torch.tensor(PNumpy)
+        #     P = P.reshape([shape0, shape1])
+        #     e = self.__getEnergy(P, ps0, esContractingOnEdgeEnergy, esContractingAtIntersectionEnergy,
+        #                          esRepellingEnergy, psSphereRepellingEnergy)
+        #     return e.numpy()
+        #
+        # def jac(PNumpy):
+        #     P = torch.tensor(PNumpy, requires_grad=True)
+        #     P = P.reshape([shape0, shape1])
+        #     e = self.__getEnergy(P, ps0, esContractingOnEdgeEnergy, esContractingAtIntersectionEnergy,
+        #                          esRepellingEnergy, psSphereRepellingEnergy)
+        #
+        #     gP = torch.autograd.grad(e, P)[0]
+        #     gP[psAnchorConstraint] *= 0
+        #
+        #     return gP.detach().numpy().reshape(-1)
+        #
+        # def callback(x):
+        #     # pass
+        #     print(func(x))
+        #     # tP.append(x.copy().reshape(shape0, shape1))
+        #
+        # # print('ehhe', func(P))
+        # res = optimize.minimize(func, P.reshape(-1), jac=jac, method="SLSQP", callback=callback, options={'disp':True, 'ftol': 0, 'eps': 1e-5, 'maxiter': 500})
+        # tP.append(res.x.reshape([shape0, shape1]))
+        # # print(func(tP[-1]))
+
+
+        # gradient descent
         tP = [P]
         for i in tqdm.tqdm(range(self.numSteps)):
-            e = self.__getEnergy(tP[-1], ps0, esContractingOnEdgeEnergy, esContractingAtIntersectionEnergy, esRepellingEnergy, psSphereRepellingEnergy)
+            # print(esChannelRepellingEnergy)
             
+            e = self.__getEnergy(tP[-1], ps0, esContractingOnEdgeEnergy, esContractingAtIntersectionEnergy,
+                                 esChannelRepellingEnergy, psSphereRepellingEnergy)
+            
+            # print(e.item())
             gP = torch.autograd.grad(e, tP[-1])[0]
+            
+            # self.wContracting *= 0.999
+            self.segLength *= self.seqLengthMultiplier
+            self.wRepellingChanging *= self.wRepellingMultiplier
+            
+            if i == 0:
+                gPNoise = (torch.rand(gP.shape) -0.5) * gP.abs().mean() * 1
+                gP += gPNoise
+            
             gP[psAnchorConstraint] *= 0
-            PNext = tP[-1] - self.h * gP
+            
+            momentum = 0 if len(tP) < 2 else tP[-1] - tP[-2]
+
+            # self.h *= np.sqrt(1.0 / (1 + self.decay * i))
+            PNext = tP[-1] - self.h * gP + self.beta * momentum
+            
+            for key in pssIntersectionConstraint:
+                PNext[np.array(list(pssIntersectionConstraint[key]))] = PNext[np.array(list(pssIntersectionConstraint[key]))].mean(0)
+            
             tP.append(PNext)
-        
+
         tP = [P.detach().numpy() for P in tP]
-        
+
         return tP, esContractingOnEdgeEnergy, esContractingAtIntersectionEnergy
     
     def __getConstraints(self, ies, ipsOnEdges):
@@ -194,33 +263,44 @@ class JointGenerator(object):
         esChannelRepellingEnergy = []
         psSphereRepellingEnergy = []
         psAnchorConstraint = []
+        pssIntersectionConstraint = {}
     
-        for i in range(len(ies)):
-            for ipOnEdge in range(self.numPointsOnEdge):
-                ip = ipsOnEdges[i][ipOnEdge]
-                if ipOnEdge != self.numPointsOnEdge - 1:  # except for the outer most point
-                    ipNext = ipsOnEdges[i][ipOnEdge + 1]
-                    esContractingOnEdgeEnergy.append([ip, ipNext])  # contracting energy
+        for i0 in range(len(ies)):
+            for ipOnEdge0 in range(self.numPointsOnEdge):
+                ip0 = ipsOnEdges[i0][ipOnEdge0]
+                if ipOnEdge0 != self.numPointsOnEdge - 1:  # except for the outer most point
+                    ipNext = ipsOnEdges[i0][ipOnEdge0 + 1]
+                    esContractingOnEdgeEnergy.append([ip0, ipNext])  # contracting energy
                     
-                    psSphereRepellingEnergy.append(ip)
+                    psSphereRepellingEnergy.append(ip0)
                 else:
-                    psAnchorConstraint.append(ip)  # anchor energy
+                    psAnchorConstraint.append(ip0)  # anchor energy
         
-            for ipOnEdge in range(self.numPointsOnEdge):
-                ip = ipsOnEdges[i][ipOnEdge]
+            for ipOnEdge0 in range(self.numPointsOnEdge):
+                ip0 = ipsOnEdges[i0][ipOnEdge0]
             
-                for ie2 in range(len(ies)):  # all other edges
-                    if ie2 == i:
+                for i1 in range(len(ies)):  # all other edges
+                    if i1 == i0:
                         continue
-                    for ipOnEdge2 in range(self.numPointsOnEdge):  # all points on other edges
-                        ip2 = ipsOnEdges[i][ipOnEdge2]
-                        esChannelRepellingEnergy.append([ip, ip2])  # repelling energy
+                    if self.model.edgeChannel[ies[i0]] == self.model.edgeChannel[ies[i1]]:    # same channel
+                        continue
+                        
+                    for ipOnEdge1 in range(self.numPointsOnEdge):  # all points on other edges
+                        ip1 = ipsOnEdges[i1][ipOnEdge1]
+                        esChannelRepellingEnergy.append([ip0, ip1])  # repelling energy
     
         for i0 in range(len(ies)):
             for i1 in range(len(ies) - i0 - 1):
                 i1 = i1 + i0 + 1
                 
-                if self.model.edgeChannel[i0] == self.model.edgeChannel[i1]:  # same channel
+                if self.model.edgeChannel[ies[i0]] == self.model.edgeChannel[ies[i1]]:  # same channel
+                    iChannel = self.model.edgeChannel[ies[i0]]
+                    if iChannel not in pssIntersectionConstraint:
+                        pssIntersectionConstraint[iChannel] = set()
+
+                    pssIntersectionConstraint[iChannel].add(ipsOnEdges[i1][0])
+                    pssIntersectionConstraint[iChannel].add(ipsOnEdges[i0][0])
+                    
                     esContractingAtIntersectionEnergy.append(
                         [ipsOnEdges[i0][0], ipsOnEdges[i1][0]])  # contraction between the two center points
                 else:
@@ -232,36 +312,48 @@ class JointGenerator(object):
         psSphereRepellingEnergy = np.array(psSphereRepellingEnergy)
         psAnchorConstraint = np.array(psAnchorConstraint)
         
-        return esContractingOnEdgeEnergy, esContractingAtIntersectionEnergy, esChannelRepellingEnergy, psSphereRepellingEnergy, psAnchorConstraint
+        
+        # breakpoint()
+        
+        return esContractingOnEdgeEnergy, esContractingAtIntersectionEnergy, esChannelRepellingEnergy, psSphereRepellingEnergy, psAnchorConstraint, pssIntersectionConstraint
 
     def __getEnergy(self, ps, ps0, esContractingOnEdgeEnergy, esContractingAtIntersectionEnergy, esRepellingEnergy, psSphereRepellingEnergy):
         cee = self.__contractingEnergy(ps, esContractingOnEdgeEnergy)
-        cie = self.__contractingEnergy(ps, esContractingAtIntersectionEnergy)
-        re = self.__channelRepellingEnergy(ps, esRepellingEnergy, self.channelMargin)
-        se = self.__sphereRepellingEnergy(ps, psSphereRepellingEnergy, self.sphereRadius, self.spherePadding)
-        return self.wContractingOnEdge * cee + self.wContractingAtIntersection * cie + self.wRepelling * re
+        # cie = self.__contractingEnergy(ps, esContractingAtIntersectionEnergy)
+        cre = self.__channelRepellingEnergy(ps, esRepellingEnergy, self.channelRadius, self.channelMargin)
+        # print('re', re.item())
+        sre = self.__sphereRepellingEnergy(ps, psSphereRepellingEnergy, self.sphereRadius, self.spherePadding)
+        # print(esRepellingEnergy)
+        
+        # print(cee.item(), cre.item(), sre.item())
+        
+        return self.wContracting * cee + self.wRepelling * cre + self.wRepelling * sre
 
-    @staticmethod
-    def __contractingEnergy(ps, es):
+    def __contractingEnergy(self, ps, es):
         if len(es) == 0:
             return 0
         ps0 = ps[es[:, 0]]
         ps1 = ps[es[:, 1]]
-        ce = torch.norm(ps0 - ps1, dim=1).sum()
+        ce = ((torch.norm(ps0 - ps1, dim=1) - self.segLength) ** 2).sum()
         return ce
         
     @staticmethod
-    def __channelRepellingEnergy(ps, es, margin):
+    def __channelRepellingEnergy(ps, es, radius, margin):
+        if len(es) == 0:
+            return 0
         ps0 = ps[es[:, 0]]
         ps1 = ps[es[:, 1]]
         d = torch.norm(ps0 - ps1, dim=1)
-        re = ( (d - margin) ** 2)[d < margin].sum()
+        re = - (-radius * 2 - margin + d)[ d < radius * 2 + margin].sum()
+        # print(re.item())
+        
         return re
     
     @staticmethod
     def __sphereRepellingEnergy(ps, ips, radius, padding):
         d = torch.norm(ps, dim=1)
         se = ( (d - (radius-padding) )**2)[d > radius - padding].sum()
+        
         return se
     
     def __generatePointsOnEdge(self, ie, iv):
@@ -276,7 +368,7 @@ class JointGenerator(object):
         v = self.model.v0[iv] - self.model.v0[iv]
         
         vecUnit = (vNeighbor - v) / np.linalg.norm(vNeighbor - v)   # from v to vNeighbor
-        pOut = vecUnit * self.sphereRadius + v
+        pOut = vecUnit * (self.sphereRadius - self.spherePadding) + v
         pCenter = v.copy()
         points = []
         
@@ -292,8 +384,8 @@ class JointGenerator(object):
         
         return points
     
-    def animate(self, Ps, E, speed=1.0):
-        # animate the generation processimport polyscope as ps
+    def animate(self, Ps, E, EIntersection, speed=1.0):
+        # animate the generation process import polyscope as ps
         try:
             ps.init()
         except:
@@ -302,23 +394,25 @@ class JointGenerator(object):
         
         P = Ps[0]
         cs = ps.register_curve_network('channels', P, E)
-    
+
+        csIntersection = ps.register_curve_network('channelsIntersection', P, EIntersection)
+        pp = ps.register_point_cloud('p', P)
+        
         t0 = time.time()
         
         def callback():
             t = (time.time() - t0) * speed
+            
             if t // self.h < len(Ps):
                 iStep = int(t // self.h)
             else:
                 iStep = len(Ps) - 1
-                
+            print(iStep)
             cs.update_node_positions(Ps[iStep])
+            csIntersection.update_node_positions(Ps[iStep])
+            pp.update_point_positions(Ps[iStep])
             
 
         ps.set_user_callback(callback)
         ps.show()
-    
-        
-    
-    
-        
+

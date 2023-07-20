@@ -5,6 +5,7 @@ rootPath = os.path.split(os.path.realpath(__file__))[0]
 rootPath = os.path.split(rootPath)[0]
 
 from pyPneuMesh.utils import getDefaultValue, getLength
+# from build.model import Model as CModel
 from build.model import Model as CModel
 
 import numpy as np
@@ -16,6 +17,8 @@ class Model(object):
     def __init__(self, trussParam, simParam):
         trussParam = copy.deepcopy(trussParam)
         simParam = copy.deepcopy(simParam)
+        
+        self.cmodel = CModel
         
         # load from trussParam
         self.v0 = trussParam['v0']
@@ -57,6 +60,8 @@ class Model(object):
         # calculate maxLengths
         maxLengths = getLength(self.v0, self.e)
         maxLengths[self.edgeActive] = self.MAX_ACTIVE_BEAM_LENGTH
+        maxLengths[~self.edgeActive] = self.MAX_ACTIVE_BEAM_LENGTH - \
+                                       self.CONTRACTION_PER_LEVEL * (self.NUM_CONTRACTION_LEVEL - 1)
         self.maxLengths = maxLengths
         
     def save(self, folderDir, name):
@@ -75,6 +80,27 @@ class Model(object):
             str(simParamPath),
             simParam
         )
+    
+    def saveRendering(self, folderDir, name):
+        
+        Vs = []
+        Vs.append(self.v0)
+        E = self.e
+        
+        data = {
+            'Vs': Vs,
+            'E': E,
+            'edgeChannel': self.edgeChannel,
+        }
+        
+        folderPath = pathlib.Path(folderDir)
+        renderPath = folderPath.joinpath("{}.static".format(name))
+
+        np.save(
+            str(renderPath),
+            data
+        )
+    
     
     def getTrussParam(self):
         trussParam = {
@@ -107,8 +133,11 @@ class Model(object):
         # actionSeq: [numActions, numChannel]
         
         time = 0
-        times = [time]
-        lengths = [self.maxLengths.copy()]    # target lengths
+        # times = [time] * 4
+        # lengths = [self.maxLengths.copy()] * 4    # target lengths
+        
+        times = []
+        lengths = []
         
         for iAction in range(len(actionSeq)):
             action = actionSeq[iAction]
@@ -133,18 +162,55 @@ class Model(object):
         
         return times, lengths
     
-    def step(self, numSteps=1, times=None, lengths=None):
+    def step(self, numSteps=1, times=None, lengths=None, retForce=False):
         if times is None:
             times = np.array([0.0], dtype=np.float64)
             lengths = np.array([getLength(self.v0, self.e)], dtype=np.float64).reshape(1, len(self.e))
         
+        
         assert(times.ndim == 1 and times.dtype == np.float64)
         assert(lengths.ndim == 2 and lengths.shape[0] == times.shape[0] and lengths.dtype == np.float64)
         
-        cModel = CModel(self.k, self.h, self.gravity, self.damping, self.friction, self.v0, self.e, self.CONTRACTION_SPEED)
+        K = np.ones(len(self.e))
+        # K *= self.k
+        
+        K[self.edgeActive] *= self.k * 0.5
+        K[~self.edgeActive] *= self.k
+        
+        self.friction *= 0.8
+        
+        self.gravity *= 1.0
+        # breakpoint()
+
+        # with open("/Users/Roll/Desktop/CPneumesh/Pn0.bin", "wb") as f:
+        #     # Save the shape of the array as integers
+        #     f.write(np.array(self.v0.shape, dtype=np.int32).tobytes())
+        #
+        #     # Save the array data as doubles (float64)
+        #     f.write(self.v0.astype(np.float64).tobytes())
+        #
+        # with open("/Users/Roll/Desktop/CPneumesh/e.bin", "wb") as f:
+        #     # Save the shape of the array as integers
+        #     f.write(np.array(self.e.shape, dtype=np.int32).tobytes())
+        #
+        #     # Save the array data as doubles (float64)
+        #     f.write(self.v0.astype(np.long).tobytes())
+        #
+        cModel = CModel(K, self.h, self.gravity, self.damping, self.friction, self.v0, self.e, self.CONTRACTION_SPEED)
         vs = cModel.step(times, lengths, numSteps)
-        vs = vs.reshape((numSteps + 1), len(self.v0), 3)
+        
         return vs
+        
+        #
+        # cModel = CModel(K, self.h, self.gravity, self.damping, self.friction, self.v0, self.e, self.CONTRACTION_SPEED)
+        # vs, fs = cModel.step(times, lengths, numSteps)
+        # vs = vs.reshape((numSteps + 1), len(self.v0), 3)
+        # fs = fs.reshape((numSteps+1), len(self.e))
+        
+        # if retForce:
+        #     return vs, fs
+        # else:
+        #     return vs
 
     def show(self, v=None):
         import polyscope as ps
@@ -161,7 +227,13 @@ class Model(object):
             ies = np.arange(len(self.e))[self.edgeChannel == ic]
             es = self.e[ies]
             cs = ps.register_curve_network(str(ic), v, es)
-    
+
+        ies = np.arange(len(self.e))[self.edgeActive == False]
+        es = self.e[ies]
+        cs = ps.register_curve_network('passive', v, es, color=(0,0,0))
+        
+        ps.register_curve_network('y axis', np.array([[0,0,0], [0, 5, 0]]), np.array([[0, 1]]))
+        
         ps.show()
     
     def animate(self, vs, speed=1.0, singleColor=False):
@@ -194,7 +266,11 @@ class Model(object):
         
         else:
             cs = ps.register_curve_network('truss', vs[0], self.e)
-
+            cs.add_color_quantity('color', np.ones([len(self.e), 3])*0.7, defined_on='edges')
+            
+            v = vs[0]
+            vMean = v[45:49].mean(0)
+            
             t0 = time.time()
             
             def callback():

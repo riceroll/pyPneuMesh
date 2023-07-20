@@ -11,8 +11,11 @@ jg = JointGenerator(model=moo.model, jointGeneratorParam=jointGeneratorParam)
 # Ps, E = jg.generateJoint(30)
 # jg.animate(Ps, E, 0.01)
 
-# vtP, vE, V = jg.generateJoints()
-# jg.animate(vtP[0], vE[0], 0.01)
+vtP, vE, vEIntersection, V = jg.generateJoints()
+# jg.animate(vtP[0], vE[0], vEIntersection[0], 0.004)
 
-jg.generateJointsAndExport(folderDir='scripts/testJointGenerator/data', name='table')
+jg.exportJoints(folderDir='scripts/testJointGenerator/data', name='table', vtP=vtP, vE=vE, vEIntersection=vEIntersection, V=V)
+
+
+
 

@@ -5,10 +5,16 @@ import pathlib
 from pyPneuMesh.Model import Model
 
 class HalfGraph(object):
+    
+    # quick fix, record the first edgeMirrorMap in one run
+    edgeMirrorMap = None
+    
     def __init__(self, model: Model, graphSetting):
         self.channelMirrorMap = graphSetting['channelMirrorMap'].copy()
         self.model = model
-        self.edgeMirrorMap = self.__getEdgeMirrorMap()
+        if HalfGraph.edgeMirrorMap is None:
+            HalfGraph.edgeMirrorMap = self.__getEdgeMirrorMap()
+        self.edgeMirrorMap = HalfGraph.edgeMirrorMap
         
         self.ins_o = []  # nn, original indices of nodes in a halfgraph
         self.edges = []  # indices of two incident nodes, ne x 2, ne is the number of edges in a halfgraph
@@ -57,28 +63,71 @@ class HalfGraph(object):
         self.__add_edges_from(esInfo)
 
     def __getEdgeMirrorMap(self):
-        threshold = 0.01
-        
         vertexMirrorMap = dict()
-        for iv, v in enumerate(self.model.v0):
-            if iv not in vertexMirrorMap:
-                if abs(v[1]) < threshold:
-                    vertexMirrorMap[iv] = -1  # on the mirror plane
-                else:  # mirrored with another vertex
-                    for ivMirror, vMirror in enumerate(self.model.v0):
-                        if ivMirror == iv:
-                            continue
-                        
-                        if abs(vMirror[0] - v[0]) < threshold and \
-                            abs(vMirror[2] - v[2]) < threshold and \
-                                abs(-vMirror[1] - v[1]) < threshold:
-                            assert(iv not in vertexMirrorMap)
-                            assert (ivMirror not in vertexMirrorMap)
-                            vertexMirrorMap[iv] = ivMirror
-                            vertexMirrorMap[ivMirror] = iv
+        
+        # # region version 1
+        # threshold = 0.01
+        # for iv, v in enumerate(self.model.v0):
+        #     if iv not in vertexMirrorMap:
+        #         if abs(v[1]) < threshold:
+        #             vertexMirrorMap[iv] = -1  # on the mirror plane
+        #         else:  # mirrored with another vertex
+        #             for ivMirror, vMirror in enumerate(self.model.v0):
+        #                 if ivMirror == iv:
+        #                     continue
+        #
+        #                 if abs(vMirror[0] - v[0]) < threshold and \
+        #                     abs(vMirror[2] - v[2]) < threshold and \
+        #                         abs(-vMirror[1] - v[1]) < threshold:
+        #                     assert(iv not in vertexMirrorMap)
+        #                     assert (ivMirror not in vertexMirrorMap)
+        #                     vertexMirrorMap[iv] = ivMirror
+        #                     vertexMirrorMap[ivMirror] = iv
+        #
+        #     if iv not in vertexMirrorMap:
+        #         assert(False)
+        #
+        # # endregion
+        
+        
+        # region version 2
+        ivsUnvisited = list(np.arange(len(self.model.v0)))
+        
+        offsets = np.ones([len(self.model.v0), len(self.model.v0)]) * -1
+        for iv0 in range(len(self.model.v0)):
+            for iv1 in range(len(self.model.v0)):
+                if iv0 != iv1:
+                    v0 = self.model.v0[iv0]
+                    v1Mirror = self.model.v0[iv1].copy()
+                    v1Mirror[1] *= -1
+                    offset = np.linalg.norm(v0 - v1Mirror)
+                    offsets[iv0, iv1] = offsets[iv1, iv0] = offset
+                else:       # [i, i] record its distance to mirror plane
+                    offset = abs(self.model.v0[iv0, 1])
+                    offsets[iv0, iv0] = offset
             
-            if iv not in vertexMirrorMap:
-                assert(False)
+        assert((offsets > -1).all())
+        
+        while len(ivsUnvisited) != 0:
+            iv0, iv1 = np.unravel_index(np.argmin(offsets), offsets.shape)
+            # print(iv0, iv1, offsets[iv0, iv1])
+            offsets[iv0, :] = np.inf
+            offsets[:, iv0] = np.inf
+            offsets[iv1, :] = np.inf
+            offsets[:, iv1] = np.inf
+            
+            if iv0 == iv1:
+                vertexMirrorMap[iv0] = -1
+                ivsUnvisited.remove(iv0)
+            
+            if iv0 != iv1:
+                vertexMirrorMap[iv0] = iv1
+                vertexMirrorMap[iv1] = iv0
+                ivsUnvisited.remove(iv0)
+                ivsUnvisited.remove(iv1)
+        
+        # endregion
+        
                 
         edgeMirrorMap = dict()
     
@@ -88,15 +137,19 @@ class HalfGraph(object):
         
             iv0 = e[0]
             iv1 = e[1]
+            
             if vertexMirrorMap[iv0] == -1:
                 ivM0 = iv0  # itself
             else:
                 ivM0 = vertexMirrorMap[iv0]
+                
             if vertexMirrorMap[iv1] == -1:
                 ivM1 = iv1
             else:
                 ivM1 = vertexMirrorMap[iv1]
+                
             eM = [ivM0, ivM1]
+            
             if ivM0 == iv0 and ivM1 == iv1:  # edge on the mirror plane
                 edgeMirrorMap[ie] = -1
             else:
@@ -184,70 +237,73 @@ class HalfGraph(object):
             if ieMirror != -1:
                 self.model.contractionLevel[ieMirror] = contractionLevel
 
-    def randomize(self):
-        stuck = True
-        while stuck:
-            stuck = False
-            
-            self.channels *= 0
-            self.channels += -1
-            self.contractions *= 0
-            
-            # init channels
-            iesUnassigned = set(np.arange(len(self.edges)))  # halfgraph indices of edges
-            iesIncidentMirrorUnassigned = set(self.iesIncidentMirror())
-            iesNotMirrorUnassigned = set(self.iesNotMirror())
-
-            for iChannel in self.channelMirrorMap.keys():
-                # breakpoint()
-                icMirror = self.channelMirrorMap[iChannel]
-                if icMirror == -1:
-                    ie = np.random.choice(list(iesIncidentMirrorUnassigned))
-                    iesIncidentMirrorUnassigned.remove(ie)
-                    iesUnassigned.remove(ie)
-                    if ie in iesNotMirrorUnassigned:
-                        iesNotMirrorUnassigned.remove(ie)
-                else:
-                    ie = np.random.choice(list(iesNotMirrorUnassigned))
-                    iesUnassigned.remove(ie)
-                    if ie in iesIncidentMirrorUnassigned:
-                        iesIncidentMirrorUnassigned.remove(ie)
-                    iesNotMirrorUnassigned.remove(ie)
-                self.channels[ie] = iChannel
-
-            numNotUpdate = 0
-            while iesUnassigned:
-                numNotUpdate += 1
-
-                if numNotUpdate > 40:
-                    stuck = True
-                    break
-                #
-                # self.fromHalfGraph()
-                # self.show(show=False)
-
-                ic = np.random.choice(list(self.channelMirrorMap.keys()))
-                iesUnassignedAroundChannel = self.iesAroundChannel(ic)
-                if self.iesNotMirror() is not None and iesUnassignedAroundChannel is not None:
-                    iesUnassignedAroundChannelNotMirror = np.intersect1d(iesUnassignedAroundChannel, self.iesNotMirror())
-                else:
-                    iesUnassignedAroundChannelNotMirror = None
-
-                icMirror = self.channelMirrorMap[ic]
-                if icMirror != -1:
-                    if iesUnassignedAroundChannelNotMirror is None or len(iesUnassignedAroundChannelNotMirror) == 0:
-                        continue
-                    ieToAssign = np.random.choice(iesUnassignedAroundChannelNotMirror)
-                else:
-                    if iesUnassignedAroundChannel is None or len(iesUnassignedAroundChannel) == 0:
-                        continue
-                    ieToAssign = np.random.choice(iesUnassignedAroundChannel)
-
-                numNotUpdate = 0
-                iesUnassigned.remove(ieToAssign)
-                self.channels[ieToAssign] = ic
+    def randomize(self, graphRandomize=True, contractionRandomize=True):
+        
+        if graphRandomize:
+            stuck = True
+            while stuck:
+                stuck = False
                 
-        self.contractions = np.random.randint(0, self.model.NUM_CONTRACTION_LEVEL, self.contractions.shape)
+                self.channels *= 0
+                self.channels += -1
+                self.contractions *= 0
+                
+                # init channels
+                iesUnassigned = set(np.arange(len(self.edges)))  # halfgraph indices of edges
+                iesIncidentMirrorUnassigned = set(self.iesIncidentMirror())
+                iesNotMirrorUnassigned = set(self.iesNotMirror())
+    
+                for iChannel in self.channelMirrorMap.keys():
+                    # breakpoint()
+                    icMirror = self.channelMirrorMap[iChannel]
+                    if icMirror == -1:
+                        ie = np.random.choice(list(iesIncidentMirrorUnassigned))
+                        iesIncidentMirrorUnassigned.remove(ie)
+                        iesUnassigned.remove(ie)
+                        if ie in iesNotMirrorUnassigned:
+                            iesNotMirrorUnassigned.remove(ie)
+                    else:
+                        ie = np.random.choice(list(iesNotMirrorUnassigned))
+                        iesUnassigned.remove(ie)
+                        if ie in iesIncidentMirrorUnassigned:
+                            iesIncidentMirrorUnassigned.remove(ie)
+                        iesNotMirrorUnassigned.remove(ie)
+                    self.channels[ie] = iChannel
+    
+                numNotUpdate = 0
+                while iesUnassigned:
+                    numNotUpdate += 1
+    
+                    if numNotUpdate > 40:
+                        stuck = True
+                        break
+                    #
+                    # self.fromHalfGraph()
+                    # self.show(show=False)
+    
+                    ic = np.random.choice(list(self.channelMirrorMap.keys()))
+                    iesUnassignedAroundChannel = self.iesAroundChannel(ic)
+                    if self.iesNotMirror() is not None and iesUnassignedAroundChannel is not None:
+                        iesUnassignedAroundChannelNotMirror = np.intersect1d(iesUnassignedAroundChannel, self.iesNotMirror())
+                    else:
+                        iesUnassignedAroundChannelNotMirror = None
+    
+                    icMirror = self.channelMirrorMap[ic]
+                    if icMirror != -1:
+                        if iesUnassignedAroundChannelNotMirror is None or len(iesUnassignedAroundChannelNotMirror) == 0:
+                            continue
+                        ieToAssign = np.random.choice(iesUnassignedAroundChannelNotMirror)
+                    else:
+                        if iesUnassignedAroundChannel is None or len(iesUnassignedAroundChannel) == 0:
+                            continue
+                        ieToAssign = np.random.choice(iesUnassignedAroundChannel)
+    
+                    numNotUpdate = 0
+                    iesUnassigned.remove(ieToAssign)
+                    self.channels[ieToAssign] = ic
+            
+        if contractionRandomize:
+            self.contractions = np.random.randint(0, self.model.NUM_CONTRACTION_LEVEL, self.contractions.shape)
         
         self.toModel()
         

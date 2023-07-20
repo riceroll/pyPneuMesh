@@ -10,7 +10,7 @@ class MOO(object):
     def __init__(self,
                  multiObjective: MultiObjective = None, graph: Graph = None,
                  mooDict: dict = None,
-                 randomize=False):
+                 graphRandomize=False, contractionRandomize=False, actionRandomize=False):
         
         if multiObjective is not None:  # initialize with multiObjective and graph
             self.multiObjective = multiObjective
@@ -30,8 +30,7 @@ class MOO(object):
             self.multiObjective = MultiObjective(objectives, self.multiMotion)
             self.graph = Graph(graphSetting, self.model)
 
-        if randomize:
-            self.randomize()
+        self.randomize(graph=graphRandomize, contraction=contractionRandomize, action=actionRandomize)
             
     def saveAll(self, folderDir, name):
         self.multiObjective.save(folderDir, name)
@@ -49,9 +48,13 @@ class MOO(object):
         }
         return mooDict
     
-    def randomize(self):
-        self.multiMotion.randomize()
-        self.graph.randomize()
+    def randomize(self, graph=True, contraction=True, action=True):
+        
+        self.graph.randomize(graphRandomize=graph, contractionRandomize=contraction)
+        
+        if action:
+            self.multiMotion.randomize()
+    
         
     def mutate(self, graphMutationChance, contractionMutationChance, actionMutationChance):
         self.graph.mutate(

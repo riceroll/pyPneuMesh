@@ -35,8 +35,7 @@ class MultiMotion(object):
             self.actionSeqs[i][maskMutation] = multiMotion.actionSeqs[i][maskMutation]
             multiMotion.actionSeqs[i][maskMutation] = tmp
         
-    
-    def simulate(self, iAction, numLoop):
+    def simulate(self, iAction, numLoop, retForce=False):
         actionSeq = self.actionSeqs[iAction]
         actionSeq = np.vstack([actionSeq] * numLoop)
         
@@ -45,11 +44,35 @@ class MultiMotion(object):
         times, lengths = self.model.actionSeq2timeNLength(actionSeq)
         totalTime = times[-1] + self.model.ACTION_TIME
         numSteps = int(totalTime / self.model.h)
-        vs = self.model.step(numSteps, times, lengths)
-        return vs
+        
+        Vs, Fs = self.model.step(numSteps, times, lengths, retForce=retForce)
+        Vs = Vs.reshape(numSteps + 1, -1, 3)
+        Fs = Fs.reshape(numSteps + 1, -1)
+        return Vs, Fs
     
+        
     def animate(self, iAction, numLoop, speed=1.0):
-        vs = self.simulate(iAction, numLoop)
+        vs, fs = self.simulate(iAction, numLoop)
         self.model.animate(vs, speed=speed, singleColor=True)
         return vs
+    
+    def saveAnimation(self, folderDir, name, iAction, numLoop):
+        Vs, Fs = self.simulate(iAction, numLoop, retForce=True)
+        self.model.animate(Vs, speed=1, singleColor=True)
+        
+        
+        breakpoint()
+        data = {
+            'Vs': Vs,
+            'Fs': Fs,
+            'E': self.model.e,
+            'edgeChannel': self.model.edgeChannel,
+            'h': self.model.h,
+        }
+        folderPath = pathlib.Path(folderDir)
+        animationPath = folderPath.joinpath("{}.animation".format(name))
+        np.save(str(animationPath), data)
+        return data
+
+
 

@@ -112,9 +112,69 @@ def data2Npy(data, name, npyFolderDir='/Users/Roll/Desktop/pyPneuMesh-dev/pyPneu
     np.save(str(trussParamPath), trussParam)
     np.save(str(actionSeqsPath), actionSeqs)
     
+
+def getDistanceSingleSource(E, iSource):
+    distance = np.ones(np.max(E) + 1) * -1
+    distance[iSource] = 0
+    
+    adjacencyList = {}
+    for e in E:
+        iv0 = e[0]
+        iv1 = e[1]
+        if iv0 not in adjacencyList:
+            adjacencyList[iv0] = []
+        
+        if iv1 not in adjacencyList:
+            adjacencyList[iv1] = []
+        
+        adjacencyList[iv0].append(iv1)
+        adjacencyList[iv1].append(iv0)
+    
+    queue = [iSource]
+    while True:
+        if len(queue) == 0:
+            break
+        
+        iv = queue.pop(0)
+        depth = distance[iv]
+        
+        neighbors = adjacencyList[iv]
+        neighbors = [n for n in neighbors if distance[n] == -1]
+        
+        for n in neighbors:
+            distance[n] = depth +1
+            queue.append(n)
+    
+    return distance
+
+def getDistance(E, iSources):
+    distance = np.vstack([getDistanceSingleSource(E, iSource) for iSource in iSources])
+    distance = distance.min(0)
+    return distance
+
+def getWeightFromDistance(distance, xMiddle=2.3, scale=2):
+    # xMiddle, weight = 0.5 when it's xMiddle
+    # scale, the larger the value the steeper the curve
+    return np.arctan((distance - xMiddle) * scale) / np.pi + 0.5
+
+def plotDistance(distance, V, E):
+    import polyscope as ps
+    try:
+        ps.init()
+    except:
+        pass
+    
+    colors = np.array([[d/max(distance), 0, 0] for d in distance])
     
     
+    ps.register_curve_network('curve', V, E)
+    pc = ps.register_point_cloud('pc', V)
+    pc.add_color_quantity('color', colors)
+    ps.show()
+        
+
     
+
     
     
     

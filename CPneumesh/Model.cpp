@@ -5,7 +5,7 @@ using namespace std;
 using namespace Eigen;
 namespace py = pybind11;
 
-Model::Model(double k, double h, double gravity, double damping, double friction,
+Model::Model(VectorXd K, double h, double gravity, double damping, double friction,
              MatrixXd v0, MatrixXi e, double CONTRACTION_SPEED)
    {
 
@@ -17,7 +17,7 @@ Model::Model(double k, double h, double gravity, double damping, double friction
   Force.resize(V0.rows(), 3);
 
   this->h = h;
-  this->k = k;
+  this->K = K;
   this->gravity = gravity;
   this->damping = damping;
   this->friction = friction;
@@ -36,7 +36,7 @@ MatrixXi Model::getE() {
   return this->E;
 }
 
-VectorXd Model::step(VectorXd times, MatrixXd lengths, int numSteps) {
+std::pair<VectorXd, VectorXd> Model::step(VectorXd times, MatrixXd lengths, int numSteps) {
   MatrixXd V = V0;
   Vel.setZero();
 
@@ -46,6 +46,8 @@ VectorXd Model::step(VectorXd times, MatrixXd lengths, int numSteps) {
 //  Vel(all, 0) *= 100;
 
   VectorXd LTarget = lengths.row(0);   // target length of penumatic actuation
+
+  VectorXd Fs((numSteps + 1) * E.rows() * 1);
 
   VectorXd Vs((numSteps + 1) * V.rows() * 3);
   for (int iRow = 0; iRow < V.rows(); iRow++) {
@@ -87,7 +89,8 @@ VectorXd Model::step(VectorXd times, MatrixXd lengths, int numSteps) {
     auto Vec01 = V(E(all, 1), all) - V(E(all, 0), all); // vectors from V[e[0]] to V[e[1]]
 
     for (int iE = 0; iE < E.rows(); iE++) {
-      FEdge[iE] = (L[iE] - L0[iE]) * k;   // contraction force is positive
+      FEdge[iE] = (L[iE] - L0[iE]) * K[iE];   // contraction force is positive
+
       Force.row(E(iE, 0)) += Vec01.row(iE) / L[iE] * FEdge[iE];
       Force.row(E(iE, 1)) -= Vec01.row(iE) / L[iE] * FEdge[iE];
     }
@@ -111,7 +114,6 @@ VectorXd Model::step(VectorXd times, MatrixXd lengths, int numSteps) {
         }
 
         Force.row(iV) += -fFrictionMaxMag * velHorizontal / velHorizontal.norm();
-
       }
 
       // velocity on ground
@@ -119,7 +121,6 @@ VectorXd Model::step(VectorXd times, MatrixXd lengths, int numSteps) {
         Vel(iV, 2) = 0;
         V(iV, 2) = 0;
       }
-
     }
 
     Vel = Vel + Force * h;
@@ -133,10 +134,12 @@ VectorXd Model::step(VectorXd times, MatrixXd lengths, int numSteps) {
       }
     }
 
+    for (int iE = 0; iE < E.rows(); iE++) {
+        Fs[iStep * E.rows() + iE] = FEdge[iE];
+    }
   }
 
-
-  return Vs;
+  return std::make_pair(Vs, Fs);
 }
 
 
@@ -146,7 +149,7 @@ PYBIND11_MODULE(model, m) {
 //  m.def("add", &add, "A function that adds two numbers");
 
   py::class_<Model>(m, "Model")
-    .def(py::init<double, double, double, double, double, MatrixXd, MatrixXi, double>())
+    .def(py::init<VectorXd, double, double, double, double, MatrixXd, MatrixXi, double>())
     .def("getE", &Model::getE)
     .def("step", &Model::step)
     ;

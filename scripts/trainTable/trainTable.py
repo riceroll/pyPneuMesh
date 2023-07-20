@@ -10,8 +10,8 @@ from pyPneuMesh.GA import GA
 
 
 mode = "start"
-mode = "continue"
-mode = "load"
+# mode = "continue"
+# mode = "load"
 # mode = "configMOO"
 
 GACheckpointDir = "/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/trainTable/output/2022-12-09_07-07-13/ElitePool_55.gacheckpoint.npy"

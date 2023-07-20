@@ -12,9 +12,9 @@ from pyPneuMesh.GA import GA
 mode = "start"
 mode = "continue"
 mode = "load"
-# mode = "configMOO"
+mode = "configMOO"
 
-GACheckpointDir = "/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/trainTable_2022-12-09_5-51/output/gcp_2022-12-09_12-19-30/ElitePool_390.gacheckpoint.npy"
+GACheckpointDir = "/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/trainTable_2022-12-09_5-51/output/gcp_2022-12-09_12-19-30/ElitePool_115.gacheckpoint.npy"
 
 if mode == "start":
     GASetting = {
@@ -40,7 +40,7 @@ if mode == "start":
     
 elif mode == "continue":
     ga = GA(GACheckpointDir=GACheckpointDir)
-    ga.run()
+    # ga.run()
     
 elif mode == "load":
     ga = GA(GACheckpointDir=GACheckpointDir)

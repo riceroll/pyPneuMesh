@@ -2,6 +2,7 @@ import pathlib
 import numpy as np
 import copy
 from pyPneuMesh import subObjectives
+from inspect import signature
 
 class MultiObjective(object):
     def __init__(self, objectives, multiMotion):
@@ -21,12 +22,19 @@ class MultiObjective(object):
         
         scores = []
         for i in range(len(self.objectives)):
-            vs = self.multiMotion.simulate(i, self.objectives[i]['numLoop'])
+            vs, fs = self.multiMotion.simulate(i, self.objectives[i]['numLoop'], retForce=True)
             
             for j in range(len(self.objectives[i]['subObjectives'])):
                 subObjectiveName = self.objectives[i]['subObjectives'][j]
                 subObjective = getattr(subObjectives, 'obj{}{}'.format(subObjectiveName[0].upper(), subObjectiveName[1:]))
-                score = subObjective(vs)
+                
+                sig = signature(subObjective)
+                params = sig.parameters
+                if len(params) == 1:
+                    score = subObjective(vs)
+                elif len(params) == 2:
+                    score = subObjective(vs, fs)
+                    
                 scores.append(score)
         scores = np.array(scores, np.float64)
         return scores

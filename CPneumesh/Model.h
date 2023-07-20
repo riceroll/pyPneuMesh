@@ -27,20 +27,20 @@ public:
   Eigen::MatrixXd Force;
 
   double h;
-  double k;
+  Eigen::VectorXd K;
   double damping;
   double gravity;
   double friction;
   double CONTRACTION_SPEED;
 
-  Model(double k, double h, double gravity, double damping, double friction,
+  Model(Eigen::VectorXd K, double h, double gravity, double damping, double friction,
         Eigen::MatrixXd v0, Eigen::MatrixXi e, double CONTRACTION_SPEED);
 
   Eigen::VectorXd getL(Eigen::MatrixXd V, Eigen::MatrixXi E);
 
   Eigen::MatrixXi getE();
 
-  Eigen::VectorXd step(Eigen::VectorXd times, Eigen::MatrixXd lengths, int numSteps);
+  std::pair<Eigen::VectorXd, Eigen::VectorXd> step(Eigen::VectorXd times, Eigen::MatrixXd lengths, int numSteps);
 
 };
 
