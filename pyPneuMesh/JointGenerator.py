@@ -68,15 +68,20 @@ class JointGenerator(object):
         vEIntersection = []
         V = []
         
+        # parallel
         numV = len(self.model.v0)
-        # numV = 1
         with multiprocessing.Pool(multiprocessing.cpu_count()) as p:
             vtPvEevEi = list(tqdm.tqdm(p.imap(self.generateJoint, np.arange(0, numV)), total=numV))
         
+        # serial single
+        vtPvEevEi[3] = self.generateJoint(3)
+        
+        
+        # # serial multiple
         # vtPvEevEi = []
-        # for i in range(numV):
-            # tP, Ee, Ei = self.generateJoint(i)
-            # vtPvEevEi.append([tP, Ee, Ei])
+        # for i in range(4):
+        #     tP, Ee, Ei = self.generateJoint(i)
+        #     vtPvEevEi.append([tP, Ee, Ei])
         
         for iv, tPEeEi in enumerate(vtPvEevEi):
             vtP.append(tPEeEi[0])
@@ -376,6 +381,9 @@ class JointGenerator(object):
             tOut = ip / (self.numPointsOnEdge - 1)
             tCenter = 1 - tOut
             p = tOut * pOut + tCenter * pCenter
+            
+            # add noise to avoid symmetry lock
+            p += np.random.rand(3) * 1e-3
             
             points.append(p)
         points = np.array(points)

@@ -18,9 +18,9 @@ GACheckpointDir = "/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/trainLo
 
 if mode == "start":
     GASetting = {
-        'nGenesPerPool': 64,
+        'nGenesPerPool': 128,
         'nSurvivedMin': 32,     # actually is max
-        'nGensPerPool': 16,
+        'nGensPerPool': 8,
         
         'nWorkers': multiprocessing.cpu_count(),
         

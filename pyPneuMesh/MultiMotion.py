@@ -27,7 +27,7 @@ class MultiMotion(object):
             actionSeqRand = np.random.randint(np.zeros_like(actionSeq), np.ones_like(actionSeq) * 2)
             maskMutation = np.random.rand(actionSeq.shape[0], actionSeq.shape[1]) < chance
             self.actionSeqs[i][maskMutation] = actionSeqRand[maskMutation]
-    
+            
     def cross(self, multiMotion, chance):
         for i, actionSeq in enumerate(self.actionSeqs):
             maskMutation = np.random.rand(actionSeq.shape[0], actionSeq.shape[1]) < chance
@@ -38,7 +38,9 @@ class MultiMotion(object):
     def simulate(self, iAction, numLoop, retForce=False):
         actionSeq = self.actionSeqs[iAction]
         actionSeq = np.vstack([actionSeq] * numLoop)
+        actionSeq = np.vstack([np.zeros(actionSeq.shape[1]), actionSeq])
         
+        breakpoint()
         assert(actionSeq.shape[1] >= self.model.getNumChannel())
         
         times, lengths = self.model.actionSeq2timeNLength(actionSeq)

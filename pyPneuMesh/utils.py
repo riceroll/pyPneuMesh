@@ -27,7 +27,6 @@ def readMooDict(folderDir):
     assert(len(mooDict) == 5)
     return mooDict
 
-
 def getDefaultValue(dictionary, key, defaultValue):
     if key in dictionary:
         return dictionary[key]
@@ -39,7 +38,6 @@ def getLength(v, e):
     assert(e.ndim == 2 and e.shape[1] == 2)
     
     return np.linalg.norm(v[e[:, 0]] - v[e[:, 1]], axis=1)
-
 
 def json2Data(jsonDir):
     import json
@@ -158,6 +156,8 @@ def getWeightFromDistance(distance, xMiddle=2.3, scale=2):
     return np.arctan((distance - xMiddle) * scale) / np.pi + 0.5
 
 def plotDistance(distance, V, E):
+    # plot distance for helmet weight of joints
+    
     import polyscope as ps
     try:
         ps.init()
@@ -172,7 +172,7 @@ def plotDistance(distance, V, E):
     pc.add_color_quantity('color', colors)
     ps.show()
         
-
+    
     
 
     

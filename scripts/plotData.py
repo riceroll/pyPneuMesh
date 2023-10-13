@@ -186,8 +186,7 @@ def plotData(model:Model):
     plt.subplots_adjust(left=0.15, right=0.95, bottom=0.45, top=0.85)
     plt.savefig('/Users/Roll/Desktop/MetaTruss-Submission/Figures/' + 'contractionDesign.png', dpi=1000)
     
-    
-    # plt.show()
+    plt.show()
     
     
     
@@ -214,7 +213,7 @@ def plotData(model:Model):
     
     plt.savefig('/Users/Roll/Desktop/MetaTruss-Submission/Figures/' + 'channelDesign.png', dpi=1000)
     
-    # plt.show()
+    plt.show()
 
 
 

@@ -1,8 +1,10 @@
 import sys
-
+# change this to your site-packages to import external python libraries
 sys.path.append('/Users/Roll/opt/anaconda3/lib/python3.7/site-packages')
-sys.path.append('/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh')
 
+import bpy  # this is needed and only works in Blender
+
+# meta data for Blender plugin
 bl_info = {
     # required
     'name': 'PneuMesh',
@@ -14,19 +16,20 @@ bl_info = {
     'description': 'PneuMesh Visualizer',
 }
 
-import bpy
-import re
 
-# == GLOBAL VARIABLES
+# == properties for the plugin that will show up as a sidebar
 PROPS = [
-    ('animation_dir',
-     bpy.props.StringProperty(name='animation', default='/Users/Roll/Desktop/rendered/testing.animation.npy')),
-    # ('suffix', bpy.props.StringProperty(name='Suffix', default='Suff')),
-    # ('add_version', bpy.props.BoolProperty(name='Add Version', default=False)),
-    # ('version', bpy.props.IntProperty(name='Version', default=1)),
+    ('animation_dir',   # name of the property
+     bpy.props.StringProperty(name='animation', default='/Users/Roll/Desktop/rendered/testing.animation.npy')), # change this to the default npy directory
 ]
 
 
+# the Blender operator class that will create the truss
+# required to keep the class name as "ObjectABCDE"
+# required to inherit (bpy.types.Operator)
+# required to define bl_idname as "opr.object_abcde"
+# required to define a bl_label
+# required to have a member function execute(self, context) that returns {'FINISHED'}
 class ObjectCreateTruss(bpy.types.Operator):
     bl_idname = 'opr.object_create_truss'
     bl_label = 'Object create truss'
@@ -36,24 +39,7 @@ class ObjectCreateTruss(bpy.types.Operator):
         import bpy
         import sys
         sys.path.append('/Users/Roll/opt/anaconda3/lib/python3.7/site-packages/')
-        # from skimage import exposure
         
-        # import matplotlib.cm as cm
-        # import matplotlib.colors as colors
-        # scalar_mappable = cm.ScalarMappable(cmap='inferno')
-        # number_to_color = scalar_mappable.get_cmap()
-        
-        #
-        # frames = np.zeros([200, 50, 3])
-        # e = np.ones([30, 2])
-        # edgeChannel = np.ones(30)
-        
-        # animation = {
-        #     'Vs': frames,
-        #     'E': e,
-        #     'edgeChannel': edgeChannel,
-        #     'h': 0.01,
-        # }
         showForce = False
         print(bpy.types.Scene.animation_dir)
         animation = np.load(context.scene.animation_dir, allow_pickle=True).item()
@@ -102,6 +88,8 @@ class ObjectCreateTruss(bpy.types.Operator):
             return [r, g, b]
         
         colors = ['F2B807', 'F5AB55', 'E3125F', '63A5BF', 'F27A5E', '66C8D2']
+        
+        colors = ['F2B807', 'D777B4', 'E38065', 'EBC758', '7BC2EC', '5DA49B']
         
         colors = np.array([getRGB(c) for c in colors], dtype=np.float)
         
@@ -316,13 +304,18 @@ class ObjectCreateTruss(bpy.types.Operator):
         bpy.ops.object.camera_add(enter_editmode=False, align='VIEW', location=(3.9237427711486816, -1.7984970808029175, 2.009699821472168),
                                   rotation=(1.1931158304214478, -7.194596491899574e-06, 1.1325969696044922))
 
-
         # bpy.ops.object.camera_add(enter_editmode=False, align='VIEW', location=(3.9237427711486816, 1.7984970808029175, 2.009699821472168),rotation=(1.1931158304214478, -7.194596491899574e-06, 3.141592653589 -1.1325969696044922))
         
         return {'FINISHED'}
 
 
-# == PANELS
+
+# the Blender panel class that creates a side panel
+# required to keep the class name as "XXXPanel"
+# required to inherit (bpy.types.Panel)
+# required to define 'bl_idname' as "VIEW3D_PT_xxx", 'bl_space_type' as 'VIEW_3D', 'bl_region_type' as 'UI'
+# required to define a bl_label
+# required to have draw(self, context) function
 class PneuMeshPanel(bpy.types.Panel):
     bl_idname = 'VIEW3D_PT_pneumesh'
     bl_label = 'PneuMesh'
@@ -341,20 +334,17 @@ class PneuMeshPanel(bpy.types.Panel):
         col.operator('opr.object_create_truss', text='Create')
 
 
-# == MAIN ROUTINE
+# register the panel and the operator in BLender
 CLASSES = [
     ObjectCreateTruss,
     PneuMeshPanel,
 ]
-
-
 def register():
     for (prop_name, prop_value) in PROPS:
         setattr(bpy.types.Scene, prop_name, prop_value)
     
     for klass in CLASSES:
         bpy.utils.register_class(klass)
-
 
 def unregister():
     for (prop_name, _) in PROPS:

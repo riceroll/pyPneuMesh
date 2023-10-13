@@ -110,7 +110,7 @@ def objHelmetMiddle(vs):
     if len(helmetWeight) == 0:
         from pyPneuMesh.utils import getDistance, getWeightFromDistance
         
-        trussparam = np.load('/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/trainHelmet4_static/data/helmet.trussparam.npy', allow_pickle=True).all()
+        trussparam = np.load('./scripts/trainHelmet4_static/data/helmet.trussparam.npy', allow_pickle=True).all()
         e = trussparam['e']
         distance = getDistance(e, [iMiddle, iLeft, iRight])
         helmetWeight = getWeightFromDistance(distance)

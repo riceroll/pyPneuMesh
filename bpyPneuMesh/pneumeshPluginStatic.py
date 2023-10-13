@@ -65,9 +65,6 @@ class ObjectCreateTruss(bpy.types.Operator):
         
         # Fs = np.array(exposure.equalize_hist(Fs.reshape(-1))).reshape(Fs.shape)
         
-        
-        
-        
         # colorful
         colors = np.array([
             [242, 34, 51],
@@ -77,8 +74,6 @@ class ObjectCreateTruss(bpy.types.Operator):
             [103, 132, 232],
             [238, 255, 255]
         ], dtype=np.float) / 256
-        
-        
         
         def srgb2Linear(color_component):
             # sRGB to linear approximation
@@ -93,17 +88,20 @@ class ObjectCreateTruss(bpy.types.Operator):
             b = srgb2Linear(int(hexColor[4:6], 16) / 255.0)
             return [r, g, b]
         
-        colors = ['F2B807', 'F5AB55', 'E3125F', '63A5BF', 'F27A5E', '66C8D2']
+        colors = ['F2B807', 'F5AB55', 'E3125F', '63A5BF', 'F27A5E', '66C8D2']   # initial orange blue
+
+        # colors = ['F2B807', 'F5AB55', '66C8D2', '63A5BF', 'F27A5E', 'E3125F']
+        # colors = ['7BC2EC', 'EBC758', '5678D5', 'E38065', 'D777B4', 'DF446C']
+        
+        colors = ['E3C53F', 'F2623A', 'E33252', '63A5BF', 'F59B43', '66C8D2']       # current orange blue
         
         colorsa = np.array([getRGB(c) for c in colors], dtype=np.float)
         
-
         colorsb = np.array([
             np.array(list(np.random.choice(range(256), size=3)), dtype=np.float) for i in range(64)
         ], dtype=np.float) / 256
         
         colors = np.vstack([colorsa, colorsb])
-        
         
         # colors = [
         #     (0.007, 0.083, 0.500),
@@ -114,7 +112,7 @@ class ObjectCreateTruss(bpy.types.Operator):
         #     (0.7, 0.432, 0.008),
         #     (1.0, 1.0, 1.0)x
         # ]
-    
+        
         radius = 0.012
         bevel_resolution = 12
         fps = 12
@@ -151,9 +149,9 @@ class ObjectCreateTruss(bpy.types.Operator):
             if transparent:
                 mat.blend_method = 'BLEND'
                 nodes["Principled BSDF"].inputs[21].default_value = 0.0
-                
+            
             return mat
-
+        
         materials = [newShader('color', c) for c in colors]
         
         def addCurveObject(iChannel, props):
@@ -185,7 +183,6 @@ class ObjectCreateTruss(bpy.types.Operator):
             sphereObject.data.materials.append(mat)
             
             return sphereObject
-
         
         # print(numFrames)
         V0 = Vs[0]
@@ -206,7 +203,7 @@ class ObjectCreateTruss(bpy.types.Operator):
             
             # if addSphere0:
             #     sphereObject0 = addSphereObject(color)
-
+            
             # if addSphere1:
             #     sphereObject1 = addSphereObject(color)
             
@@ -250,16 +247,14 @@ class ObjectCreateTruss(bpy.types.Operator):
                 #     sphereObject1.keyframe_insert('location', frame=iFrame)
                 #
                 if color[0] != 1.0:
-
                     sphereObject0.location = v0
                     sphereObject0.keyframe_insert('location', frame=iFrame)
-
+                    
                     sphereObject1.location = v1
                     sphereObject1.keyframe_insert('location', frame=iFrame)
             
             ivsAdded.add(e[0])
             ivsAdded.add(e[1])
-        
         
         # # adding cube
         # bpy.ops.mesh.primitive_cube_add(size=1)
@@ -301,11 +296,11 @@ class ObjectCreateTruss(bpy.types.Operator):
         
         bpy.ops.object.light_add(type='SUN', align='WORLD', location=(0, 0, 0))
         bpy.context.object.data.energy = 1.0
-
+        
         bpy.context.scene.eevee.use_bloom = True
         bpy.context.scene.eevee.bloom_threshold = 1.1
         bpy.context.scene.eevee.use_gtao = True
-
+        
         bpy.ops.mesh.primitive_plane_add(size=100, enter_editmode=False, align='WORLD', location=(0, 0, 0))
         
         bpy.context.scene.render.use_freestyle = True
@@ -313,10 +308,10 @@ class ObjectCreateTruss(bpy.types.Operator):
         bpy.context.scene.render.resolution_x = 3840
         bpy.context.scene.render.resolution_y = 2160
         
-        bpy.ops.object.camera_add(enter_editmode=False, align='VIEW', location=(3.9237427711486816, -1.7984970808029175, 2.009699821472168),
+        bpy.ops.object.camera_add(enter_editmode=False, align='VIEW',
+                                  location=(3.9237427711486816, -1.7984970808029175, 2.009699821472168),
                                   rotation=(1.1931158304214478, -7.194596491899574e-06, 1.1325969696044922))
-
-
+        
         # bpy.ops.object.camera_add(enter_editmode=False, align='VIEW', location=(3.9237427711486816, 1.7984970808029175, 2.009699821472168),rotation=(1.1931158304214478, -7.194596491899574e-06, 3.141592653589 -1.1325969696044922))
         
         return {'FINISHED'}
@@ -366,6 +361,5 @@ def unregister():
 
 if __name__ == '__main__':
     register()
-    
-    
-    
+
+
