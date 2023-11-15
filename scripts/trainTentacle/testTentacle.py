@@ -10,11 +10,11 @@ from pyPneuMesh.GA import GA
 
 
 mode = "start"
-# mode = "continue"
+mode = "continue"
 # mode = "load"
 # mode = "configMOO"
 
-GACheckpointDir = "./scripts/trainTentacle/output/1/ElitePool_278.gacheckpoint.npy"
+GACheckpointDir = "/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/trainTentacle/output/1/ElitePool_278.gacheckpoint.npy"
 
 if mode == "start":
     # GASetting = {
@@ -37,9 +37,9 @@ if mode == "start":
     # }
     
     GASetting = {
-        'nGenesPerPool': 512,
-        'nSurvivedMin': 128,  # actually is max
-        'nGensPerPool': 6,
+        'nGenesPerPool': 128,
+        'nSurvivedMin': 32,  # actually is max
+        'nGensPerPool': 4,
         
         'nWorkers': multiprocessing.cpu_count(),
         
@@ -67,11 +67,11 @@ elif mode == "continue":
     
 #     38 is good
     moo = ga.elitePool[1]['moo']
-    moo.saveAll('./scripts/trainTentacle/data', 'tentacle')
-    moo.multiMotion.saveAnimation('./scripts/trainTentacle/data', 'tentacle0', 0, 1)
-    moo.multiMotion.saveAnimation('./scripts/trainTentacle/data',
+    moo.saveAll('/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/trainTentacle/data', 'tentacle')
+    moo.multiMotion.saveAnimation('/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/trainTentacle/data', 'tentacle0', 0, 1)
+    moo.multiMotion.saveAnimation('/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/trainTentacle/data',
                                   'tentacle1', 1, 1)
-    moo.multiMotion.saveAnimation('./scripts/trainTentacle/data',
+    moo.multiMotion.saveAnimation('/Users/Roll/Desktop/pyPneuMesh-dev/pyPneuMesh/scripts/trainTentacle/data',
                                   'tentacle2', 2, 1)
     
     
