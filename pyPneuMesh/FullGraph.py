@@ -171,7 +171,8 @@ class FullGraph(object):
             
             iesAdjacent = FullGraph.eAdjacencyList[ie]
             icsAdjacent = set(self.channels[iesAdjacent].tolist())
-            icsAdjacent.remove(icOriginal)
+            if icOriginal in icsAdjacent:
+                icsAdjacent.remove(icOriginal)
             icsAdjacent = list(icsAdjacent)
             
             while len(icsAdjacent) > 0:

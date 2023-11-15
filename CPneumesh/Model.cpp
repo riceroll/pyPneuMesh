@@ -6,12 +6,13 @@ using namespace Eigen;
 namespace py = pybind11;
 
 Model::Model(VectorXd K, double h, double gravity, double damping, double friction,
-             MatrixXd v0, MatrixXi e, double CONTRACTION_SPEED)
+             MatrixXd v0, MatrixXi e, double CONTRACTION_SPEED, VectorXi fixed)
    {
 
   this->V0 = v0;
   this->V = v0;
   this->E = e;
+  this->fixed = fixed;
 
   Vel.resize(V0.rows(), 3);
   Vel.setZero();
@@ -40,7 +41,7 @@ MatrixXi Model::getE() {
 std::pair<VectorXd, VectorXd> Model::step(VectorXd times, MatrixXd lengths, int numSteps) {
   MatrixXd V = V0;
 
-  VectorXd LTarget = lengths.row(0);   // target length of penumatic actuation
+  VectorXd LTarget = lengths.row(0);   // target length of pneumatic actuation
 
   VectorXd Fs((numSteps + 1) * E.rows() * 1);
 
@@ -122,6 +123,12 @@ std::pair<VectorXd, VectorXd> Model::step(VectorXd times, MatrixXd lengths, int 
     Vel = Vel * damping;
 
     V += Vel * h;
+
+    for (int i=0; i<V.rows(); i++) {
+        if (fixed[i] == 1) {
+            V.row(i) -= Vel.row(i) * h;
+        }
+    }
 
     for (int iRow = 0; iRow < V.rows(); iRow++) {
       for (int iCol=0; iCol < V.cols(); iCol++) {
@@ -213,7 +220,7 @@ PYBIND11_MODULE(model, m) {
   m.doc() = "pybind11 example plugin"; // optional module docstring
 
   py::class_<Model>(m, "Model")
-    .def(py::init<VectorXd, double, double, double, double, MatrixXd, MatrixXi, double>())
+    .def(py::init<VectorXd, double, double, double, double, MatrixXd, MatrixXi, double, VectorXi>())
     .def("getE", &Model::getE)
     .def("step", &Model::step)
     .def("stepForGym", &Model::stepForGym)

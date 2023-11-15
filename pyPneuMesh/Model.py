@@ -194,7 +194,7 @@ class Model(object):
         #     # Save the array data as doubles (float64)
         #     f.write(self.v0.astype(np.long).tobytes())
         #
-        cModel = CModel(K, self.h, self.gravity, self.damping, friction, self.v0, self.e, self.CONTRACTION_SPEED)
+        cModel = CModel(K, self.h, self.gravity, self.damping, friction, self.v0, self.e, self.CONTRACTION_SPEED, self.vertexFixed)
         vs = cModel.step(times, lengths, numSteps)
         
         

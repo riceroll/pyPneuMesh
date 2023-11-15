@@ -23,6 +23,7 @@ public:
   Eigen::MatrixXd V;
   Eigen::MatrixXi E;
   Eigen::VectorXd L0;   // target length of mass spring
+  Eigen::VectorXi fixed;
 
   Eigen::MatrixXd Vel;
   Eigen::MatrixXd Force;
@@ -35,7 +36,7 @@ public:
   double CONTRACTION_SPEED;
 
   Model(Eigen::VectorXd K, double h, double gravity, double damping, double friction,
-        Eigen::MatrixXd v0, Eigen::MatrixXi e, double CONTRACTION_SPEED);
+        Eigen::MatrixXd v0, Eigen::MatrixXi e, double CONTRACTION_SPEED, Eigen::VectorXi fixed);
 
   Eigen::VectorXd getL(Eigen::MatrixXd V, Eigen::MatrixXi E);
 
