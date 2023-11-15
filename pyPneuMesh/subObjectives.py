@@ -94,15 +94,15 @@ def objTableHigh(vs: np.ndarray):
     return abs(zMean - zTarget)
 
 def objTentaclePosition0(vs: np.ndarray):
-    d = ((vs[-1, 18] - np.array([ 0.25661, -0.037002,  1.7182  ]) / 0.17 * 0.102) ** 2).sum()
+    d = (( (vs[-1, 18] - np.array([ 0.25661, -0.037002,  1.7182  ])) / 0.17 * 0.102) ** 2).sum()
     return -d
 
 def objTentaclePosition1(vs: np.ndarray):
-    d = ((vs[-1, 18] - np.array([-0.3843, 0.13715, 1.8388]) / 0.17 * 0.102) ** 2).sum()
+    d = (( (vs[-1, 18] - np.array([-0.3843, 0.13715, 1.8388]) ) / 0.17 * 0.102) ** 2).sum()
     return -d
 
 def objTentaclePosition2(vs: np.ndarray):
-    d = ((vs[-1, 18] - np.array([-0.22215, -0.40834, 1.0739]) / 0.17 * 0.102) ** 2).sum()
+    d = (( (vs[-1, 18] - np.array([-0.22215, -0.40834, 1.0739]) ) / 0.17 * 0.102) ** 2).sum()
     return -d
 
 def objGrabLobster(vs: np.ndarray):
