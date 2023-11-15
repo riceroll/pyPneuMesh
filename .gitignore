@@ -1,2 +1,10 @@
 __py*
-RenderOption
+RenderOption*
+build
+data
+ANOVA
+bpyPneuMesh
+ghPneuMesh
+imgui.ini
+utils
+output

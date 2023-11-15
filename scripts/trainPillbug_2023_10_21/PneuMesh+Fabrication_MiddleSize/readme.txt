@@ -1,0 +1,1 @@
+Shuhong fabricated one pillbug for Dissolvable pneumesh 2023 Aug. Here shows the relevant fabrication parameters for that one. 

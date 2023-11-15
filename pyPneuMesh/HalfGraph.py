@@ -14,6 +14,7 @@ class HalfGraph(object):
         self.model = model
         if HalfGraph.edgeMirrorMap is None:
             HalfGraph.edgeMirrorMap = self.__getEdgeMirrorMap()
+        
         self.edgeMirrorMap = HalfGraph.edgeMirrorMap
         
         self.ins_o = []  # nn, original indices of nodes in a halfgraph
@@ -164,14 +165,14 @@ class HalfGraph(object):
                     edgeMirrorMap[ieMirrored] = ie
     
         return edgeMirrorMap
-
+    
     def saveGraphSetting(self, folderDir, name):
         graphSetting = self.getGraphSetting()
     
         folderPath = pathlib.Path(folderDir)
         graphSettingPath = folderPath.joinpath("{}.graphsetting".format(name))
         np.save(str(graphSettingPath), graphSetting)
-
+        
     def getGraphSetting(self):
         graphSetting = {
             'symmetric': True,
@@ -360,7 +361,7 @@ class HalfGraph(object):
         for ie in range(len(self.contractions)):
             if maskMutation[ie] < chance:
                 self.contractions[ie] = contraction[ie]
-
+                
     def cross(self, graph, chance):
         maskMutation = np.random.rand(len(self.contractions))
         for ie in range(len(self.contractions)):

@@ -82,7 +82,7 @@ std::pair<VectorXd, VectorXd> Model::step(VectorXd times, MatrixXd lengths, int 
       }
     }
 
-    // calculate edge force
+    // add edge force
     VectorXd FEdge;
     FEdge.resize(E.size());
     auto L = getL(V, E);
@@ -95,6 +95,7 @@ std::pair<VectorXd, VectorXd> Model::step(VectorXd times, MatrixXd lengths, int 
       Force.row(E(iE, 1)) -= Vec01.row(iE) / L[iE] * FEdge[iE];
     }
 
+    // add gravity force
     Force(all, 2).array() -= gravity;
 
     // contact with ground
@@ -122,6 +123,50 @@ std::pair<VectorXd, VectorXd> Model::step(VectorXd times, MatrixXd lengths, int 
         V(iV, 2) = 0;
       }
     }
+
+    // contact with objects
+    Vo, Fo, V, Vel, Force, del
+
+    Vo, Fo: object mesh
+    V, Vo, Fo:=> inside  boolean array of which V is inside
+    point_mesh_squared_distance: V, Vo, Fo => IF, Vc, D , indices of faces, closest points
+
+    for (int iV = 0; iV < V.rows(); iV++) {
+
+      the closest point
+      vector from v to closest point
+      get the normal from vector assuming outside
+
+      if inside[iV] {
+        invert the normal
+        extend the vector
+        that is the new position of v
+      }
+
+      // on mesh
+      if D[iV] < 2 * delta {
+        get the velocity component along normal
+        if normal velocity towards surface
+          totalvelocity - that dot product
+
+        get the normal force
+        if normal force towards surface
+          get support force
+          total force plus support force
+          velocity is now parallel velocity -> velocity magnitude and unit vector
+
+          calculate the friction magnitude by taking the min between support * miu * t and velocity
+          add friction force to total force
+
+
+
+
+      }
+
+    }
+
+
+
 
     Vel = Vel + Force * h;
     Vel = Vel * damping;

@@ -27,6 +27,20 @@ def objLowerBody(vs: np.ndarray):
     zMax = vs[:, :, 2].max()
     return -zMax
 
+def objLowerFinalBody(vs: np.ndarray):
+    zMax = vs[-1, :, 2].max()
+    return -zMax
+
+def objNarrowBody(vs: np.ndarray):
+    horizontalMax = vs[:, :, 1].max() - vs[:, :, 1].min()
+    return -horizontalMax
+
+def objPillbugAsymmetrical(vs: np.ndarray):
+    if vs[:, 3, 1].std() < 1e-5:
+        return -1
+    else:
+        return 0
+
 def objTableTilt(vs: np.ndarray):
     v45 = vs[-1, 45]
     v46 = vs[-1, 46]
@@ -48,6 +62,13 @@ def objTableTilt(vs: np.ndarray):
 def objTableNoTilt(vs: np.ndarray):
     # minimize the z axis difference of the two pairs of the top four nodes
     return - abs(vs[-1, 45, 2]-vs[-1, 46, 2]) - abs(vs[-1, 47, 2] - vs[-1, 48, 2])
+
+def objPillbugNoIntersection(vs: np.ndarray):
+    minDistance = ((vs[:, 16] - vs[:, 17]) ** 2).sum(1).min()
+    if minDistance < 1e-8:
+        return - minDistance * 1e8
+    else:
+        return 0
 
 def objTableAlwaysNoTilt(vs: np.ndarray):
     # minimize the z axis difference of the two pairs of the top four nodes
@@ -72,9 +93,20 @@ def objTableHigh(vs: np.ndarray):
     
     return abs(zMean - zTarget)
 
+def objTentaclePosition0(vs: np.ndarray):
+    d = ((vs[-1, 18] - np.array([ 0.25661, -0.037002,  1.7182  ]) / 0.17 * 0.102) ** 2).sum()
+    return -d
+
+def objTentaclePosition1(vs: np.ndarray):
+    d = ((vs[-1, 18] - np.array([-0.3843, 0.13715, 1.8388]) / 0.17 * 0.102) ** 2).sum()
+    return -d
+
+def objTentaclePosition2(vs: np.ndarray):
+    d = ((vs[-1, 18] - np.array([-0.22215, -0.40834, 1.0739]) / 0.17 * 0.102) ** 2).sum()
+    return -d
+
 def objGrabLobster(vs: np.ndarray):
     return -np.sqrt(((vs[:, 32] - vs[:, 29]) ** 2).sum(1).max())
-
 
 def objLowerBodyMax(vs: np.ndarray):
     return -vs[:, :, 2].max()

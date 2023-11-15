@@ -29,6 +29,7 @@ class MOO(object):
             self.multiMotion = MultiMotion(actionSeqs, self.model)
             self.multiObjective = MultiObjective(objectives, self.multiMotion)
             self.graph = Graph(graphSetting, self.model)
+            
 
         self.randomize(graph=graphRandomize, contraction=contractionRandomize, action=actionRandomize)
             

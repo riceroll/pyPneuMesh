@@ -16,8 +16,7 @@ class Graph(object):
         if symmetric:
             return HalfGraph(model, graphSetting)
         else:
-            assert(False)
-            return FullGraph(model)
+            return FullGraph(model, graphSetting)
     
     def __init__(self, graphSetting, model):
         self.graphSetting = graphSetting.copy()
@@ -39,5 +38,3 @@ class Graph(object):
     def randomize(self):
         pass
     
-    def saveGraphSetting(self):
-        pass

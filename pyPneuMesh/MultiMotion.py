@@ -38,9 +38,8 @@ class MultiMotion(object):
     def simulate(self, iAction, numLoop, retForce=False):
         actionSeq = self.actionSeqs[iAction]
         actionSeq = np.vstack([actionSeq] * numLoop)
-        actionSeq = np.vstack([np.zeros(actionSeq.shape[1]), actionSeq])
+        # actionSeq = np.vstack([np.zeros(actionSeq.shape[1]), actionSeq])
         
-        breakpoint()
         assert(actionSeq.shape[1] >= self.model.getNumChannel())
         
         times, lengths = self.model.actionSeq2timeNLength(actionSeq)
@@ -48,22 +47,21 @@ class MultiMotion(object):
         numSteps = int(totalTime / self.model.h)
         
         Vs, Fs = self.model.step(numSteps, times, lengths, retForce=retForce)
+        
         Vs = Vs.reshape(numSteps + 1, -1, 3)
         Fs = Fs.reshape(numSteps + 1, -1)
         return Vs, Fs
     
         
-    def animate(self, iAction, numLoop, speed=1.0):
+    def animate(self, iAction, numLoop, speed=1.0, singleColor=True):
         vs, fs = self.simulate(iAction, numLoop)
-        self.model.animate(vs, speed=speed, singleColor=True)
+        self.model.animate(vs, speed=speed, singleColor=singleColor)
         return vs
     
     def saveAnimation(self, folderDir, name, iAction, numLoop):
         Vs, Fs = self.simulate(iAction, numLoop, retForce=True)
         self.model.animate(Vs, speed=1, singleColor=True)
         
-        
-        breakpoint()
         data = {
             'Vs': Vs,
             'Fs': Fs,

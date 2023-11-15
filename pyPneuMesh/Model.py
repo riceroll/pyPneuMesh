@@ -64,6 +64,7 @@ class Model(object):
                                        self.CONTRACTION_PER_LEVEL * (self.NUM_CONTRACTION_LEVEL - 1)
         self.maxLengths = maxLengths
         
+        
     def save(self, folderDir, name):
         trussParam = self.getTrussParam()
         simParam = self.getSimParam()
@@ -177,11 +178,8 @@ class Model(object):
         K[self.edgeActive] *= self.k * 0.5
         K[~self.edgeActive] *= self.k
         
-        self.friction *= 0.8
+        friction = self.friction * 0.8
         
-        self.gravity *= 1.0
-        # breakpoint()
-
         # with open("/Users/Roll/Desktop/CPneumesh/Pn0.bin", "wb") as f:
         #     # Save the shape of the array as integers
         #     f.write(np.array(self.v0.shape, dtype=np.int32).tobytes())
@@ -196,8 +194,9 @@ class Model(object):
         #     # Save the array data as doubles (float64)
         #     f.write(self.v0.astype(np.long).tobytes())
         #
-        cModel = CModel(K, self.h, self.gravity, self.damping, self.friction, self.v0, self.e, self.CONTRACTION_SPEED)
+        cModel = CModel(K, self.h, self.gravity, self.damping, friction, self.v0, self.e, self.CONTRACTION_SPEED)
         vs = cModel.step(times, lengths, numSteps)
+        
         
         return vs
         
@@ -232,7 +231,7 @@ class Model(object):
         es = self.e[ies]
         cs = ps.register_curve_network('passive', v, es, color=(0,0,0))
         
-        ps.register_curve_network('y axis', np.array([[0,0,0], [0, 5, 0]]), np.array([[0, 1]]))
+        # ps.register_curve_network('y axis', np.array([[0,0,0], [0, 5, 0]]), np.array([[0, 1]]))
         
         ps.show()
     

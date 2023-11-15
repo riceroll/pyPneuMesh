@@ -140,12 +140,15 @@ class JointGenerator(object):
             
         return vChannelP, V
         
-    def export(self, vChannelP, V, outDir):
+    def export(self, vChannelP, idsJointToChannelP, V, outDir):
+        # jointIndices: index of the joint connected to each channelP
+        
         vChannelP = [[[[p[0], p[1], p[2]] for p in POfTheChannel] for POfTheChannel in channelP] for channelP in vChannelP]
         V = [v.tolist() for v in V]
         
         jointsDict = {
             'vChannelP': vChannelP,
+            'idsJointToChannelP': idsJointToChannelP,
             'V': V,
             'channelRadius': self.channelRadius,
             'sphereRadius': self.sphereRadius
@@ -156,6 +159,52 @@ class JointGenerator(object):
         with open(outDir, 'w') as oFile:
             oFile.write(js)
     
+    def getIdsJoint(self, vChannelP):
+        # detect the index of the joint that is connected to one of the channelP
+        # return:
+        #   idsJointToChannelP: [numVertices, numChannelP, 1]
+        
+        idsJointToChannelP = dict()
+        for i in range(len(vChannelP)):
+            idsJointToChannelP[i] = dict()
+            for j in range(len(vChannelP[i])):
+                idsJointToChannelP[i][j] = None
+        
+        for edge in self.model.e:
+            iv0 = np.int(edge[0])
+            iv1 = np.int(edge[1])
+            
+            channelP0 = vChannelP[iv0]
+            channelP1 = vChannelP[iv1]
+            
+            v0 = self.model.v0[iv0]
+            v1 = self.model.v0[iv1]
+            
+            vec01 = v1 - v0
+            unitVec01 = vec01 / np.linalg.norm(vec01)
+            
+            dots0 = []
+            for i, channel in enumerate(channelP0):
+                p = channel[-1]
+                unitVecP = p / np.linalg.norm(p)
+                dots0.append(np.dot(unitVecP, unitVec01))
+            
+            dots1 = []
+            for i, channel in enumerate(channelP1):
+                p = channel[-1]
+                unitVecP = p / np.linalg.norm(p)
+                dots1.append(np.dot(unitVecP, -unitVec01))
+            
+            i0 = np.argmax(dots0).astype(np.int)
+            i1 = np.argmax(dots1).astype(np.int)
+            
+            assert(idsJointToChannelP[iv0][i0] is None)
+            assert (idsJointToChannelP[iv1][i1] is None)
+            idsJointToChannelP[iv0][i0] = iv1
+            idsJointToChannelP[iv1][i1] = iv0
+        
+        return idsJointToChannelP
+    
     def exportJoints(self, folderDir, name, vtP, vE, vEIntersection, V):
         folderPath = pathlib.Path(folderDir)
         outDir = folderPath.joinpath('{}.jointsdict'.format(name))
@@ -163,7 +212,9 @@ class JointGenerator(object):
         
         vChannelP, V = self.generateJointsChannels(vtP, vE, vEIntersection, V)
         
-        self.export(vChannelP, V, outDir)
+        idsJointToChannelP = self.getIdsJoint(vChannelP)
+        
+        self.export(vChannelP, idsJointToChannelP, V, outDir)
         
     def generateJoint(self, iv):
         # output tP: [iTime, iPoint, dimension]
